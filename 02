@@ -1,0 +1,112 @@
+鼠标
+选中为复制   只在终端下有用  适用于所有的 linux系统 
+滚轮 粘贴
+rth- cmcltl reset classroom
+rth- cmcltl reset server
+ctlr+alt+f2 切换到字符模式
+
+ctlr+alt+f1 回到gui模式
+
+通配符
+eg
+touch 1.txt 12.txt 13.txt 123.txt 456.txt
+[root@room9pc01 ll]# ls
+123.txt  12.txt  13.txt  1.txt  456.txt
+[root@room9pc01 ll]# rm -rf 1?.txt
+[root@room9pc01 ll]# ls
+123.txt  1.txt  456.txt
+[root@room9pc01 ll]# touch 145.txt
+[root@room9pc01 ll]# ls
+123.txt  145.txt  1.txt  456.txt
+
+
+
+? 配一位
+* 全部
+
+
+cat head tail   
+
+cat -n //  ;查看文件 几行； 显示行号
+head -n //  ;查看文件 前几行 
+tail -n //   ;查看文件 尾部 几行  n表示 你要显示几行
+
+grep 关键字 目的文件  ；
+grep root  /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+operator:x:11:0:operator:/root:/sbin/nologin
+
+
+grep ^root /etc/passwd  ^匹配 root 开头的 
+grep root$ /etc/passwd  $匹配 以 root 结尾的
+
+管道 |   将上一条命令执行的结果交给下一条命令执行
+eg：
+cat /etc/passwd | grep root
+
+root:x:0:0:root:/root:/bin/bash
+operator:x:11:0:operator:/root:/sbin/nologin
+
+cat /etc/passwd | wc -l 计数 
+42
+
+cat -n /etc/passwd | head -15 |tail -6   带行号输出
+    10	operator:x:11:0:operator:/root:/sbin/nologin
+    11	games:x:12:100:games:/usr/games:/sbin/nologin
+    12	ftp:x:14:50:FTP User:/var/ftp:/sbin/nologin
+    13	nobody:x:99:99:Nobody:/:/sbin/nologin
+    14	systemd-network:x:192:192:systemd Network Management:/:/sbin/nologin
+    15	dbus:x:81:81:System message bus:/:/sbin/nologin
+
+cat -n /etc/passwd | head -15 |tail -6 |wc -l  配合计数使用 
+6
+
+重定向
+>    覆盖重定向  直接覆盖原文件
+
+[root@room9pc01 home]# echo 123 > 1.txt
+[root@room9pc01 home]# cat 1.txt 
+123
+[root@room9pc01 home]# echo 456 > 1.txt
+[root@room9pc01 home]# cat 1.txt 
+456
+
+>>  追加重定向    保留源文件 在最后追加
+
+[root@room9pc01 home]# echo 123 >>1.txt
+[root@room9pc01 home]# cat 1.txt 
+456
+123
+[root@room9pc01 home]# echo 789 >>1.txt
+[root@room9pc01 home]# cat 1.txt 
+456
+123
+789
+
+echo 
+
+vim编辑器
+
+命令模式 	批量操作，复制粘贴    i 进入插入模式 esc 推出 进入命令模式； 按两次 esc 进入 末行模式 wq 退出 q！推出不保存 ！强制执行
+					从光标位置开始往下操作，
+	命令模式下执行			复制      数字+yy  光标下几行需要复制，不是复制多少行
+					粘贴      p
+					删除      数字+dd  删除了数字行
+					全文查找 /关键字  
+					撤销     u
+					反撤销   ctrl+r
+					退出保存 shift+zz 
+插入模式 	写入文档
+末行模式 	保存退出  wq 退出保存 q！退出不保存 
+set nu 显示行数 
+：6 快速移动到某一行  移动到第6行
+
+远程控制
+teamviewer
+win  cmd 命令
+mstwc
+跨平台 win +linux
+tigervnc
+xshell
+
+ssh -X root@severname
