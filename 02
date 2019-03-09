@@ -1,4 +1,63 @@
+ 还原命令： rht-vmctl reset  电脑名
+虚拟机： classroom  server  desktop  win
+
+ls -l 详解
+
+    d  目录文件    -  普通文件      l  链接文件
+
+    权限  ：  r  读    w  写   x 执行权限 
+     属主    属组    其他人  
+     rwx     r--      r-x
+tab键 
+       1. 按一次，补全命令或者路径
+       2. 按两次，下来菜单，照着找
+       3. 按一次，检查这个文件有没有
+
+mkdir  文件夹 目录
+       mkdir  -p  a/aa/aaa
+touch   文件
+       touch 1.txt
+mv  移动
+    格式：  mv  源文件   目的位置
+    1.mv  可以移动文件
+    2.mv  可以移动文件的同时改名
+    3.mv  可以直接重命名（移动到当前路径下）  
+移动时修改文件名
+[root@room9pc01 ~]# ls
+123456789        besic02               nu.txt           秋名山.txt  下载
+a                bin                   original-ks.cfg  视频        音乐
+anaconda-ks.cfg  initial-setup-ks.cfg  公共             图片        桌面
+b                ll                    模板             文档
+[root@room9pc01 ~]# mv 123456789 ll/sbc
+[root@room9pc01 ~]# cd ll
+[root@room9pc01 ll]# ls
+1.txt  456.txt  sbc
+
+
+    调去上一条命令的执行参数路径  esc+.   alt+.
+cp 复制
+   格式：  cp  源文件  目的位置
+           1. 拷贝的过程中叶可以改名字
+           2. 拷贝文件夹需要加参数  -a
+           3. 与mv的区别是一个源文件还在，一个不在。
+
+练习：
+      1.在自己家里创建一个a文件夹，在里面创建1.txt 2.txt 3.txt
+            
+         cd    mkdir a  cd a  touch 1.txt 2.txt 3.txt
+      2. 移动题一中的3.txt 到/下，并且改名字为4.txt
+             mv 3.txt /4.txt
+      3. 在自己家里创建一个b文件夹，b文件夹中创建一个b文件，拷贝这个b文件到/tmp/b/bb/bbb中。
+           mkdir b  cd b  touch b
+           mkdir -p /tmp/b/bb/bbb
+           cp b /tmp/b/bb/bbb
+
+
+      4.在题3的bbb文件夹中，创建c.txt d.txt .然后把c.txt重命名为v.txt
+         alt + .    cd  /tmp/b/bb/bbb   touch c.txt d.txt
+            mv c.txt v.txt
 鼠标
+
 选中为复制   只在终端下有用  适用于所有的 linux系统 
 滚轮 粘贴
 rth- cmcltl reset classroom
