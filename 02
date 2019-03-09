@@ -37,7 +37,7 @@ b                ll                    模板             文档
     调去上一条命令的执行参数路径  esc+.   alt+.
 cp 复制
    格式：  cp  源文件  目的位置
-           1. 拷贝的过程中叶可以改名字
+           1. 拷贝的过程中叶可以改名字  cp 1.txt /2.txt
            2. 拷贝文件夹需要加参数  -a
            3. 与mv的区别是一个源文件还在，一个不在。
 
@@ -56,6 +56,7 @@ cp 复制
       4.在题3的bbb文件夹中，创建c.txt d.txt .然后把c.txt重命名为v.txt
          alt + .    cd  /tmp/b/bb/bbb   touch c.txt d.txt
             mv c.txt v.txt
+#############################
 鼠标
 
 选中为复制   只在终端下有用  适用于所有的 linux系统 
@@ -65,7 +66,7 @@ rth- cmcltl reset server
 ctlr+alt+f2 切换到字符模式
 
 ctlr+alt+f1 回到gui模式
-
+##########################
 通配符
 eg
 touch 1.txt 12.txt 13.txt 123.txt 456.txt
@@ -82,23 +83,23 @@ touch 1.txt 12.txt 13.txt 123.txt 456.txt
 
 ? 配一位
 * 全部
-
+##########################################
 
 cat head tail   
 
-cat -n //  ;查看文件 几行； 显示行号
+cat -n //  ;查看文件 显示行号:
 head -n //  ;查看文件 前几行 
 tail -n //   ;查看文件 尾部 几行  n表示 你要显示几行
-
+############################################
 grep 关键字 目的文件  ；
 grep root  /etc/passwd
 root:x:0:0:root:/root:/bin/bash
 operator:x:11:0:operator:/root:/sbin/nologin
 
-
+grep ^$ /etc/passwd	~$ 匹配空行
 grep ^root /etc/passwd  ^匹配 root 开头的 
-grep root$ /etc/passwd  $匹配 以 root 结尾的
-
+grep login$ /etc/passwd |tail -4   ;  $匹配 以 login 结尾,且之显示四行
+##############################################
 管道 |   将上一条命令执行的结果交给下一条命令执行
 eg：
 cat /etc/passwd | grep root
@@ -119,7 +120,7 @@ cat -n /etc/passwd | head -15 |tail -6   带行号输出
 
 cat -n /etc/passwd | head -15 |tail -6 |wc -l  配合计数使用 
 6
-
+##################################################################3
 重定向
 >    覆盖重定向  直接覆盖原文件
 
@@ -141,7 +142,7 @@ cat -n /etc/passwd | head -15 |tail -6 |wc -l  配合计数使用
 456
 123
 789
-
+############################################
 echo 
 
 vim编辑器
@@ -159,7 +160,7 @@ vim编辑器
 末行模式 	保存退出  wq 退出保存 q！退出不保存 
 set nu 显示行数 
 ：6 快速移动到某一行  移动到第6行
-
+#####################################################
 远程控制
 teamviewer
 win  cmd 命令
@@ -168,4 +169,45 @@ mstwc
 tigervnc
 xshell
 
-ssh -X root@severname
+ssh -X root@server0.example.com  :-X 调用图形界面 ##server0.example.com 域名
+#########################################################
+tar 打包压缩
+打包
+            新包的名字     
+tar -czf xxx.tar.gz 需要打包的文件名 #######
+解压
+          需要解压博得名字
+tar -xf xxx.tar.gz 解压到当前位置
+tar -xf xxx.tar.gz -C /指定压缩位置  大写C 小写识别
+##################################
+分号  ;
+命令 接着执行 多条命令 
+eg mkdir pp ; touch xixi
+#####################
+创建普通用户
+创建用户
+useradd 用户名
+1.查 id  id 用户名  
+[root@room9pc01 home]# id Student
+uid=1000(Student) gid=1000(Student) 组=1000(Student)
+2.查home ls /home
+3.查文件   grep /etc/passwd
+删除用户 
+userdel 用户名
+1.删除家 rm -rf /home/xixi
+2.       vim
+切换 用户 
+su 用户名
+###################################################
+创建组 
+
+groupadd xixi
+groupdel xixi
+命令别名 （临时别名）
+alias
+ 别名=‘实际执行的命令’
+别名定义 
+	alias if="ifconfig"
+	alias ho="hostname"
+查看别名 alias 
+取消别名 unalias
