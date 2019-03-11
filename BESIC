@@ -287,3 +287,40 @@ del　删除变量
 input 输入函数
 作用：从表准设备上读取一字符串
 input('提示语句')　
+＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃　
+if 语句
+让程序根剧条件有选择的执行某些语句
+
+格式　：　　　　　＝＝判断　　< > != 不等于
+if  语句１
+    elif　　　四个英文空格elif 之前    
+    语句２　
+    elif 
+    语句３
+    .......
+    else
+     语句n
+ＮＯＴＥＳ：
+     else 只能在最后面　有且只有一个
+所有语句自上而下执行，当某个表达式子成立之后跳出判断体。
+eg：判断str 类型时 在if/elif/else 中记得加 '' 
+判断int float 类型时 不用加
+who = str(input('人物：'))
+if who == '糖糖':
+    print('YES%s属于西游记' %who)
+elif who == '空空':
+    print('YES%s属于西游记' %who)
+elif who == '沙沙':
+    print('YES%s属于西游记' %who)
+else:
+    print('不属于西游记')
+########################
+ nu = int(input('输入数字：'))
+ if nu == 1:#　如果要对比　ｓｔｒ类型的数据　要加‘’　eg:　if nu == 'a':　　
+     print(nu)
+ elif nu == 2:
+     print(nu)
+ elif nu == 3:
+     print(nu)
+ else:
+     print('null')
