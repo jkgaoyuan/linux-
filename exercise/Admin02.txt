@@ -1,0 +1,309 @@
+#################################################################
+Linux系统简介
+
+什么是Linux?
+Linux是一种操作系统：可以让计算机硬件正常工作
+
+Unix/Linux发展史
+• UNIX诞生，1970-1-1
+
+Linux的诞生                                            
+• Linux之父,Linus Torwalds
+– 1991年10月,发布0.02版(第一个公开版)内核
+– 1994年03月,发布1.0版内核
+– 标准读音:　哩呐科斯
+
+版本号:主版本.次版本.修订号
+
+Linux发行版本
+• 发行版的名称/版本由发行方决定
+– Red Hat Enterprise Linux（RHEL） 5/6/7
+– Suse Linux Enterprise 12
+– Debian Linux 7.8
+– Ubuntu Linux 14.10/15.04
+– ......
+################################################
+• CentOS,社区企业操作系统
+– Community Enterprise Operating System
+– http://www.centos.org/
+
+• 基于Linux的企业服务器
+• 嵌入式系统
+• 高性能大型运算
+
+###############################################
+安装Linux系统
+CentOS,社区企业操作系统,建议2G以上内存
+
+ Ctrl + Alt = 鼠标回到真机
+
+#################################################
+预备知识
+
+Linux目录结构：树型结构
+• 最顶层为根目录(/)
+– Unix/Linux的基本哲学理念:一切皆文件
+
+　　根目录(/)：所有的数据都在此目录下（Linux系统的起点）
+
+      路径：/abc/nsd/1.txt
+   /dev：存放设备(硬盘或键盘或鼠标或显示器.....)相关的数据
+
+Linux管理员用户为:root  　　进行登录
+
+
+Linux磁盘表示
+
+　hd,表示IDE设备
+　sd,表示SCSI设备
+　vd,表示虚拟设备
+
+　/dev/sda:表示SCSI设备，第一块
+　/dev/sdb:表示SCSI设备，第二块
+　/dev/sdc:表示SCSI设备，第三块
+　/dev/sdd:表示SCSI设备，第四块
+#################################################
+Linux基本操作
+
+命令行基本操作
+获取命令行界面
+• 虚拟控制台切换( Ctrl + Alt + Fn 组合键)
+– tty1:图形桌面
+– tty2~tty6:字符控制台
+
+• 右键 "打开终端"
+    编辑--->配置文件首选项--->修改字体大小
+
+• 命令行提示标识的含义
+– [当前用户@主机名 工作目录]$
+
+– 若当前用户是root,则最后一个字符为 #
+[root@svr7 桌面]#
+– 否则,最后一个字符为 $
+[teacher@svr7 桌面]$
+
+ Ctrl  shift 　+ =　终端字体变大
+ Ctrl  － =　终端字体变小
+
+##################################################
+查看及切换目录
+• pwd — Print Working Directory
+– 用途:查看当前工作目录
+
+• cd — Change Directory
+– 用途:切换工作目录
+– 格式:cd [目标文件夹位置]
+
+• ls — List
+– 格式:ls [选项]... [目录或文件名]...
+
+
+[root@localhost ~]# pwd        #显示当前所在位置
+[root@localhost ~]# cd /abc　　　　＃切换到/abc目录
+bash: cd: /abc: 没有那个文件或目录
+[root@localhost ~]# cd   /　　　　　＃切换到　/　目录
+[root@localhost /]# pwd
+[root@localhost /]# ls　　　　　＃显示当前目录内容
+
+[root@localhost /]# cd /boot
+[root@localhost /boot]# pwd
+[root@localhost /boot]# ls
+
+[root@localhost /]# cd /opt
+[root@localhost /opt]# pwd
+[root@localhost /opt]# ls
+　颜色：
+　　蓝色：目录
+　　黑色：文件
+  
+[root@localhost /]# ls
+[root@localhost /]# ls /root
+[root@localhost /]# ls /home
+[root@localhost /]# ls /opt
+[root@localhost /]# ls /boot
+[root@localhost /]# ls /root
+
+]# ls /root/anaconda-ks.cfg
+]# cat /root/anaconda-ks.cfg  #查看文件内容
+]# cat /etc/passwd　　　#查看文件内容
+]# cat /etc/hosts　　　　#查看文件内容
+]# cat /etc/fstab　　　　#查看文件内容
+]# cat /etc/redhat-release　#查看当前系统版本
+###############################################
+以 / 开始的绝对路径
+以当前为参照的相对路径
+
+[root@localhost /]# cd /etc/pki/
+[root@localhost pki]# pwd
+[root@localhost pki]# ls
+[root@localhost pki]# cd /etc/pki/CA    #绝对路径
+[root@localhost CA]# pwd
+
+[root@localhost CA]# cd /etc/pki/
+[root@localhost pki]# pwd
+[root@localhost pki]# ls
+[root@localhost pki]# cd CA　　　　＃相对路径
+[root@localhost CA]# pwd
+
+[root@localhost CA]# cd /
+[root@localhost /]# ls root     #相对路径
+[root@localhost /]# ls /root    #绝对路径
+
+###############################################
+ 　　.. :表示上一级目录　　　　　　　　　
+
+[root@localhost /]# cd ..   　　　　#后退
+[root@localhost /]# cd /etc/pki/
+[root@localhost pki]# pwd
+/etc/pki
+[root@localhost pki]# cd ..
+[root@localhost etc]# pwd
+/etc
+[root@localhost etc]# cd ..
+[root@localhost /]# pwd
+/
+[root@localhost /]# cd /etc/pki/
+[root@localhost pki]# cd ../..　　　＃一次性后退两层
+[root@localhost /]# pwd
+#################################################
+• 真机列出CPU处理器信息
+[root@svr7 桌面]# lscpu
+.......
+CPU(s):                4
+.......
+型号名称：        Intel(R) Core(TM) i5-4430S CPU @ 2.70GHz
+.......
+
+• 真机检查内存大小、空闲情况
+[root@svr7 桌面]# cat /proc/meminfo
+MemTotal:       16330728 kB
+.......
+
+查看主机名和IP信息
+• 列出当前系统的主机名称
+[root@localhost /]# hostname　　#查看当前主机名
+localhost.localdomain
+[root@localhost /]# hostname　 A.tedu.cn  #临时设置
+
+[root@localhost /]# hostname　　#查看当前主机名
+
+[root@localhost /]# exit   　　 #关闭当前终端
+开启一个新的终端进行验证：
+[root@A /]#　hostname
+
+• 列出已激活的网卡连接信息
+[root@A ~]# ifconfig　　　　　　　　　　　#查看IP地址信息
+[root@A ~]# ifconfig eth0 192.168.1.1　#临时设置IP地址
+[root@A ~]# ifconfig eth0
+
+[root@A ~]# ping  192.168.1.1
+按Ctrl + c 结束正在运行的命令
+
+lo: 本地回环接口，专用于测试
+        inet 127.0.0.1  netmask 255.0.0.0
+
+　　127.0.0.1：永久代表本机
+
+[root@A ~]# ping  127.0.0.1
+按Ctrl + c 结束正在运行的命令
+
+##########################################
+可以永久设置主机名与IP地址与子网掩码与网关地址与DNS服务器地址
+
+修改主机名：设置系统主机名-->输入新的名字-->确定-->确定
+[root@A ~]# nmtui
+[root@nsd1903 ~]# hostname
+nsd1903.tedu.cn
+[root@nsd1903 ~]# 
+
+修改IP地址与子网掩码　
+[root@A ~]#　nmtui
+　编辑连接 -->eth0-->编辑ipv4-->显示-->将自动修改手动
+　-->按空格　勾选　自动连接    　    #每次开机自动生效
+　-->按空格　勾选　对所有用户有效  
+
+激活配置
+[root@A ~]#　nmtui
+　启用连接 -->eth0-->敲回车　禁用-->敲回车　激活
+　最终eth0前面有一个＊代表激活状态
+
+###############################################
+
+创建文档
+• mkdir — Make Directory
+– 格式:mkdir  [/路径/]目录名...
+[root@nsd1903 ~]# mkdir nsd01 　　  #当前创建目录
+[root@nsd1903 ~]# pwd
+/root
+[root@nsd1903 ~]# ls
+[root@nsd1903 ~]# mkdir /opt/nsd02　＃在指定路径下创建
+[root@nsd1903 ~]# ls /opt/
+• touch命令
+– 用途:新建空文件　格式:touch 文件名...
+[root@nsd1903 ~]# touch  1.txt　　　　#当前创建文件
+[root@nsd1903 ~]# ls
+[root@nsd1903 ~]# touch  /opt/2.txt　＃在指定路径下创建
+[root@nsd1903 ~]# ls /opt/
+
+
+文本内容操作
+• less分屏阅读工具
+• 格式:less [选项] 文件名...
+
+– 优势:支持前后翻页
+• 基本交互操作
+– 按 / 键向后查找(n、N切换)
+
+[root@nsd1903 ~]# less /etc/passwd
+　　按键盘　上　下　可以进行滚动
+　　/a   　　#全文查找ａ　(n、N切换)
+　　按ｑ退出
+
+• head、tail 命令
+– 格式:　head -n 数字 文件名
+　　　　tail -n 数字 文件名
+
+[root@nsd1903 ~]# head -2 /etc/passwd  #显示头两行内容
+[root@nsd1903 ~]# head -3 /etc/passwd
+
+[root@nsd1903 ~]# tail -2 /etc/passwd　＃显示尾两行内容
+[root@nsd1903 ~]# tail -3 /etc/passwd
+
+
+• grep工具
+– 用途:输出包含指定字符串的行
+– 格式:grep 　'查找条件' 　　目标文件
+
+[root@nsd1903 ~]# grep　 root  　/etc/passwd
+
+[root@nsd1903 ~]# grep 　a　 /etc/passwd
+
+#############################################
+关机及重启操作
+• 关机:poweroff
+[root@svr7 ~]# poweroff
+
+• 重启:reboot
+[root@svr7 ~]# reboot
+
+#############################################
+编辑命令或路径的技巧：　Tab可以进行补全       
+[root@nsd1903 ~]# if(tab)(tab)
+if         ifdown     ifup
+ifcfg      ifenslave  
+ifconfig   ifstat     
+[root@nsd1903 ~]# ifco(tab)
+
+[root@nsd1903 ~]# cat /et(tab)/red(tab)
+CentOS Linux release 7.5.1804 (Core)
+ 
+]# ls /etc/sysconfig/network-scripts/ifcfg-eth0 
+
+]# ls /et(tab)/sysco(tab)/netw(tab)-(tab)/ifc(tab)-e(tab)
+
+
+
+
+
+
+
