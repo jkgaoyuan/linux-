@@ -410,7 +410,8 @@ reboot  重启
 修改主机名 hostname jkgao  (临时修改主机名 重启后 恢复)
 修改完成后 打开新终端 才会显示新主机名
 ################################################################
-cat /etc/redhat-release　#查看当前系统版本
+cat /etc/redhat-release　#查看当前系统版本 适用于 Redhat系列的Linux
+cat /etc/issue    	 全版本的 Linux 都可以
 ########################################
 查看网络信息  ifconfig	
 
