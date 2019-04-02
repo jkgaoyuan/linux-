@@ -480,7 +480,73 @@ grep 查找
 	nobody:x:99:99:Nobody:/:/sbin/nologin
 
 ############################################
+关于命令的提示
+    通常我们会使用 --help来 进行命令的提示参数的配置表
+    但 如果当我们需要 使用全新的命令时 我们可以使用 man page 命令
+eg：
+gaoyuan@ubuntu:~$ man date
+DATE(1)     #这里的数字1代表用户在shell 环境中可以操作的命令或者可以执行的文件                    User Commands                         DATE(1)
+             5 代表配置文件或者某些文件的格式
+             8 系统管理员可以使用的管理命令
+             这是比较常见的 几个数字
+NAME
+       date - print or set the system date and time
 
+SYNOPSIS
+       date [OPTION]... [+FORMAT]
+       date [-u|--utc|--universal] [MMDDhhmm[[CC]YY][.ss]]
+
+DESCRIPTION
+       Display the current time in the given FORMAT, or set the system date.
+
+       Mandatory  arguments  to  long options are mandatory for short options
+       too.
+
+       -d, --date=STRING
+              display time described by STRING, not 'now'
+
+       --debug
+              annotate the parsed date, and warn about questionable usage  to
+              stderr
+       ... ...
+EXAMPLES
+       Convert seconds since the epoch (1970-01-01 UTC) to a date
+
+              $ date --date='@2147483647'
+
+       Show the time on the west coast of the US (use tzselect(1) to find TZ)
+
+              $ TZ='America/Los_Angeles' date
+
+进入 man后 空格键翻页  q 退出
+我们主要通过阅读 example 和 string 来 学习如何使用 命令 。
+当然最简单的方式就是 Google 一下
+
+eg : man useradd
+
+USERADD(8)                       系统管理命令                      USERADD(8)
+
+名称
+       useradd - 创建一个新用户或更新默认新用户信息
+
+大纲
+       useradd [选项] 登录
+
+       useradd -D
+
+       useradd -D [选项]
+
+描述
+       useradd is a low level utility for adding users. On Debian,
+       administrators should usually use adduser(8) instead.
+
+       如果使用时不带 -D 选项，useradd 命令使用命令行上指定的值和系统的默认值
+       创建一个新用户。根据命令行选项，useradd 命令也会更新系统文件和创建新用
+       户的主目录并复制初始文件。
+
+       默认上，也会为用户创建组 (察看 -g, -N, -U，和 USERGROUPS_ENAB)。
+       ... ...
+#########################################################################
 
 
 
