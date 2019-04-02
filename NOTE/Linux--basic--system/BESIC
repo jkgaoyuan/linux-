@@ -518,7 +518,7 @@ EXAMPLES
 
               $ TZ='America/Los_Angeles' date
 
-进入 man后 空格键翻页  q 退出
+进入 man后 空格键翻页  q 退出  / word 查找 关键字   eg： /bin
 我们主要通过阅读 example 和 string 来 学习如何使用 命令 。
 当然最简单的方式就是 Google 一下
 
