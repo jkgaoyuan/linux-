@@ -1,6 +1,4 @@
-理   python  NSD
-             187 9279 3826 （同微信）
- 还原命令： rht-vmctl reset  电脑名
+还原命令： rht-vmctl reset  电脑名
 虚拟机： classroom  server  desktop  win
 ############################################
 Linux文件目录
@@ -13,23 +11,143 @@ Linux文件目录
 /root 管理员的家目录（~）
 /var 系统中大小经常变化的文件 比如 log
 /
-##############################################
-ls -l 详解
+Unix&Linux一切皆文件  
+路径 /abc/nsd/1.txt
+开头的 /是根目录 其他的/ 均为分隔符
 
+/dev/
+存放设备(硬盘\键盘\鼠标\显示器)相关数据的地方
+/root :Linux中管理员的家目录
+/home: 存放所有普通用户家目录  (他本身不是所有用户的家)
+ / 表示 根 
+ ~ 表示家目录 
+ . 表示当前目录  常常与复制命令连用 
+ ..表示父目录
+Linux目录结构:树形结构   
+最顶层为根目录
+根目录   (/) 
+
+                                                       /
+bin       boot      dev      etc     home     root      run      sbin      tmp        usr          	 var
+                                                  |                                                              |               	  | 
+                                                  |                                                              |                	  | 
+                                                  |                                                              |                 	  | 
+                                          -----------------------------                                     ---------------------------------------         --------
+                                | alice  bob  eve|                           | bin local  sbin  tmp|      |tmp|
+
+
+##############################################
+
+终端中颜色:
+黑色表示 文件
+蓝色表示目录
+
+
+Linux中表示上一级目录
+cd ..
+相当于Windows中的   后退 返回上一级
+
+如何编写命令行
+绿色:可以执行的文件 
+青色:文件
+在Linux中执行命令,都要找到相应的程序,将程序运行
+
+命令的执行依赖于解释器	 比如 /bin/bash
+命令的执行依赖于解释器  默认的/bin/bash
+内核: 调配计算机硬件资源 
+用户的指令--------> 内核---------> 调配计算机硬件
+
+Linux 命令分类 
+	内部命令 属于解释器的一部分
+	外部命令 解释器之外的其他程序
+命令行的完整格式 
+ 基本用法  
+ -命令字 [选项]... [参数1]  [参数2] ...
+  cat /etc/redhat-release
+  head -1 /etc/password
+  cat ls 是不能直接查看设备文件的  
+查看命令的帮助信息 
+  word --help
+  man word
+选项,调控命令的执行方式
+  短选项: -A -I -c -d
+  多个短选项选项-------->复合选项 -IH 
+  长选项  --help
+###################################################
+ftp://176.233.40.248/
+账户 nsd1903	
+     20190329
+
+
+20190329
+
+
+Unix&Linux一切皆文件  
+路径 /abc/nsd/1.txt
+开头的 /是根目录 其他的/ 均为分隔符
+
+/dev/
+存放设备(硬盘\键盘\鼠标\显示器)相关数据的地方
+
+
+#########################################################################################
+Linux磁盘表示  (面试题目常考)
+命名规则
+       				 /dev/sda
+					  |      |		
+ 					 |     |           a 表示第一块磁盘  b表示第二块 以此类推  
+        			      所在目录  sd:表示scsi 设备
+                                      vd:表示虚拟设备
+						 id:表示ide设备    
+/dev/sda  scsi的第一块磁盘
+/dev/sdb   第二块
+/dev/sdc   第三块
+
+切换到控制界面 
+Ctrl+alt+Fn  
+         F4  字符控制台
+         F1  图形化界面
+
+命令行提示符的意义:
+[ root @ localhost  ~  ]#
+  登录的账户 主机名      代表当前工作目录    表示当前登录的用户为root 管理员 普通的账户为$     
+					[root@localhost ~]# pwd
+					/root
+					[gaoyuan@localhost ~]$ pwd
+					/home/gaoyuan
+
+
+ctrl+shift+ + 加大字体
+ctrl +  -   缩小字体
+使用&来连接两条命令 
+[root@localhost ~]# cd 桌面&ls
+[1] 22503
+anaconda-ks.cfg       公共  视频  文档  音乐
+initial-setup-ks.cfg  模板  图片  下载  桌面
+[1]+  完成                  cd 桌面
+ls -l 详解
+文件的详细属性
     d  目录文件    -  普通文件      l  链接文件
 
     权限  ：  r  读    w  写   x 执行权限 
      属主    属组    其他人  
      rwx     r--      r-x
+ 	-a 列出所有文件，包括以 "." 开头的隐含文件。	
+	-d 将目录名像其他文件一样列出 而不是列出他的内容..##只列出目录名
+	-h 显示常用的单位 提供易读的单位
+      -lh 显示详细属性时 加上单位大小   
+	-A 显示目录全部内容,包括隐藏数据 .显示除 "." 和 ".." 外的所有文件。 后期写脚本的时候会常用-A ,-a由于显示 . ..会比较难匹配所以,不会用-a.
+	-l 长格式显示
 tab键 
        1. 按一次，补全命令或者路径
        2. 按两次，下来菜单，照着找
        3. 按一次，检查这个文件有没有
 
 mkdir  文件夹 目录
-       mkdir  -p  a/aa/aaa
-touch   文件
+       mkdir  -p  a/aa/aaa  #通过 -p参数来递归创建文件夹
+touch   文件                #TOUCH 可以支持多个 选项 用来同时创建 文件
        touch 1.txt
+       touch /root/1.txt /root/2.txt	
 mv  移动
     格式：  mv  源文件   目的位置
     1.mv  可以移动文件
@@ -79,21 +197,53 @@ rth- cmcltl reset server
 ctlr+alt+f2 切换到字符模式
 
 ctlr+alt+f1 回到gui模式
+ ctrl + l 清屏
+ ctrl + c 放弃当前命令行/ 结束当前命令行
+ esc + . 或者alt + . 粘贴上个命令行的参数
+ ctrl + u 清空至行首 
+ ctrl + k 清空至行尾
+ ctrl + w  往回删除一个单侧 (以空格界定)
+ ctrl + d  相当于exit
 ##########################
 通配符
+* 任意多个任意字符 
+? 只配一个,且必须要有
+[a-b] 多个字符或连续范围中的一个
+{a,b,c} 多组不同的字符串,全匹配
+ls /etc/r*.conf 
+以r开头,conf 结尾 
+	[root@jkgao ~]# ls /etc/r*.conf
+	/etc/radvd.conf        /etc/resolv.conf 
+ls /etc/*abc*
+只要包含abc  
+ls /dev/tty??
+tty结尾 必须要有两位 
+	[root@jkgao ~]# ls /dev/tty??
+	/dev/tty10  /dev/tty20
+#########################
+	[root@jkgao ~]# ls /dev/tty[1-8]
+	/dev/tty1  /dev/tty3  /dev/tty5  /dev/tty7
+	/dev/tty2  /dev/tty4  /dev/tty6  /dev/tty8
+	[root@jkgao ~]# ls /dev/tty[1-11]    #############################3这里为什么不显示 大于十的部分能 因为Linux只定义了10 一下的
+	/dev/tty1
+	[root@jkgao ~]# ls /dev/tty[3-6]
+	/dev/tty3  /dev/tty4  /dev/tty5  /dev/tty6
+	[root@jkgao ~]# ls /dev/tty{1,3,5,8,9}
+	/dev/tty1  /dev/tty3  /dev/tty5  /dev/tty8  /dev/tty9
+	[root@jkgao ~]# ls /dev/tty{[1-5],[6-8]}
+	/dev/tty1  /dev/tty3  /dev/tty5  /dev/tty7
+	/dev/tty2  /dev/tty4  /dev/tty6  /dev/tty8
+#################################################
 eg
-touch 1.txt 12.txt 13.txt 123.txt 456.txt
-[root@room9pc01 ll]# ls
-123.txt  12.txt  13.txt  1.txt  456.txt
-[root@room9pc01 ll]# rm -rf 1?.txt
-[root@room9pc01 ll]# ls
-123.txt  1.txt  456.txt
-[root@room9pc01 ll]# touch 145.txt
-[root@room9pc01 ll]# ls
-123.txt  145.txt  1.txt  456.txt
-
-
-
+	touch 1.txt 12.txt 13.txt 123.txt 456.txt
+	[root@room9pc01 ll]# ls
+	123.txt  12.txt  13.txt  1.txt  456.txt
+	[root@room9pc01 ll]# rm -rf 1?.txt
+	[root@room9pc01 ll]# ls
+	123.txt  1.txt  456.txt
+	[root@room9pc01 ll]# touch 145.txt
+	[root@room9pc01 ll]# ls
+	123.txt  145.txt  1.txt  456.txt
 ? 配一位
 * 全部
 ##########################################
@@ -211,11 +361,19 @@ userdel 用户名
 2.       vim
 切换 用户 
 su 用户名
+##############################################
+删除
+	rm- Remove   删了 真的就没了
+格式 rm [选项]  文件/目录
+常用选项 -r 递归删除 ,目录以及目录下所有
+       -f 强制删除 
+	 -i 提示信息 
 ###################################################
 创建组 
 
 groupadd xixi
 groupdel xixi
+
 命令别名 （临时别名）
 alias
  别名=‘实际执行的命令’
@@ -225,6 +383,47 @@ alias
 查看别名 alias 
 取消别名 unalias
 ############################################################
+cp复制 
+	cp 选项 源文件
+	cp可以支持两个以上的参数,永远会把最后一个参数作为目标其他所有参数都会作为源.也就是他会把 前边的所有文档\目录 拷贝到最后一个文件夹
+常用选项 
+	-r 递归,复制目录以及目录下文件时 需要添加
+	-i 提示信息   由于 系统已经自定义了系统级别的别名 ,所以在覆盖文件的时候会不断提示 
+	[root@jkgao 桌面]# alias
+	alias cp='cp -i'
+	但是我们可以使用 \ 可以在本次 命令中临时取消 别名 
+	[root@jkgao 桌面]# \cp -r /boot/ /桌面
+	复制时可以重新命名目标路径下的名称
+	eg:
+	[root@jkgao nsd01]# cp /etc/passwd ./nsd
+	[root@jkgao nsd01]# ls
+	0  nsd  passwd
+	[root@jkgao nsd01]# 
+	#######  ########提问这两次 cp操作有什么不同
+	[root@jkgao nsd01]# rm -rf /opt/*
+	[root@jkgao nsd01]# cp -r /home/ /opt/test  ########本次复制home到opt 并改名为 test######opt中为空
+	[root@jkgao nsd01]# cp -r /home/ /opt/test  ########本次复制home到opt/test中 ##########这次opt中已经有了名为test的文件夹
+	[root@jkgao nsd01]# ls
+	[root@jkgao nsd01]# ls /opt/
+	test
+	[root@jkgao nsd01]# ls /opt/test/
+	2  gaoyuan  home
+	[root@jkgao nsd01]# 
+
+####################################
+ . 表示当前目录  常常与复制命令连用 
+ ..表示当前目录的父目录
+eg:
+	[root@jkgao opt]# cd nsd01/0/
+	[root@jkgao 0]# ls
+	[root@jkgao 0]# cp -r /etc/passwd .
+	[root@jkgao 0]# cp -r /etc/passwd ..
+	[root@jkgao 0]# ls
+	passwd
+	[root@jkgao 0]# cd ..
+	[root@jkgao nsd01]# ls
+	0  passwd
+##############################################################
 破解用户密码（rhce考试第一步）
 1.
 重启系统 在系统启动过程中内核选择部分 按 E  进入单用户模式
@@ -327,78 +526,10 @@ dns服务器地址 讲网站的域名解析为对应的 IP地址
 -IP路由 涉及路由器
 
 ############################################################################################
-ftp://176.233.40.248/
-账户 nsd1903	
-     20190329
-Linux目录结构:树形结构   
-最顶层为根目录
-根目录   (/) 
 
-                                                       /
-bin       boot      dev      etc     home     root      run      sbin      tmp        usr          	 var
-                                                  |                                                              |               	  | 
-                                                  |                                                              |                	  | 
-                                                  |                                                              |                 	  | 
-                                          -----------------------------                                     ---------------------------------------         --------
-                                | alice  bob  eve|                           | bin local  sbin  tmp|      |tmp|
-
-20190329
+cat /etc/redhat-release　#查看当前系统版本
 
 
-Unix&Linux一切皆文件  
-路径 /abc/nsd/1.txt
-开头的 /是根目录 其他的/ 均为分隔符
-
-/dev/
-存放设备(硬盘\键盘\鼠标\显示器)相关数据的地方
-
-
-#########################################################################################
-Linux磁盘表示  (面试题目常考)
-命名规则
-       				 /dev/sda
-					  |      |		
- 					 |     |           a 表示第一块磁盘  b表示第二块 以此类推  
-        			      所在目录  sd:表示scsi 设备
-                                      vd:表示虚拟设备
-						 id:表示ide设备    
-/dev/sda  scsi的第一块磁盘
-/dev/sdb   第二块
-/dev/sdc   第三块
-
-切换到控制界面 
-Ctrl+alt+Fn  
-         F4  字符控制台
-         F1  图形化界面
-
-命令行提示符的意义:
-[ root @ localhost  ~  ]#
-  登录的账户 主机名      代表当前工作目录    表示当前登录的用户为root 管理员 普通的账户为$     
-					[root@localhost ~]# pwd
-					/root
-					[gaoyuan@localhost ~]$ pwd
-					/home/gaoyuan
-
-
-ctrl+shift+ + 加大字体
-ctrl +  -   缩小字体
-使用&来连接两条命令 
-[root@localhost ~]# cd 桌面&ls
-[1] 22503
-anaconda-ks.cfg       公共  视频  文档  音乐
-initial-setup-ks.cfg  模板  图片  下载  桌面
-[1]+  完成                  cd 桌面
-
-终端中颜色:
-黑色表示 文件
-蓝色表示目录
-
-
-Linux中表示上一级目录
-cd ..
-相当于Windows中的   后退 返回上一级
-
-##############################################################
 lscpu 查看cpu信息
 cat /proc/meminfo 查看内存 空闲情况
 	[student@gao ~]$ head -1 /proc/meminfo 
@@ -479,7 +610,34 @@ grep 查找
 	ftp:x:14:50:FTP User:/var/ftp:/sbin/nologin
 	nobody:x:99:99:Nobody:/:/sbin/nologin
 
-############################################
+####################################################
+mount 挂载 操作 :让目录成为设备访问点
+mount 设备目录 挂载点目录
+	[root@jkgao gaoyuan]# mount /dev/cdrom dvd/  #该命令需要root权限操作
+	[root@jkgao gaoyuan]# umount dvd/ #卸载挂载点 ,不要的当前挂载点内执行
+默认以只读的方式挂载 
+	注意:
+	1.当前路径不要在挂载点目录内 
+	2.允许一个设备有多个不同挂载点
+	3.一个挂载点不允许挂载多个设备
+	4.挂载点最好使用自己创建的目录,虽然Linux只是规定了挂载点是目录,也就是说可以使用 /root/这种比较特殊的文件夹 ,但是在卸载的时候就会提示目标正忙
+安装软件  前提是先得有软件的安装包
+	1. 互联网下载
+	2. 从光盘中获得安装包
+#####################################################
+Windows 读取光盘内容
+
+光盘----> 光驱设备 ----->cd驱动器图标(访问点)
+
+如何让Linux系统读取 光盘的内容 
+光盘 ------>光驱 
+光盘----> 光驱设备 ----->目录(Linux规定)
+  /dev/hdc   ####ide
+   /dev/sr0  #### sata
+	1.图形利用鼠标 将光盘放入 虚拟光驱
+	2.命令行查看光驱设备  Linux下通过/dev/cdrom
+	[gaoyuan@jkgao ~]$ ls -l /dev/cdrom
+	lrwxrwxrwx. 1 root root 3 4月   3 10:59 /dev/cdrom -> sr0
 
 
 
