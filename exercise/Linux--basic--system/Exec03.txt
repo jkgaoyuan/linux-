@@ -1,0 +1,143 @@
+
+案例：复制、删除、移动
+  1. 在目录/opt下创建一个子目录 nsd 
+	[root@jkgao ~]# mkdir /opt/nsd
+  2. 在目录/opt/nsd/创建文件readme.txt,利用vim写入内容 I Love Linux
+	[root@jkgao ~]# mkdir /opt/nsd
+	[root@jkgao ~]# touch /opt/nsd/readme.txt
+	[root@jkgao ~]# vim /opt/nsd/readme.txt 
+	 i 进入 编辑模式  输入文字  :wq 退出
+
+  3. 将/etc/passwd 和 /etc/resolv.conf同时拷贝到/opt/nsd目录下
+	[root@jkgao ~]# cp -r /etc/passwd /etc/resolv.conf /opt/nsd/
+	[root@jkgao ~]# ls /opt/nsd/
+	passwd  readme.txt  resolv.conf
+
+  4. 将文件 /etc/redhat-release复制到 /root/ 下，同时 改名为 version.txt 
+	[root@jkgao ~]# cp /etc/redhat-release /root/version.txt
+	[root@jkgao ~]# ls /root/version.txt 
+	/root/version.txt
+
+  5. 将文件 /root/version.txt 移动到/opt/nsd/目录下
+	[root@jkgao ~]# mv /root/version.txt /opt/nsd/
+	[root@jkgao ~]# ls /opt/nsd/
+	passwd  readme.txt  resolv.conf  version.txt
+
+  6. 将/home目录复制到/opt/nsd/目录下 
+	[root@jkgao ~]# cp -r /home/ /opt/nsd/ 
+	[root@jkgao ~]# ls /opt/nsd/
+	home  passwd  readme.txt  resolv.conf  version.txt
+
+案例：复制、删除、移动
+  1. 在目录/mnt下创建一个子目录 abc 
+	[root@jkgao ~]# mkdir /mnt/abc/
+	[root@jkgao ~]# ls /mnt/ 
+	abc
+  2. 在目录/mnt/abc/创建文件readme.txt,利用vim写入内容 I Love Study
+	[root@jkgao ~]# touch /mnt/abc/readme.txt
+	[root@jkgao ~]# vim /mnt/abc/readme.txt
+	[root@jkgao ~]# cat /mnt/abc/readme.txt
+	i love study
+  3. 将/etc/passwd 和 /etc/resolv.conf同时拷贝到/mnt/abc/目录下
+	[root@jkgao ~]# cp -r /etc/passwd /etc/resolv.conf /mnt/abc/
+	[root@jkgao ~]# ls /mnt/abc/
+	passwd  readme.txt  resolv.conf
+
+  4. 将文件 /etc/redhat-release复制到 /mnt/ 下，同时 改名为 version.txt 
+	[root@jkgao ~]# cp -r /etc/passwd /etc/resolv.conf /mnt/abc/
+	[root@jkgao ~]# ls /mnt/abc/
+	passwd  readme.txt  resolv.conf
+
+  5. 将文件  /mnt/version.txt 移动到/opt/nsd/目录下强制覆盖 
+	[root@jkgao ~]# \cp /mnt/version.txt /opt/nsd/
+	[root@jkgao ~]# ls /opt/nsd/
+	home  passwd  readme.txt  resolv.conf  version.txt
+
+  6. 将/boot目录复制到/mnt/abc/目录下 
+	[root@jkgao ~]# cp -r /boot/ /mnt/abc/
+	[root@jkgao ~]# ls /mnt/abc/
+	boot  passwd  readme.txt  resolv.conf
+
+
+
+案例：ls命令练习
+  1. 查看根目录下内容
+	[root@jkgao ~]# ls /root/
+	anaconda-ks.cfg       公共  视频  文档  音乐
+	initial-setup-ks.cfg  模板  图片  下载  桌面
+
+  2. 显示根目录本身详细属性   
+	[root@jkgao ~]# ls -dlh /root/
+	dr-xr-x---. 15 root root 4.0K 4月   3 19:33 /root/
+
+  3. 切换到/boot目录，显示当前目录内容的详细属性，并加上易读的容量单位
+	[root@jkgao ~]# ls -lh /boot/
+	总用量 129M
+	-rw-r--r--. 1 root root 145K 4月  21 2018 config-3.10.0-862.el7.x86_64
+	drwxr-xr-x. 3 root root   17 4月   2 10:01 efi
+	drwxr-xr-x. 2 root root   27 4月   2 10:02 grub
+	drwx------. 5 root root   97 4月   2 10:22 grub2
+	-rw-------. 1 root root  71M 4月   2 10:17 initramfs-0-rescue-962d403d5b00491292f699497764911c.img
+	-rw-------. 1 root root  31M 4月   2 10:22 initramfs-3.10.0-862.el7.x86_64.img
+	-rw-------. 1 root root  13M 4月   2 10:28 initramfs-3.10.0-862.el7.x86_64kdump.img
+	-rw-r--r--. 1 root root 298K 4月  21 2018 symvers-3.10.0-862.el7.x86_64.gz
+	-rw-------. 1 root root 3.3M 4月  21 2018 System.map-3.10.0-862.el7.x86_64
+	-rwxr-xr-x. 1 root root 6.0M 4月   2 10:17 vmlinuz-0-rescue-962d403d5b00491292f699497764911c
+	-rwxr-xr-x. 1 root root 6.0M 4月  21 2018 vmlinuz-3.10.0-862.el7.x86_64
+
+  4. 显示/root的全部内容，包括隐藏文档
+	[root@jkgao ~]# ls -A /root/
+	anaconda-ks.cfg  .bashrc  .dbus                 .local    公共  文档
+	.bash_history    .cache   .esd_auth             .mozilla  模板  下载
+	.bash_logout     .config  .ICEauthority         .tcshrc   视频  音乐
+	.bash_profile    .cshrc   initial-setup-ks.cfg  .viminfo  图片  桌面
+
+  5. 显示/bin/bash程序，详细属性
+	[root@jkgao ~]# ls -dlh /bin/bash
+	-rwxr-xr-x. 1 root root 942K 4月  11 2018 /bin/bash
+
+  6. 显示/dev/cdrom光驱设备，详细属性
+	[root@jkgao ~]# ls -dlh /dev/cdrom 
+	lrwxrwxrwx. 1 root root 3 4月   3 16:26 /dev/cdrom -> sr0
+
+
+案例：mount挂载
+  1. 在根目录下创建目录结构/rhel7/dvd
+	[root@jkgao ~]# mkdir -p /root/rhel7/dvd
+	[root@jkgao ~]# ls /root/rhel7/
+	dvd
+
+  2. 利用图形将光盘文件rhel-server-7.4-x86_64-dvd.iso放入光驱设备中
+	找到光驱设备选择虚拟光驱 选择 iso 文件 点击连接
+  3. 将光驱设备挂载到/rhel7/dvd目录，以/rhel7/dvd目录作为其访问点
+	[root@jkgao ~]# mount /dev/cdrom /root/rhel7/dvd/
+	mount: /dev/sr0 写保护，将以只读方式挂载
+	[root@jkgao ~]# ls /root/rhel7/dvd/
+	CentOS_BuildTag  GPL       LiveOS    RPM-GPG-KEY-CentOS-7
+	EFI              images    Packages  RPM-GPG-KEY-CentOS-Testing-7
+	EULA             isolinux  repodata  TRANS.TBL
+
+  4. 查看/rhel7/dvd/Packages目录内容
+	[root@jkgao ~]# ls /root/rhel7/dvd/Packages/
+	389-ds-base-1.3.7.5-18.el7.x86_64.rpm
+	389-ds-base-devel-1.3.7.5-18.el7.x86_64.rpm
+	389-ds-base-libs-1.3.7.5-18.el7.x86_64.rpm
+	389-ds-base-snmp-1.3.7.5-18.el7.x86_64.rpm
+
+  5. 将/rhel7/dvd/Packages目录中以vsftpd开头的软件包，拷贝到/opt下
+	[root@jkgao ~]# cp /root/rhel7/dvd/Packages/vsftpd* /opt/
+	[root@jkgao ~]# ls /opt/
+	nsd   vsftpd-3.0.2-22.el7.x86_64.rpm
+	test  vsftpd-sysvinit-3.0.2-22.el7.x86_64.rpm
+
+
+
+案例：别名
+  1. 为虚拟机定义一个别名，执行byebye可以实现关闭系统
+  	[root@jkgao ~]# alias baby='poweroff'
+	
+
+
+
+
+
