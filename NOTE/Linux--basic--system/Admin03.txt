@@ -1,0 +1,363 @@
+如何编写命令行　　　　　　　　
+
+• Linux命令
+– 用来实现某一类功能的指令或程序
+　　在Linux中执行大多数命令，都要找到相应的程序，将程序运行
+
+– 命令的执行依赖于解释器(默认的解释器：/bin/bash)
+
+　绿色：可以执行的程序
+
+　内核：可以调配计算机硬件资源
+
+　用户的指令------＞解释器------＞内核------＞调配计算机硬件
+
+################################################
+命令行的一般格式
+• 基本用法
+– 命令字     [选项]...     [参数1]    [参数2]...
+
+– 短选项:-l、-A、-c、-d、.. ..
+– 多个短选项-->复合选项:-lh、-lA、-ld、.. ..
+– 长选项:--help、.. ..
+
+
+查看命令的帮助信息
+　　格式： 命令　 --help
+ 
+[root@nsd1903 ~]# cat  --help
+[root@nsd1903 ~]# cat  -n  /etc/passwd      #添加行号
+[root@nsd1903 ~]# cat  -n  /etc/redhat-release 
+
+[root@nsd1903 ~]# head -2 /etc/passwd
+[root@nsd1903 ~]# tail -3 /etc/passwd
+
+#################################################
+快速编辑技巧
+• Tab键自动补全
+ – 可补齐命令字、选项、参数、文件路径、软件名、服务名
+
+• 快捷键　　　　　　　　　　　　　　
+ – Ctrl + l:清空整个屏幕
+ – Ctrl + c:废弃当前编辑的命令行（结束正在运行的命令）
+ – Esc + . 或 Alt + .:粘贴上一个命令的参数
+
+ – Ctrl + u:清空至行首
+ – Ctrl + k:清空至行尾
+ – Ctrl + w:往回删除一个单词(以空格界定)
+
+[root@nsd1903 ~]# ls /etc/redhat-release 
+/etc/redhat-release
+[root@nsd1903 ~]# cat 　Alt + .
+[root@nsd1903 ~]# cat -n 　Alt + .
+[root@nsd1903 ~]# head -1　 Alt + .
+
+　青色：快捷方式
+#################################################
+mount挂载操作:　让目录成为设备的访问点
+
+安装软件，前提具备软件的安装包
+１.互联网下载
+２.从光盘中获得软件安装包
+
+#############################################
+Windows读取光盘的内容
+ 光盘-----＞光驱设备-----＞CD驱动器图标(访问点)
+
+
+如何让Linux读取光盘的内容
+ 光盘-----＞光驱设备-----＞访问点(自己创建目录)　　/dvd
+          /dev/hdc
+          /dev/sr0
+ 访问点就是一个目录
+
+
+1.图形利用鼠标，将光盘放入，虚拟光驱设备
+2.命令行查看光驱设备
+[root@nsd1903 ~]# ls /dev/sr0
+/dev/sr0
+[root@nsd1903 ~]# ls /dev/cdrom
+/dev/cdrom
+[root@nsd1903 ~]# ls -l /dev/cdrom   #显示详细信息
+lrwxrwxrwx. 1 root root 3 4月   3 10:58 /dev/cdrom -> sr0
+３.创建访问点
+[root@nsd1903 ~]# mkdir /dvd
+[root@nsd1903 ~]# ls /
+[root@nsd1903 ~]# ls /dvd
+
+• 使用mount命令
+– 格式:mount 　设备路径　　　 挂载点目录
+[root@nsd1903 ~]# mount　 /dev/cdrom 　/dvd/
+
+[root@nsd1903 ~]# ls /dvd
+[root@nsd1903 ~]# ls /dvd/Packages/
+
+　　煤矿------＞洞口
+
+• 使用umount命令
+– 格式:umount 挂载点目录
+[root@nsd1903 ~]#　umount /dvd
+[root@nsd1903 ~]# ls /dvd
+[root@nsd1903 ~]#　mkdir /abc
+[root@nsd1903 ~]#　mount /dev/cdrom  /abc
+[root@nsd1903 ~]# ls /abc
+
+注意：
+　１.当前路径不要在挂载点目录内
+[root@nsd1903 dvd]# umount /dvd/
+umount: /dvd：目标忙。
+        (有些情况下通过 lsof(8) 或 fuser(1) 可以
+         找到有关使用该设备的进程的有用信息)
+
+   2.允许一个设备，具有多个不同的挂载点
+   3.一个挂载点，不允许挂载多个设备
+  ４.挂载点的选择，自己创建的目录
+
+#################################################
+目录和文件管理
+• pwd — Print Working Directory
+– 用途:查看当前工作目录
+
+• cd — Change Directory
+– 用途:切换工作目录
+– 格式:cd [目标文件夹位置]
+   
+　　/root：Linux中管理员的家目录
+　　/home:存放所有普通用户家目录
+
+    ~:用户家目录
+  ~user表示用户user的家目录
+[root@nsd1903 /]# useradd  tom   #创建用户tom
+[root@nsd1903 /]# ls /home/
+
+[root@nsd1903 /]# useradd dc    #创建用户dc
+[root@nsd1903 /]# ls /home/
+
+[root@nsd1903 /]# cd ~dc    #切换到普通用户dc的家目录
+[root@nsd1903 dc]# pwd
+[root@nsd1903 dc]# cd ~tom
+[root@nsd1903 tom]# pwd
+
+
+  . 表示当前目录,经常与复制命令连用
+  .. 表示父目录
+################################################
+ls 列出文档及属性
+• ls — List
+– 格式:ls [选项]... [目录或文件名]
+
+• 常用命令选项
+ – -l:以长格式显示,显示详细属性
+ – -A:包括名称以 . 开头的隐藏文档
+ – -d:显示目录本身(而不是内容)的属性
+ – -h:提供易读的容量单位(K、M等)
+
+]# ls -l /etc/redhat-release 
+
+]# ls -l /etc/passwd
+]# ls -l /etc/fstab 
+]# ls -l /etc/sysconfig/network-scripts/ifcfg-eth0 
+]# ls -l /root/　　　　＃显示目录内容的详细属性
+]# ls -l /
+
+]# ls -l /etc/passwd
+]# ls -l -h /etc/passwd
+]# ls -lh /etc/passwd　　　#显示详细属性时，加上大小单位
+]# ls -lh /var/log/messages  
+
+]# ls -ld  /root    #显示目录本身的详细属性
+]# ls -ld  /
+　　　　　　　　　　　　　　　
+]# ls -A /root　　　　　＃显示目录的全部内容，包括隐藏数据
+]# touch /opt/.nsd01.txt
+]# ls /opt/
+]# ls -A /opt/
+
+#################################################
+使用通配符
+• 针对不确定的文档名称,以特殊字符表示
+– *:任意多个任意字符
+– ?:单个字符
+[root@nsd1903 ~]# ls /root/a*    #显示/root下以a开头
+/root/anaconda-ks.cfg
+
+[root@nsd1903 ~]# ls /boot/vm*
+
+[root@nsd1903 ~]# ls /dev/tty*　　#显示/dev下以tty开头
+
+[root@nsd1903 ~]# ls /etc/*tab  　#显示/etc下以tab结尾
+[root@nsd1903 ~]# ls /etc/*.conf
+
+显示以r开头，以.conf结尾
+[root@nsd1903 ~]# ls /etc/r*.conf
+[root@nsd1903 ~]# ls /dev/tty*
+[root@nsd1903 ~]# ls /dev/tty?
+[root@nsd1903 ~]# ls /dev/tty??
+[root@nsd1903 ~]# ls /dev/tty???
+
+• 针对不确定的文档名称,以特殊字符表示
+– [a-z]:多个字符或连续范围中的一个,若无则忽略
+– {a,min,xy}:多组不同的字符串,全匹配
+
+[root@nsd1903 ~]# ls /dev/tty[1-8]
+
+[root@nsd1903 ~]# ls /dev/tty[3-6]
+
+[root@nsd1903 ~]# ls /dev/tty{1,3,5,7,9,21}
+
+[root@nsd1903 ~]# ls /dev/tty{38,S0}
+
+##############################################
+别名的定义:简化复杂的命令
+
+• 查看已设置的别名
+– alias [别名名称]
+• 定义新的别名
+– alias 别名名称= '实际执行的命令行'
+• 取消已设置的别名
+– unalias [别名名称]
+
+[root@nsd1903 ~]# hostname      
+nsd1903.tedu.cn
+[root@nsd1903 ~]# hn
+bash: hn: 未找到命令...
+[root@nsd1903 ~]# alias hn='hostname'　　＃定义别名
+[root@nsd1903 ~]# hn
+nsd1903.tedu.cn
+[root@nsd1903 ~]# alias      　　 #显示所有有效别名
+[root@nsd1903 ~]# unalias hn　　　＃删除hn别名
+[root@nsd1903 ~]# hn
+bash: hn: 未找到命令...
+[root@nsd1903 ~]# 
+
+###############################################
+mkdir 创建目录
+• mkdir — Make Directory
+– 格式:mkdir [-p] [/路径/]目录名...
+   -p:创建父目录
+[root@server0 ~]#  mkdir -p /vod/movie/cartoon
+[root@server0 ~]#　ls /vod
+[root@server0 ~]#　ls /vod/movie
+
+[root@nsd1903 ~]#  mkdir -p /opt/aa/bb/cc/dd
+[root@nsd1903 ~]#  ls /opt/
+[root@nsd1903 ~]#  ls /opt/aa
+[root@nsd1903 ~]#  ls /opt/aa/bb/
+[root@nsd1903 ~]#  ls /opt/aa/bb/cc/
+
+rm 删除
+• rm — Remove
+– 格式:rm [选项]... 文件或目录...
+• 常用命令选项
+– -r、-f:递归删除(含目录)、强制删除
+    -r:递归,目录本身以及目录下所有
+
+[root@nsd1903 ~]# mkdir /opt/nsd01
+[root@nsd1903 ~]# mkdir /opt/nsd02
+[root@nsd1903 ~]# touch /opt/1.txt
+[root@nsd1903 ~]# ls /opt/
+1.txt  nsd01  nsd02
+[root@nsd1903 ~]# rm -rf /opt/1.txt
+[root@nsd1903 ~]# ls /opt/
+nsd01  nsd02
+[root@nsd1903 ~]# rm -rf /opt/* 
+[root@nsd1903 ~]# ls /opt/
+################################################
+mv 移动/改名
+• mv — Move
+– 格式:mv   原文件      目标路径
+[root@nsd1903 ~]# rm -rf /opt/*
+[root@nsd1903 ~]# mkdir /opt/nsd
+[root@nsd1903 ~]# touch /opt/1.txt
+[root@nsd1903 ~]# ls /opt/
+[root@nsd1903 ~]# mv /opt/1.txt  /opt/nsd
+[root@nsd1903 ~]# ls /opt/
+nsd
+[root@nsd1903 ~]# ls /opt/nsd
+
+重命名：路径不变的移动
+[root@nsd1903 ~]# ls /opt/
+[root@nsd1903 ~]# mv /opt/nsd/  /opt/abc
+[root@nsd1903 ~]# ls /opt/
+
+[root@nsd1903 ~]# mv /opt/abc/ /opt/student
+[root@nsd1903 ~]# ls /opt/
+#################################################
+cp 复制
+• cp — Copy
+– 格式:cp [选项]... 原文件     目标路径
+
+• 常用命令选项
+– -r:递归,复制目录时必须有此选项
+
+[root@nsd1903 ~]# rm -rf /opt/*
+[root@nsd1903 ~]# cp /etc/passwd /opt/
+[root@nsd1903 ~]# ls /opt/
+
+[root@nsd1903 ~]# cp /etc/fstab  /opt/
+[root@nsd1903 ~]# ls /opt/
+
+[root@nsd1903 ~]# cp -r /home/ /opt/
+[root@nsd1903 ~]# ls /opt/
+
+[root@nsd1903 ~]# cp -r /boot/ /opt/
+[root@nsd1903 ~]# ls /opt/
+
+复制时出现同名进行覆盖
+在本次命令执行，临时取消别名的操作
+[root@nsd1903 ~]# cp -r /boot/ /opt/
+cp：是否覆盖"/opt/boot/grub2/device.map"？
+ 按 Ctrl + c　取消操作
+[root@nsd1903 ~]# \cp -r /boot/ /opt/
+[root@nsd1903 ~]# \cp -r /boot/ /opt/
+
+
+复制可以支持两个以上的参数，永远会把最后一个参数作为目标，其它的所有参数都会作为源
+]# cp -r /root /etc/shadow    /etc/hosts /etc/login.defs  /opt/
+]# ls /opt/
+
+复制可以与　．　连用：将源数据，复制到当前路径下
+]# cd /opt/
+]# pwd
+]# cp /etc/resolv.conf  .
+]# ls
+]# cd /etc/sysconfig/network-scripts/
+]# pwd
+]# cp /etc/passwd  .
+]# ls
+
+复制时，可以重新命名目标路径下的名称
+
+[root@nsd1903 /]# rm -rf /opt/*
+[root@nsd1903 /]# cp /etc/passwd /opt/
+[root@nsd1903 /]# ls /opt/
+
+[root@nsd1903 /]# cp /etc/passwd /opt/nsd
+[root@nsd1903 /]# ls /opt/
+
+[root@nsd1903 /]# cp -r /boot/ /opt/abc
+[root@nsd1903 /]# ls /opt/
+
+请描述下列，两次复制的不同：
+[root@nsd1903 /]# rm -rf /opt/*
+[root@nsd1903 /]# cp -r /home/  　/opt/test
+[root@nsd1903 /]# cp -r /home/　 /opt/test
+　第一次复制，将/home复制到/opt目录下改名为test
+　第二次复制，将/home复制到/opt/test目录下
+##############################################
+Linux文件的最后必须没有 /  
+
+##############################################
+
+
+
+
+
+
+
+
+
+
+
+
+
