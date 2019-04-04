@@ -79,9 +79,6 @@ ftp://176.233.40.248/
      20190329
 
 
-20190329
-
-
 Unix&Linux一切皆文件  
 路径 /abc/nsd/1.txt
 开头的 /是根目录 其他的/ 均为分隔符
@@ -262,8 +259,8 @@ operator:x:11:0:operator:/root:/sbin/nologin
 grep ^$ /etc/passwd	~$ 匹配空行
 grep ^root /etc/passwd  ^匹配 root 开头的 
 grep login$ /etc/passwd |tail -4   ;  $匹配 以 login 结尾,且之显示四行
-##############################################
-管道 |   将上一条命令执行的结果交给下一条命令执行
+#########################################################
+管道 |   将上一条命令执行的结果交给下一条命令执行  类似于桥梁的作用 没有数量限制 ###重要
 eg：
 cat /etc/passwd | grep root
 
@@ -285,6 +282,8 @@ cat -n /etc/passwd | head -15 |tail -6 |wc -l  配合计数使用
 6
 ##################################################################3
 重定向
+     前边命令的输出 写入到指定文本文件中,若指定文本文件不存在会自动创建
+    
 >    覆盖重定向  直接覆盖原文件
 
 [root@room9pc01 home]# echo 123 > 1.txt
@@ -306,9 +305,23 @@ cat -n /etc/passwd | head -15 |tail -6 |wc -l  配合计数使用
 123
 789
 ############################################
-echo 
+echo  复读机 只会显示 echo后面输入的字符 
+	配合重定向 快速修改 文件信息
+	[root@jkgao gaoyuan]# echo lolo > /opt/hn.txt 
+	[root@jkgao gaoyuan]# cat /opt/hn.txt
+	lolo
 
+	[root@jkgao gaoyuan]# echo lolo
+	lolo
+#####################
 vim编辑器
+
+vim 命令模式下 
+dd剪切(可以当删除使用)  用p可以粘贴出来
+yy复制(光标放在行首)  5yy复制五行
+p粘贴 
+
+
 
 命令模式 	批量操作，复制粘贴    i 进入插入模式 esc 推出 进入命令模式； 按两次 esc 进入 末行模式 wq 退出 q！推出不保存 ！强制执行
 					从光标位置开始往下操作，
@@ -335,11 +348,27 @@ xshell
 ssh -X root@server0.example.com  :-X 调用图形界面 ##server0.example.com 域名
 #########################################################
 tar 打包压缩
+linux 压缩格式:
+	gzip(特点速度快,效率底) -----------> .gz
+	bzip2---------------------------> .bz2
+	xz(特点速度慢,效率高,)---------------> .xz
+选项 
+	-c 创建归档
+	-x 释放归档
+	-f 指定tar包的文件名
+	-z -j -J  分别调用.gz .bz2 .xz 格式工具进行处理
+	-t 显示归档中的文件清单
+	-C 指定路径释放
+注意 连用时f一定要写在所有选项之后
+tar 所有选项都需要有 f 选项
+显示
 打包
-            新包的名字     
-tar -czf xxx.tar.gz 需要打包的文件名 #######
+      选项  /路径/新包的名字     
+tar -zcf  xxx.tar.gz    需要打包的文件名 #######
+tar -jcf  xxx.tar.bz2    需要打包的文件名 #######
+tar -Jcf  xxx.tar.xz    需要打包的文件名 #######
 解压
-          需要解压博得名字
+          需要解压包得名字
 tar -xf xxx.tar.gz 解压到当前位置
 tar -xf xxx.tar.gz -C /指定压缩位置  大写C 小写识别
 ##################################
@@ -347,16 +376,50 @@ tar -xf xxx.tar.gz -C /指定压缩位置  大写C 小写识别
 命令 接着执行 多条命令 
 eg mkdir pp ; touch xixi
 #####################
+管理用户和组
+用户	1.登录操作系统	
+	2.方便对不同用户进行访问控制
+组      方便管理用户
+用户唯一标识: UID  从0 开始的
+组唯一标识: GID  从0 开始
+Linux系统管理的uid 永远为0 
+	[root@jkgao gaoyuan]# id root
+	uid=0(root) gid=0(root) 组=0(root)
 创建普通用户
-创建用户
+
 useradd 用户名
-1.查 id  id 用户名  
-[root@room9pc01 home]# id Student
-uid=1000(Student) gid=1000(Student) 组=1000(Student)
-2.查home ls /home
-3.查文件   grep /etc/passwd
+useradd 选项 用户名
+常用的选项  
+-u用户id  指定uid (uid有极限)
+	新用户uid默认上个用户uid+1
+-d 家目录路径  指定家目录默认在/home/下 
+	[root@jkgao gaoyuan]# useradd -d /mnt/nsd01 nsd01
+						   家目录	用户名
+-s登录解释器 
+	[root@jkgao gaoyuan]# useradd -s /sbin/nologin haha
+	[root@jkgao gaoyuan]# grep haha /etc/passwd 
+	haha:x:1002:1002::/home/haha:/sbin/nologin
+
+查看解释器
+[root@jkgao gaoyuan]# cat /etc/shells 
+				/sbin/nologin #禁止用户登录系统,非删除用户
+-G 附加组
+1.查看用户基本信息 id  id 用户名  
+	[root@room9pc01 home]# id Student
+	uid=1000(Student) gid=1000(Student) 组=1000(Student)
+2.查home ls /home/
+
+	
+3.查文件   grep nsd01 /etc/passwd
+用户的基本信息存放在  /etc/passwd 
+/etc/passwd	属于系统级 配置文件 
+	root:	x	 :0		:0:		root:			/root:	/bin/bash
+       用户名 密码占位符 用户的UID	基本组的GID   用户描述信息可以为空   家目录         解释器
+#############
 删除用户 
+	
 userdel 用户名
+userdel -r 用户名 #连通用户的的家目录一起删了(工作中尽量不会用这命令)
 1.删除家 rm -rf /home/xixi
 2.       vim
 切换 用户 
@@ -370,10 +433,72 @@ su 用户名
 	 -i 提示信息 
 ###################################################
 创建组 
-
+基本组:与用户同名且由系统创建并将用户默认添加到该组(为了满足Linux默认的用户只属于一个组)
+附加组(从属组): 由管理员创建并管理 
 groupadd xixi
 groupdel xixi
+思路:创建组 创建用户时指定附加组
 
+	[root@jkgao gaoyuan]# groupadd tarena #创建组
+	[root@jkgao gaoyuan]# useradd -G tarena nsd03 #指定组并创建用户nsd03
+	[root@jkgao gaoyuan]# id nsd03
+	uid=1003(nsd03) gid=1004(nsd03) 组=1004(nsd03),1003(tarena)  
+		用户id		基本组id	     附加组id
+#########################################
+管理组
+存在组基本信息的文件 /etc/group 文件
+由于没有直接查看组命令 所以使用grep查看
+[root@jkgao gaoyuan]# grep stugrp /etc/group
+stugrp:x:1005:
+组名:密码占位符:组的成员列表
+groupadd 组名
+属性
+-g  
+groupadd [-g] 组名 
+##################################3
+管理组成员
+gpasswd 
+gpasswd -a 用户名 组名 添加
+gpasswd -d 用户名 组名  删除
+
+#############################################
+删除组 
+groupdel
+groupdel 组名
+不能删除住组 附属组可以删除
+删除组不影响 用户存在
+####################################
+设置密码
+ passwd 用户名
+输入密码 两次
+[root@jkgao gaoyuan]# passwd nsd03
+更改用户 nsd03 的密码 。
+新的 密码：
+root用户在执行时 不需要 输入原密码 ,且设置的密码不需要符合密码字典的要求
+普通用户可以修改自己的密码 并且密码必须符合密码字典的要求,
+普通用户是无法修改与自己平级账户的密码的
+ su - nsd03 
+非交互式设置密码
+必须 root 用户执行这条命令
+echo 123 | passwd --stdin nsd03 (--stdin 取消passwd的交互功能##echo 之后为密码)
+##########################################
+登录密码 保存文件 
+默认 root 才有权限阅读
+/etc/shadow  系统文件
+	(了解)
+	[root@jkgao gaoyuan]# head -1 /etc/shadow
+	root:$6$N2mU7M8m$mBO2wcqpI09Y/KlVTsIZJonkqKp948r/AyA9JUf0CoVE7GdPBZf5xyThSR40Pcwq6M8muh3n.Y/Xld0LCBZce.:17988:0:99999:7:::
+	用户  :     密码加密字符串                                  : 上次修改密码的时间,从1970-1-1到修改密码的时间的天数: 密码可存在的天数:提前7天警告密码快失效了:用户永远不过期
+修改用户属性 (只能修改已存在)
+usermod 
+选项 
+-u 修改uid
+-G 修改附属组
+-d 修改家目录
+-s 修改解释器
+[root@jkgao gaoyuan]# usermod -u 1700 -G tarena -s /sbin/nologin nsd11
+ 
+###########################
 命令别名 （临时别名）
 alias
  别名=‘实际执行的命令’
@@ -387,7 +512,7 @@ cp复制
 	cp 选项 源文件
 	cp可以支持两个以上的参数,永远会把最后一个参数作为目标其他所有参数都会作为源.也就是他会把 前边的所有文档\目录 拷贝到最后一个文件夹
 常用选项 
-	-r 递归,复制目录以及目录下文件时 需要添加
+	-r 递归,复制目录以及目录下文件时 需要添加  #重要,比较常用
 	-i 提示信息   由于 系统已经自定义了系统级别的别名 ,所以在覆盖文件的时候会不断提示 
 	[root@jkgao 桌面]# alias
 	alias cp='cp -i'
@@ -452,10 +577,6 @@ desktop IP 172.25.0.10
 server ip 172.25.0.11 
 linux 中 加上文件的属性(.txt)是不影响文件的读取的,加后缀是为了给人看.
 
-vim 命令模式下 
-dd剪切(可以当删除使用)  用p可以粘贴出来
-yy复制(光标放在行首)  5yy复制五行
-p粘贴 
 
 ####################################################################################
 AB两个机器的免密码登录 
@@ -595,6 +716,25 @@ tail用法类似
 	MemTotal:       16329888 kB
 grep 查找 
 格式  grep 条件 目标文件
+	属性 -i 忽略大小写 
+	     -v 取反查找  关键字之外的都显示
+		-^word 必须以字符串word 开头
+		-word$ 必须以字符串word 结尾
+	student@gao ME]$ grep ^root /etc/passwd
+	root:x:0:0:root:/root:/bin/bash
+	[student@gao ME]$ grep bash$ /etc/passwd
+	root:x:0:0:root:/root:/bin/bash
+	student:x:1000:1000::/home/student:/bin/bash
+	weekend:x:1001:1001::/home/weekend:/bin/bash
+#################################################### 
+	-v 取反查找  关键字之外的都显示
+	[student@gao ME]$ grep -v root /etc/passwd |head -5
+	bin:x:1:1:bin:/bin:/sbin/nologin
+	daemon:x:2:2:daemon:/sbin:/sbin/nologin
+	adm:x:3:4:adm:/var/adm:/sbin/nologin
+	lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+	sync:x:5:0:sync:/sbin:/bin/sync
+#################################################
 	[student@gao ~]$ grep bin /etc/passwd
 	root:x:0:0:root:/root:/bin/bash
 	bin:x:1:1:bin:/bin:/sbin/nologin
@@ -638,10 +778,3 @@ Windows 读取光盘内容
 	2.命令行查看光驱设备  Linux下通过/dev/cdrom
 	[gaoyuan@jkgao ~]$ ls -l /dev/cdrom
 	lrwxrwxrwx. 1 root root 3 4月   3 10:59 /dev/cdrom -> sr0
-
-
-
-
-
-
-
