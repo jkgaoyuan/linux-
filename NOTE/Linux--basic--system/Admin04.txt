@@ -1,0 +1,346 @@
+使用vim创建/修改文件内容
+
+  三模式：命令模式　　　插入模式（输入模式）　　末行模式
+
+[root@nsd1903 ~]# vim /opt/xiha.txt
+
+	命--------i 键---＞插入模式(Esc 键回到命令模式)
+	令
+	模
+	式--------: 键---＞ 末行模式 (Esc 键回到命令模式)
+
+   末行模式  :wq 　保存并退出
+　　　　　　:q! 　强制不保存并退出
+
+
+
+查找文本内容
+• 根据字符串模式提取文本行
+– grep [选项] '匹配模式' 文本文件...
+　
+• 常用命令选项　　　　　　　　
+– -v,取反匹配
+– -i,忽略大小写
+
+[root@nsd1903 ~]# grep root /etc/passwd
+
+[root@nsd1903 ~]# grep Root /etc/passwd
+[root@nsd1903 ~]# grep -i Root /etc/passwd
+
+]# grep -v root /etc/passwd　　#不包含root的行
+
+
+• 常用的匹配模式
+– word　 包含字符串word
+– ^word 　以字符串word开头
+– word$ 　以字符串word结尾
+
+[root@nsd1903 ~]# grep root /etc/passwd
+
+[root@nsd1903 ~]# grep ^root /etc/passwd
+
+[root@nsd1903 ~]# grep root$ /etc/passwd
+[root@nsd1903 ~]# grep bash$ /etc/passwd
+
+##############################################
+重定向输出操作：将前面命令的输出，写入到后面文本文件中
+　　>：覆盖重定向
+　　＞>：追加重定向
+[root@nsd1903 ~]# ls --help
+[root@nsd1903 ~]# ls --help > /opt/ls.txt
+[root@nsd1903 ~]# less  /opt/ls.txt
+
+[root@nsd1903 ~]# hostname
+[root@nsd1903 ~]# hostname > /opt/ls.txt 
+[root@nsd1903 ~]# cat /opt/ls.txt
+[root@nsd1903 ~]# hostname >> /opt/ls.txt 
+[root@nsd1903 ~]# cat /opt/ls.txt
+
+]# cat /etc/redhat-release    >> /opt/ls.txt 
+]# cat /opt/ls.txt
+
+[root@nsd1903 ~]# echo 123456
+
+[root@nsd1903 ~]# echo 123456 > /opt/ls.txt 
+[root@nsd1903 ~]# cat /opt/ls.txt
+
+[root@nsd1903 ~]# echo NSD1903 >> /opt/ls.txt 
+[root@nsd1903 ~]# cat /opt/ls.txt
+
+###############################################
+管道操作:连接或桥梁
+    | :将前面命令的输出，传递给后面命令，当做后面命令的参数
+
+　/etc/passwd文件的８到12行内容
+　]# head -12 /etc/passwd     |　 tail -5 
+
+　]# head -12 /etc/passwd    | tail -5  | cat -n
+
+　]# cat -n /etc/passwd　 |　 head -12　 | 　tail -5
+　
+　]# ifconfig | head -2
+　]# ifconfig | less
+
+################################################
+管理用户和组           
+  
+     用户： 1.登录操作系统　　２.方便对不同用户进行访问控制
+　　组:方便管理用户
+
+　　用户唯一标识： UID 
+　　组唯一标识： GID 
+
+   　Linux管理员root的UID永远为0
+
+	Linux一个用户至少属于一个组
+　　基本组：与用户同名，有系统创建加入完成
+　　附加组（从属组）：管理员创建加入完成
+
+
+添加用户
+用户基本信息存放在 /etc/passwd 文件（系统级配置文件）
+
+　root:x:0:0:root:/root:/bin/bash
+用户名:密码占位符:UID:基本组的GID:用户描述信息:家目录:解释器
+
+• 使用 useradd 命令
+– useradd [选项]... 用户名
+• 常用命令选项
+– -u 用户id、-d 家目录路径、-s 登录解释器、-G 附加组
+
+[root@nsd1903 ~]# useradd nsd01
+[root@nsd1903 ~]# ls /home/
+
+[root@nsd1903 ~]# id nsd01  #查看用户基本信息
+
+[root@nsd1903 ~]# id haxi
+id: haxi: no such user
+
+[root@nsd1903 ~]# grep nsd01 /etc/passwd #查看用户信息
+
+[root@nsd1903 ~]# useradd  nsd02
+[root@nsd1903 ~]# grep nsd /etc/passwd
+
+[root@nsd1903 ~]# useradd -u 1600 nsd03  ＃指定UID创建
+[root@nsd1903 ~]# grep nsd /etc/passwd
+[root@nsd1903 ~]# useradd  nsd04
+[root@nsd1903 ~]# grep nsd /etc/passwd
+
+]# useradd -d /mnt/abc nsd06　　＃指定用户的家目录创建
+]# grep nsd06 /etc/passwd
+
+
+-s 登录解释器
+　/sbin/nologin：禁止用户登录系统的解释器
+[root@nsd1903 ~]# useradd -s /sbin/nologin  nsd07
+[root@nsd1903 ~]# grep nsd07 /etc/passwd
+
+-G 附加组
+[root@nsd1903 ~]# groupadd tarena　　　　＃创建组
+[root@nsd1903 ~]# useradd -G tarena nsd08
+[root@nsd1903 ~]# id nsd08
+uid=1605(nsd08) gid=1606(nsd08) 组=1606(nsd08),1605(tarena)
+
+#############################################
+设置登录密码
+• 使用 passwd 命令
+– passwd [用户名]
+[root@nsd1903 ~]# useradd nsd10
+[root@nsd1903 ~]# passwd nsd10
+更改用户 nsd10 的密码 。
+新的 密码：　　　　　　　　　　＃设置新的密码
+无效的密码： 密码少于 8 个字符
+重新输入新的 密码：　　　　　　　＃重新输入新的密码
+passwd：所有的身份验证令牌已经成功更新。
+[root@nsd1903 ~]# su - nsd10    #命令行临时切换身份
+[nsd10@nsd1903 ~]$ passwd 
+更改用户 nsd10 的密码 。
+为 nsd10 更改 STRESS 密码。
+（当前）UNIX 密码：　　　　　　　　＃输入旧密码
+新的 密码：　　　　　　　　　　　　＃设置新的密码
+重新输入新的 密码：　　　　　　　　＃重新输入新的密码
+passwd：所有的身份验证令牌已经成功更新。
+[nsd10@nsd1903 ~]$ exit
+
+
+
+非交互式设置密码
+– echo '密码'　　 | 　　passwd 　--stdin　 用户名
+
+[root@nsd1903 ~]# echo 123 | passwd --stdin nsd10
+更改用户 nsd10 的密码 。
+passwd：所有的身份验证令牌已经成功更新。
+
+[root@nsd1903 ~]# echo redhat | passwd --stdin nsd10
+更改用户 nsd10 的密码 。
+passwd：所有的身份验证令牌已经成功更新。
+
+###############################################
+用户密码信息存放在 /etc/shadow 文件
+[root@nsd1903 ~]# tail -1 /etc/shadow
+nsd10:$6$pOWNdlhE$z9/irH93UkWigQr0FQgPC.3NmZGfVMtr6oym4
+jWMWFCKRGeq4qYOysgXCR.1q9ztNfMJ91HJxGG34
+V3Jq3b0n/:17990:０:99999:7:::
+
+ 用户名:密码加密字符串:上一次修改密码的时间    
+
+#################################################
+
+修改用户属性
+• 使用 usermod 命令
+– usermod [选项]... 用户名
+
+• 常用命令选项
+– -u 用户id、-d 家目录路径、-s 登录解释器
+– -G 附加组
+
+[root@nsd1903 ~]# useradd nsd11
+[root@nsd1903 ~]# grep nsd11 /etc/passwd
+[root@nsd1903 ~]# id nsd11
+
+]# usermod -u 1700 -d /opt/nsd11 -G tarena -s /sbin/nologin  nsd11
+
+]# id  nsd11
+
+]# grep nsd11 /etc/passwd
+
+#################################################
+删除用户
+• 使用 userdel 命令
+– userdel [-r] 用户名
+    -r:连同家目录一并删除
+
+[root@server0 ~]# userdel -r alex
+[root@server0 ~]# id alex
+id: alex: no such user
+
+###############################################
+管理组账号
+
+添加组
+组基本信息存放在 /etc/group 文件
+[root@nsd1903 ~]# grep  stugrp  /etc/group
+ stugrp:x:1610:
+  组名:组的密码占位符:组的GID编号:组的成员列表
+
+• 使用 groupadd 命令
+– groupadd [-g 组ID] 组名
+
+[root@nsd1903 ~]# groupadd stugrp
+[root@nsd1903 ~]# grep stugrp /etc/group
+stugrp:x:1610:
+[root@nsd1903 ~]# useradd kenji
+[root@nsd1903 ~]# useradd jack
+[root@nsd1903 ~]# useradd natasha
+[root@nsd1903 ~]# useradd kaka
+
+管理组成员
+组成员信息存放在 /etc/gshadow 文件
+• 使用 gpasswd 命令
+– gpasswd -a 用户名 　组名
+– gpasswd -d 用户名　 组名
+
+[root@nsd1903 ~]# gpasswd -a kenji stugrp
+[root@nsd1903 ~]# grep stugrp /etc/group
+
+[root@nsd1903 ~]# gpasswd -a natasha stugrp
+[root@nsd1903 ~]# grep stugrp /etc/group
+
+[root@nsd1903 ~]# gpasswd -a kaka stugrp
+[root@nsd1903 ~]# grep stugrp /etc/group
+
+[root@nsd1903 ~]# gpasswd -d kaka stugrp
+[root@nsd1903 ~]# grep stugrp /etc/group
+
+[root@nsd1903 ~]# gpasswd -a jack stugrp
+[root@nsd1903 ~]# grep stugrp /etc/group
+
+##################################################
+删除组
+• 使用 groupdel 命令
+– groupdel 组名
+[root@nsd1903 ~]# groupdel stugrp
+[root@nsd1903 ~]# grep stugrp /etc/group
+
+#################################################
+tar备份与恢复
+  
+  Linux压缩格式：
+      -z  gzip ----＞　.gz
+　　　-j bzip2 ----＞ .bz2
+      -J  xz ----＞ .xz
+
+
+归档和压缩
+• 归档的含义
+– 将许多零散的文件整理为一个文件
+– 文件总的大小基本不变
+
+• 压缩的含义
+– 按某种算法减小文件所占用空间的大小
+– 恢复时按对应的逆向算法解压
+
+• tar 集成备份工具
+– -c:创建tar包
+– -x:释放tar包
+– -f:指定tar包文件名称
+– -z、-j、-J:调用 .gz、.bz2、.xz 格式的工具进行处理
+– -t:显示tar包的文件清单
+– -C:指定释放路径
+
+tar制作压缩包（tar包）
+ 
+　格式: tar 　选项　 /路径/压缩包的名字     /路径/源文件 ....
+
+
+ tar 　-zcf　 /路径/压缩包的名字     /路径/源文件 ....
+
+ tar 　-jcf　 /路径/压缩包的名字     /路径/源文件 ....
+
+ tar 　-Jcf　 /路径/压缩包的名字     /路径/源文件 ....
+　　 -z gzip .gz    -j bzip2 .bz2      -J  xz .xz
+红色：压缩
+]# rm -rf /opt/*
+]# tar -zcf /opt/file.tar.gz  /home/  /etc/passwd
+]# ls /opt/
+]# tar -tf /opt/file.tar.gz       　  #查看包里面内容
+]# tar -tf /opt/file.tar.gz  ｜　less
+
+]# tar -jcf /opt/nsd.tar.bz2  /home/  /etc/passwd
+]# tar -tf /opt/nsd.tar.bz2  
+]# ls /opt/
+
+]# tar -Jcf /opt/abc.tar.xz   /home/  /etc/passwd
+]# tar -tf /opt/abc.tar.xz  
+]# ls /opt/         
+
+
+
+]# mkdir /nsd1903
+]# tar -xf　 /opt/abc.tar.xz    -C 　/nsd1903/
+]# ls 　/nsd1903/
+]# ls 　/nsd1903/home/
+]# ls 　/nsd1903/etc/
+
+#################################################
+案例2:创建一个备份包
+使用 tar 工具完成以下备份任务:
+– 创建一个名为 /root/backup.tar.bz2 的归档文件
+– 其中包含 /usr/local 目录中的内容
+– tar 归档必须使用 bzip2 进行压缩
+
+]# tar -jcf /root/backup.tar.bz2   /usr/local/
+]# ls /root/
+]# tar -tf /root/backup.tar.bz2   #查看包的内容
+
+###############################################
+
+
+
+
+
+
+
+
+
+
