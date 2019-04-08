@@ -1,0 +1,328 @@
+教学环境介绍
+
+• 每个学员机上有三台预先配置好的虚拟机
+– server —— 作为练习用服务器
+– desktop —— 作为练习用客户机
+
+– classroom —— 提供网关/DNS/软件素材等资源
+
+　开机时，优先开启classroom虚拟机
+
+使用rht-vmctl辅助工具
+• 控制教学用虚拟机
+– 格式:rht-vmctl 控制指令 虚拟机名
+
+reset(还原)
+
+真机上操作：
+]# rht-vmctl reset classroom　　//先重置资源服务器
+]# rht-vmctl reset server
+]# rht-vmctl reset desktop　　 //再重置答题虚拟机
+
+虚拟机server
+  1.利用root用户进入系统，密码为redhat
+  2.查看系统版本:RHEL 7.0
+  3.查看主机名:server0.example.com
+  4.查看虚拟机eth0的IP地址:172.25.0.11
+
+虚拟机desktop
+   1.利用root用户进入系统，密码为redhat
+　2.查看系统版本:RHEL 7.0
+　3.查看主机名:desktop0.example.com
+　4.查看虚拟机eth0的IP地址:172.25.0.10
+
+##################################################
+利用真机，远程管理
+１.真机测试通信
+[student@room9pc01 ~]$ ping 172.25.0.11
+[student@room9pc01 ~]$ ping 172.25.0.10
+
+2.真机进行远程管理
+　　ssh   用户名@对方的IP地址
+     -X:在远程管理时，开启对方的图形程序
+
+[student@room9pc01 ~]$ ssh root@172.25.0.11
+Last login: Mon Apr  8 10:37:39 2019 from 172.25.0.250
+[root@server0 ~]# hostname
+
+[root@server0 ~]# ifconfig | head -2
+
+[root@server0 ~]# exit 　　#退出远程管理
+
+补充快捷键:   Ctrl + shift + t　开启一个新的终端
+
+################################################
+
+[root@server0 ~]# exit　　　　　＃退出远程管理
+登出
+Connection to 172.25.0.11 closed.
+
+[student@room9pc01 ~]$ ssh -X root@172.25.0.11
+Last login: Mon Apr  8 10:46:47 2019
+/usr/bin/xauth:  file /root/.Xauthority does not exist
+[root@server0 ~]# firefox
+
+[root@server0 ~]# 
+
+##################################################
+权限和归属
+
+基本权限
+基本权限的类别
+• 访问方式(权限)
+– 读取:允许查看内容-read    r 
+– 写入:允许修改内容-write     w
+– 可执行:允许运行和切换-execute  x 
+
+      文本文件:
+           r: cat less head tail 
+           w: vim 修改并且保存   重定向　>    >>
+           x: 写Shell脚本
+
+
+• 权限适用对象(归属)
+ – 所有者:拥有此文件/目录的用户-user  u
+ – 所属组:拥有此文件/目录的组-group     g
+ – 其他用户:除所有者、所属组以外的用户-other o
+
+　　１.txt      lisi  lisi
+
+################################################
+查看权限
+• 使用 ls -l 命令
+– ls -ld 文件或目录...
+  
+  以－开头　代表为文本文件
+  以ｄ开头　代表为目录
+  以 l开头　代表为快捷方式
+
+[root@server0 ~]# ls -ld /etc/
+
+[root@server0 ~]# ls -l /etc/passwd
+
+[root@server0 ~]# ls -ld /home/student
+
+[root@server0 ~]# ls -l /etc/shadow
+
+[root@server0 ~]# ls -ld /tmp
+##########################################
+设置基本权限
+• 使用 chmod 命令
+– chmod  归属关系+-=权限类别 　文档...
+
+     [-R]:递归，目录本身及目录下所有
+
+[root@server0 ~]# mkdir /nsd01
+[root@server0 ~]# ls -ld /nsd01
+[root@server0 ~]# chmod u-w /nsd01
+[root@server0 ~]# ls -ld /nsd01
+
+[root@server0 ~]# chmod g+w /nsd01
+[root@server0 ~]# ls -ld /nsd01
+
+[root@server0 ~]# chmod u=rwx /nsd01
+[root@server0 ~]# ls -ld /nsd01
+
+[root@server0 ~]# chmod o+w /nsd01
+[root@server0 ~]# ls -ld /nsd01
+[root@server0 ~]# chmod u=rwx,g=rx,o=--- /nsd01
+[root@server0 ~]# ls -ld /nsd01
+
+[root@server0 ~]# mkdir -p /opt/aa/bb/cc
+[root@server0 ~]# ls /opt/
+
+[root@server0 ~]# chmod -R o=--- /opt/aa
+[root@server0 ~]# ls -ld /opt/aa
+[root@server0 ~]# ls -ld /opt/aa/bb/
+[root@server0 ~]# ls -ld /opt/aa/bb/cc/
+
+###############################################
+Linux如何判断一个用户的具备的权限：　　　匹配及停止
+　１.查看用户对于该文档，所处的角色      所有者>所属组>其他人
+　２.查看相应角色位置的权限
+　
+
+###############################################
+ Permission denied：权限不足
+
+目录的 r 权限:能够 ls 浏览此目录内容
+目录的 w 权限:能够执行 rm/mv/cp/mkdir/touch/等更改目录内容的操作
+目录的 x 权限:能够 cd 切换到此目录
+
+#################################################
+以root用户新建/nsddir目录，在此目录下新建readme.txt文件
+并进一步完成下列操作
+ 1）使用户lisi能够在此目录下创建子目录  切换用户 su  -  lisi
+     chmod o+w  /nsddir/
+ 2）使用户lisi不能够在此目录下创建子目录
+     chmod o-w  /nsddir/
+ 3）使用户lisi能够修改readme.txt文件内容
+     chmod o+w  /nsddir/readme.txt
+ 4）调整此目录的权限，使所有用户都不能cd进入此目录
+     chmod u-x,g-x,o-x  /nsddir/
+ 5）为此目录及其下所有文档设置权限 rwxr-x---
+     chmod -R  u=rwx,g=rx,o=---  /nsddir/
+　　　-R：递归设置权限，目录下及目录下所有
+
+###############################################
+
+设置文档归属
+• 使用 chown 命令
+– chown [-R] 属主 文档...
+– chown [-R] :属组 文档...
+– chown [-R] 属主:属组 文档...
+
+[root@server0 ~]# mkdir /nsd03
+[root@server0 ~]# ls -ld /nsd03
+
+[root@server0 ~]# groupadd tarena
+[root@server0 ~]# chown lisi:tarena /nsd03
+[root@server0 ~]# ls -ld /nsd03
+
+[root@server0 ~]# chown student /nsd03
+[root@server0 ~]# ls -ld /nsd03
+
+[root@server0 ~]# chown :root /nsd03
+[root@server0 ~]# ls -ld /nsd03
+
+################################################
+利用root用户新建/nsd06目录，并进一步完成下列操作　
+1）将属主设为gelin01，属组设为tarena组              
+[root@server0 /]# useradd gelin01
+[root@server0 /]# useradd gelin02
+[root@server0 /]# groupadd tarena
+[root@server0 /]# chown gelin01:tarena  /nsd06
+2）使用户gelin01对此目录具有rwx权限
+      除属主与属组之外的人，对此目录无任何权限
+[root@server0 /]# chmod o=--- /nsd06
+3）使用户gelin02能进入、查看此目录内容
+[root@server0 /]# gpasswd -a  gelin02  tarena
+4）将gelin01加入tarena组, 将nsd06目录的权限设为rw-r-x---
+      再测试gelin01用户能否进入此目录
+[root@server0 /]# gpasswd -a  gelin01  tarena
+[root@server0 /]# chmod u=rw,g=rx /nsd06
+
+################################################
+实现lisi用户可以读取/etc/shadow文件内容，您有几种办法?
+
+1.修改其他人权限　　
+         chmod  o+r  /etc/shadow
+2.利用所属组
+         chown :lisi /etc/shadow
+         chmod  g+r  /etc/shadow
+3.利用所有者
+         chown  lisi /etc/shadow
+         chmod  u+r  /etc/shadow
+4.利用ACL策略
+　　　　　setfacl -m  u:lisi:r  /etc/shadow
+
+
+###############################################
+附加权限（特殊权限）
+
+Set GID
+• 附加在属组的 x 位上
+– 属组的权限标识会变为 s
+– 适用于目录,Set GID可以使目录下新增的文档自动设
+置与父目录相同的属组
+– 继承所属组身份
+
+[root@server0 ~]# mkdir /nsd09
+[root@server0 ~]# ls -ld /nsd09
+
+[root@server0 ~]# chown :tarena /nsd09
+[root@server0 ~]# ls -ld /nsd09
+[root@server0 ~]# mkdir /nsd09/test01
+[root@server0 ~]# ls -ld /nsd09/test01
+
+[root@server0 ~]# chmod g+s /nsd09/
+[root@server0 ~]# ls -ld /nsd09/
+
+[root@server0 ~]# mkdir /nsd09/test02
+[root@server0 ~]# ls -ld /nsd09/test02
+[root@server0 ~]# mkdir /nsd09/test02/abc
+[root@server0 ~]# ls -ld /nsd09/test02/abc
+################################################
+Set UID
+• 附加在属主的 x 位上
+– 属主的权限标识会变为 s
+– 适用于可执行文件,Set UID可以让使用者具有文件属
+主的身份及部分权限
+
+[root@server0 ~]# cp /usr/bin/mkdir /usr/bin/hahadir
+
+[root@server0 ~]# chmod u+s /usr/bin/hahadir 
+[root@server0 ~]# ls -l /usr/bin/hahadir
+
+[root@server0 ~]# ls -l /usr/bin/mkdir 
+
+[root@server0 ~]# su - dc
+
+[dc@server0 ~]$ /usr/bin/mkdir dc01
+[dc@server0 ~]$ /usr/bin/hahadir dc02
+[dc@server0 ~]$ exit
+        
+###############################################
+Sticky Bit
+• 附加在其他人的 x 位上
+– 其他人的权限标识会变为 t
+– 适用于开放 w 权限的目录,可以阻止用户滥用 w 写入
+权限(禁止操作别人的文档)
+
+]# mkdir /home/public/
+]# chmod ugo=rwx /home/public/ 
+
+]# chmod o+t /home/public/
+
+#############################################
+acl访问控制列表(ACL策略)
+
+acl策略的作用
+• 文档归属的局限性
+– 任何人只属于三种角色:属主、属组、其他人
+– 无法实现更精细的控制
+
+• acl访问策略
+– 能够对个别用户、个别组设置独立的权限
+– 大多数挂载的EXT3/4、XFS文件系统默认已支持
+
+设置acl访问控制策略
+• 使用 getfacl、setfacl 命令
+– getfacl 文档...
+– setfacl  -m u:用户名:权限类别 文档...
+– setfacl  -m g:组名:权限类别 文档...
+– setfacl  -b 文档...               #删除所有ACL策略
+– setfacl  -d u:用户名   文档...      #删除单条指定ACL策略
+
+　　　[-R]：递归设置ACL策略
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
