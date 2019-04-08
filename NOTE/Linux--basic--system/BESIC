@@ -41,15 +41,15 @@ bin       boot      dev      etc     home     root      run      sbin      tmp  
 终端中颜色:
 黑色表示 文件
 蓝色表示目录
-
+绿色:可以执行的文件 
+青色:文件
 
 Linux中表示上一级目录
 cd ..
 相当于Windows中的   后退 返回上一级
 
 如何编写命令行
-绿色:可以执行的文件 
-青色:文件
+
 在Linux中执行命令,都要找到相应的程序,将程序运行
 
 命令的执行依赖于解释器	 比如 /bin/bash
@@ -189,8 +189,13 @@ cp 复制
 
 选中为复制   只在终端下有用  适用于所有的 linux系统 
 滚轮 粘贴
-rth- cmcltl reset classroom
-rth- cmcltl reset server
+rth- vmctl 命令名  虚拟机名
+优先开启 classroom ###why? 提供服务啊 
+rht-vmctl reset classroom   提供网关/dns/软件资源          172.25.0.255 
+rht-vmctl reset server      作为练习服务器                     172.25.0.11   ID ROOT PASSWD redhat
+rht-vmctl reset desktop     作为练习的客户机                  172.25.0.10  ID ROOT PASSWD redhat
+子网划分 节约ipv4 地址
+b类地址 + d 类子网掩码
 ctlr+alt+f2 切换到字符模式
 
 ctlr+alt+f1 回到gui模式
@@ -457,7 +462,7 @@ groupadd 组名
 groupadd [-g] 组名 
 ##################################3
 管理组成员
-gpasswd 
+gpasswd   
 gpasswd -a 用户名 组名 添加
 gpasswd -d 用户名 组名  删除
 
@@ -491,7 +496,7 @@ echo 123 | passwd --stdin nsd03 (--stdin 取消passwd的交互功能##echo 之�
 	用户  :     密码加密字符串                                  : 上次修改密码的时间,从1970-1-1到修改密码的时间的天数: 密码可存在的天数:提前7天警告密码快失效了:用户永远不过期
 修改用户属性 (只能修改已存在)
 usermod 
-选项 
+选项  和 useradd 相同
 -u 修改uid
 -G 修改附属组
 -d 修改家目录
@@ -675,6 +680,7 @@ ifconfig eth0 192.168.1.1 为eth0 设置临时 IP
 修改ip后需要勾选自动连接 启用禁用后(激活配置)
 
 ##########
+配置ip
 一共会学到三个方法来配置 ip 这是第一个  但是nmtui 这个命令是会在安装系统后删除....所以目前常用的命令是 用脚本 来配置  
 
 #########################################################
@@ -716,7 +722,8 @@ tail用法类似
 	MemTotal:       16329888 kB
 grep 查找 
 格式  grep 条件 目标文件
-	属性 -i 忽略大小写 
+	       属性
+		 -i 忽略大小写 
 	     -v 取反查找  关键字之外的都显示
 		-^word 必须以字符串word 开头
 		-word$ 必须以字符串word 结尾
@@ -778,3 +785,139 @@ Windows 读取光盘内容
 	2.命令行查看光驱设备  Linux下通过/dev/cdrom
 	[gaoyuan@jkgao ~]$ ls -l /dev/cdrom
 	lrwxrwxrwx. 1 root root 3 4月   3 10:59 /dev/cdrom -> sr0
+
+
+
+19.4.8 权限和归属
+#####################################  
+远程管理
+ssh root@172.25.0.11
+ssh -Xroot@ip 
+ctrl + shift + t 开启终端
+ctrl + d (退出)关闭终端
+  -X 在远程管理时打开图形化界面 
+root 不受权限管理
+权限和归属
+	 权限分类: 基本权限 附加权限 acl访问控制 
+
+	1.基本权限
+	    基本权限的类别
+	      读取 -r read
+	      写入 -w write
+	      执行 -x execute (能不能运行程序执行)
+	    文本文件: 
+		 r: cat less head tail
+		 w: vim 修改且保存 重定向 >  >>	
+		 x:shell 脚本除外(里面写代码) ######一般linux认为任何文本文件不具有执行权限(也就是说默认没有执行权限)
+	    权限适用对象
+		-所有者:拥有此文件/目录用户 -user  -u
+		-所属组:拥有此文件/目录的组 -group  -g
+		-其他用户:出所有者\所属组之外的用户-other -o
+		dr-xr-x---. 18 root root 4096 4月   8 10:52 /root/
+         	d目录
+		-   rw- r--    r--  . 1           root     root  2005 7月  11 2014 /etc/passwd
+           -文本文件 主组 所属组 其他人 软连接(硬链接) 所有者(属主) 所属组 最后修改时间  文件位置 
+		l快捷方式
+		除第一个外,每三个为一组共分为三组   
+		----------. 1 root root 1148 7月  11 2014 /etc/shadow
+		文件 什么权限都没 但是挡不住root
+		d rwx rwx rwt . 22 root root 4096 4月   8 11:52 /tmp/
+                     t附加权限
+         查看权限
+		ls -ld
+		权限 :所有者>所属组>其他人
+		其他系统的权限是叠加的Linux不是  计算机是顺序执行的,
+	         判断用户 信息
+ 		 id userid
+		 判断文件的权限 
+		 ls -ld /xxxxx
+		 相互比对
+
+	设置基本权限
+		使用chmod 
+		基本权限的改变是立即生效的
+		-chmod 所属组+ - = (重新赋予权限) 权限
+		-R 递归 #################################33Linux中权限默认没有继承 的说法(Windows) 父目录的权限与子目录的权限无关
+		eg:		
+		[root@server0 ~]# chmod -R o=--- /opt/aa
+		[root@server0 ~]# ls -ld /opt/aa
+		drwxr-x---. 3 root root 15 4月   8 14:15 /opt/aa
+		[root@server0 ~]# ls -ld /opt/aa/bb/
+		drwxr-x---. 3 root root 15 4月   8 14:15 /opt/aa/bb/
+
+ 	     eg:
+		[root@server0 ~]# chmod u=rwx,g=r,o=--- /nsd01/
+		[root@server0 ~]# ls -ld /nsd01/ 
+		drwxr-----. 2 root root 6 4月   8 14:04 /nsd01/
+
+		r 权限 能够ls 浏览
+		 x 权限可以使用cd命令的
+		 w 权限可以使用 rm mv cp mkdir touch 等命令(修改文件内容的操作)
+		
+	设置文档归属
+		chown
+		-R 递归修改 属主 属组 
+		chown [-R] 属主 位置
+		chown [-R] 属主:属组 位置
+			
+		归属选项修改 需要注销后生效
+	
+	2.附加权限(特殊权限)
+	        Set GID (常考)
+			 -附加在属组的 X 位上
+			 -属组的权限变为s  #####
+			-chmod   + - = s 
+			-适用于目录,可以使目录下新增(父目录有setgid)的文档(文件和文件夹)(影响未来)自动的设定与父目录相同的属组
+		        -继承所属组身份
+			r-S 表示没有执行权限
+			r-s 表示有执行权限
+		 Sticky Bit (不常用)
+			附加在其他人的 x 位上
+			-其他人的权限表示变为t
+			-适用于开放w 权限的目录,防止用户滥用 w权限 ,限制用户修改其他人文件
+			# mkdir /home/public/
+			# chmod ugo=rwx /home/public/ 
+
+			# chmod o+t /home/public/
+
+		  Set UID (简单的攻击手段,防护用得少) 了解
+			-附加在属主的 X 位上
+			-适用于可执行文件,setuid可以让使用者具有文件属主的身份以及部分权限
+
+			
+	3.acl访问控制表(acl访问策略) 优先于基本权限和附加权限
+		能够对个别用户\个别组设置独立的权限
+	acl 策略的作用
+		文档归属的局限性
+		-任何人只属于三种角色: 属主\属组\其他人
+		-无法实现更精细的控制
+		优点
+		 能够对个别用户、个别组设置独立的权限
+		 大多数挂载的EXT3/4、XFS文件系统默认已支持
+	设置acl访问控制策略
+		查看-getfacl 文档
+		设置-setfacl [-R] -m u:用户名: 权限类别 文档
+		设置-setfacl [-R] -m g:组名: 权限类别 文档
+		    setfacl [-R] -b 文档...               #删除所有ACL策略
+		    setfacl [-R]-m u:用户名   文档...      #删除单条指定ACL策略
+		删除 setfacl  -x :删除指定用户的acl
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
