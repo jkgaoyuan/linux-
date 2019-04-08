@@ -1,0 +1,82 @@
+案例练习,准备:
+            rht-vmctl  reset  classroom
+            rht-vmctl  reset  server
+	    rht-vmctl  reset  desktop
+######################################################
+
+
+案例1：chmod权限设置
+    1）以root用户新建/nsddir/目录，在该目录下新建文件readme.txt
+	[root@server0 ~]# mkdir /nsddir
+	[root@server0 ~]# touch /nsddir/readme.txt
+	[root@server0 ~]# useradd zhangsan
+	[root@server0 ~]# ls -ld /nsddir/
+	drwxr-xr-x. 2 root root 23 4月   8 19:11 /nsddir/
+	[root@server0 ~]# chmod -R o+w /nsddir/ 
+    2）使用户zhangsan能够在/nsddir/目录下创建/删除子目录
+	[zhangsan@server0 root]$ mkdir /nsddir/zhangsan
+	[zhangsan@server0 root]$ rm -rf /nsddir/zhangsan/
+	[zhangsan@server0 root]$ ls /nsddir/
+	readme.txt
+
+    3）使用户zhangsan能够修改/nsddir/readme.txt文件的容
+  	[zhangsan@server0 root]$ echo i am zhangsan1 >  /nsddir/readme.txt
+
+ 
+案例2：chown归属设置
+    1）新建/tarena1目录
+	a）将属主设为gelin01，属组设为tarena组
+	  [root@server0 ~]# chown gelin01:tarena /tarena1/
+	  drwxr-xr-x. 2 gelin01 tarena 6 4月   8 19:45 /tarena1/
+	b）使用户gelin01对此目录具有rwx权限，其他人对此目录无任何权限
+	[root@server0 ~]# chmod o=--- /tarena1/
+	[root@server0 ~]# ls -ld /tarena1/
+	drwxr-x---. 2 gelin01 tarena 6 4月   8 19:45 /tarena1/
+    2）使用户gelin02能进入、查看/tarena1文件夹（提示：将gelin02加入所属组）
+	[root@server0 ~]# useradd gelin02	
+	[root@server0 ~]# gpasswd -a gelin02 tarena
+	
+	[root@server0 ~]# su gelin02
+	[gelin02@server0 root]$ cd /tarena1/
+
+    3）新建/tarena2目录
+	a）将属组设为tarena
+		[root@server0 ~]# mkdir /tarena2
+		[root@server0 ~]# chown :tarena /tarena2/
+
+	b）使tarena组的任何用户都能在此目录下创建、删除文件
+		
+		[root@server0 ~]# ls -ld /tarena2/
+		drwxr-xr-x. 2 root tarena 6 4月   8 19:53 /tarena2/
+		[root@server0 ~]# chmod -R g+w /tarena2/
+
+		
+    4）新建/tarena/public目录
+	a）使任何用户对此目录都有rwx权限
+	[root@server0 ~]# ls -ld /tarena/public/
+	drwxrwxrwx. 2 root root 6 4月   8 19:57 /tarena/public/
+
+	b）拒绝zhangsan进入此目录，对此目录无任何权限（利用ACL策略赋予zhangsan无任何权限）
+	[root@server0 ~]# id zhangsan 
+	uid=1001(zhangsan) gid=1001(zhangsan) 组=1001(zhangsan)
+	[root@server0 ~]# setfacl -m u:zhangsan:--- /tarena/public/
+　　参考：setfacl  -m  u:zhangsan:---  /tarena/public
+　　
+
+案例3:权限设置
+	1、创建文件夹/data/test,设置目录的访问权限，使所有者和所属组具备读写执行的权限；其他人无任何权限。
+		[root@server0 ~]# chmod g=rwx,o=--- /data/test/
+
+	2、递归修改文件夹/data/test的归属使所有者为zhangsan，所属组为tarena。
+		[root@server0 ~]# chown -R zhangsan:tarena /data/test/
+		[root@server0 ~]# ls -ld /data/test/
+
+	3、请实现在test目录下，新建的所有子文件或目录的所属组都会是tarena。
+		
+		[root@server0 ~]# chmod g+s /data/test/
+		[root@server0 ~]# mkdir /data/test/001
+		[root@server0 ~]# ls -ld /data/test/001
+		drwxr-sr-x. 2 root tarena 6 4月   8 20:28 /data/test/001
+	4、为lisi创建ACL访问权限，使得lisi可以查看/etc/shadow文件
+		[root@server0 ~]# setfacl -m u:lisi:r /etc/shadow
+
