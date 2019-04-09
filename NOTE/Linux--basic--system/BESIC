@@ -325,7 +325,7 @@ vim 命令模式下
 dd剪切(可以当删除使用)  用p可以粘贴出来
 yy复制(光标放在行首)  5yy复制五行
 p粘贴 
-
+vim 命令模式进入插入模式 可以按 o 另起新的一行
 
 
 命令模式 	批量操作，复制粘贴    i 进入插入模式 esc 推出 进入命令模式； 按两次 esc 进入 末行模式 wq 退出 q！推出不保存 ！强制执行
@@ -902,22 +902,197 @@ root 不受权限管理
 		    setfacl [-R]-m u:用户名   文档...      #删除单条指定ACL策略
 		删除 setfacl  -x :删除指定用户的acl
 
+################################################################
+(重要)  软件包的安装 分区规划及使用 ntp时间同步 
+
+软件包的安装
+   零散软件包管理
+	1.首先要具备软件的安装包
+	2.构建web服务或ftp服务共享光盘所有内容(之后会学习到)
+	3.讲虚拟机classroom已经构建完成web服务且已经共享光盘内容
+	4.访问测试 
+	访问http://classroom.example.com/
+        包的版本在Linux是有严格的限制的 版本不同肯能 使用不了,会出现不兼容,漏洞等
+	安装符合版本的包
+	5.下载软件包
+	使用wget下载工具
+	-wget 软甲包url地址  #默认下载到当前位置
+	-wget 软甲包url地址 -O /目录
+	提供Ftp功能的软件包(vsftpd)
+	6.安装
+	  适用于单个安装(若依赖关系过多的话请使用yum)
+		rpm -q 软件名 查询该软件是否已经安装
+		rpm -ivh 软件名-版本信息.rpm.. #安装 只有在安装的时候才需要完整的路径和包名
+		rpm -e 软件名                  #卸载
+	#######################################	
+	升级Linux内核(rpm包) 虚拟机中操作
+		显示内核版本 : uname -r
+		[zhangsan@server0 root]$ uname -r
+		3.10.0-123.el7.x86_64
+
+		1.下载新的内核软件包 wget http://classroom.example.com/content/rhel7.0/x86_64/errata/Packages/kernel-3.10.0-123.1.2.el7.x86_64.rpm
+		2.安装新内核包 别按ctrl + c  结束 不然会炸鸡
+			[root@server0 ~]# rpm -ivh kernel-3.10.0-123.1.2.el7.x86_64.rpm 
+			警告：kernel-3.10.0-123.1.2.el7.x86_64.rpm: 头V3 RSA/SHA256 Signature, 密钥 ID fd431d51: NOKEY
+			准备中...                          ################################# [100%]
+			正在升级/安装...
+			1:kernel-3.10.0-123.1.2.el7        ################################# [100%] 
+		3.软件包的依赖关系
+		   错误: 依赖检测失败
+		    可以手动安装: 但不推荐
+   	yum仓库管理(重要,面试常考,推荐使用)
+		 yum(也是服务)配置及其使用(软件包仓库)
+		 作用:为客户端自解决依赖关系安装软件包
+		 (配置前先明白谁是服务端谁是客户端,下面的例子是以classroom为服务端)
+       	         服务端: 虚拟机 classroom  (有众多的软件包,仓库数据文件,构建web/ftp服务)
+		                                  光盘中既具备软件包又具备仓库数据文件 
+							packages/       repodata/
+		
+		 总结:构建web服务/ftp服务,共享光盘内容				
+		 客户端: server 
+		 /etc/yum.repos.d/*.repo
+                 指定服务位置 修改配置文件,错误的配置文件会音响到正确的配置文件
+		
+		[root@server0 ~]# rm -rf /etc/yum.repos.d/* #############删除文件夹下所有文件,不是删除文件夹误删除后自己创建相同文件夹 就好
+		[root@server0 ~]# vim /etc/yum.repos.d/dvd.repo ########给你的配置文件起个名字 不支持中文
+		格式	#### 记忆yum配置文件的关键字 面试常考	
+		[nsd1903] #仓库表示
+		name=rhel7 # 仓库描述信息
+		baseurl=http://classroom.example.com/content/rhel7.0/x86_64/dvd/ #指定服务端
+		enabled=1 #是否启用本文件
+		gpgcheck=0 #不检测签名
+	      [root@server0 ~]# yum repolist  #显示如下信息时表示yum配置完成
+		已加载插件：langpacks
+		nsd03                                                    | 4.1 kB     00:00     
+		(1/2): nsd03/group_gz                                      | 134 kB   00:00     
+		(2/2): nsd03/primary_db                                    | 3.4 MB   00:00     
+		源标识                                源名称                               状态
+		nsd03                                 rhel7                                4,305
+		repolist: 4,305
+
+		[root@server0 ~]# yum -y install httpd
+		已加载插件：langpacks
+		正在解决依赖关系
+		****
+		完毕！ #看到完毕时 表示安装完成
+				
+		yum remove xxx   卸载 #由于依赖关系的存在,可能在卸载某些包的时候会卸载,相当重要的依赖包 (这条命令不要加 -y选项)
+	      yum clear all    清空yum缓存
+总结:   删除/etc/yum.repos.d/*
+	创建 /etc/yum.repos.d/xxx.repo  ##xx表示配置文件的名字
+	配置文件格式:
+	nsd1903] #仓库表示
+		name=rhel7 # 仓库描述信息
+		baseurl=http://classroom.example.com/content/rhel7.0/x86_64/dvd/ #指定服务端
+		enabled=1 #是否启用本文件
+		gpgcheck=0 #不检测签名
+###########################################
+硬盘分区管理
+   	 扇区(硬盘最小的单位)的大小 512字节 
+	  硬盘(块设备)###在虚拟机上操作
+	思路: 识别硬盘=>分区规划=>格式化=>挂载使用
+	      毛坯楼层=>打隔断 => 装修 => 入住
+查看硬盘
+     lsblk来列出系统中所有的硬盘
+	[root@server0 ~]# lsblk
+	NAME   MAJ:MIN RM SIZE RO TYPE MOUNTPOINT
+	vda    252:0    0  10G  0 disk 
+	└─vda1 252:1    0  10G  0 part /
+	vdb    252:16   0  10G  0 disk 
+	vda1表示分区1  vda 虚拟硬盘1  vdb 虚拟硬盘2 
+分区规划
+	分区模式 :mbr古老 gpt 新的模式
+		
+	主引导记录分区模式:mbr
+	mbr/msdos 分区模式
+	1-4个主分区 或者3个主分区+1个扩展分区(n个逻辑分区)
+	扩展分区再划分就是逻辑分区
+	最大支持2.2tb的磁盘	
+	扩展分区不能格式化
+	/dev/sda5 :该设备表示含义
+		第一块scsi借口设备,第五个分区
+		第一块scsi借口设备,第一个逻辑分区
+
+		使用命令fdisk /dev/vba(只支持mbr分区)
+		 n 创建分区
+		 p 选择主分区\扩展分区
+		 起始扇区
+		 结束扇区
+		 w 保存退出
+格式化: 赋予空间文件系统
+	文件系统:数据在空间的存储规则
+	Linux文件系统 RHEL6 ext4 小文件优秀
+			RHEL7 xfs  大文件优秀
+
+	mkfs.ext4 分区设备路径
+	mkfs.ext3 分区设备路径
+	mkfs.xfs  分区设备路径
+	mkfs.vfat 分区设备路径
+      blkid /dev/vdb1 #查看分区类型
+	对于一块磁盘重复格式化时 有时会需要 强制 格式化 
+	eg:
+	[root@server0 ~]# mkfs.ext4 /dev/vdb1
+	mke2fs 1.42.9 (28-Dec-2013)
+	文件系统标签=
+	****
+	[root@server0 ~]# blkid /dev/vdb1
+	/dev/vdb1: UUID="b6fe10fe-9151-4544-a3ac-1328e75ae1ce" TYPE="ext4" 
+	[root@server0 ~]# mkfs.xfs /dev/vdb2
+	[root@server0 ~]# blkid /dev/vdb2
+	/dev/vdb2: UUID="c45e5a63-1d4c-40ca-92ce-294d22d68fb5" TYPE="xfs"
+挂载设备进行使用
+	mkdir /mypart1
+	mount /dev/vdb1 /mypart1 (临时挂载)
+	df -h#查看正在挂载的分区(设备使用情况) -h 显示易读信息
+	
+	[root@server0 ~]# mkdir /mypart1
+	[root@server0 ~]# mount /dev/vdb1 /mypart1/
+	[root@server0 ~]# df -h
+	文件系统        容量  已用  可用 已用% 挂载点
+	/dev/vda1        10G  3.4G  6.7G   34% /
+	devtmpfs        901M     0  901M    0% /dev
+	tmpfs           921M   80K  921M    1% /dev/shm
+	tmpfs           921M   17M  904M    2% /run
+	tmpfs           921M     0  921M    0% /sys/fs/cgroup
+	/dev/vdb1       976M  2.6M  907M    1% /mypart1
+永久挂载(开机自动挂载)
+	修改配置文件 /etc/fstab 
+	配置文件/etc/fstab 的记录格式
+        设别路径     挂载点   类型    参数       备份标记        检测顺序
+	/dev/vdb1 /mypart1 ext4  defaults    0(1备份)      0(1检测,只有root分区写1 自己的就不要写了)          
+	/dev/vdb2 /mypart2 xft   defaults     0           0
+	vim 命令模式进入插入模式 可以按 o 另起新的一行
+	mount -a 自动挂载
+	检测开机自动挂载配置文件格式是否正确
+	检测/etc/fstab 中书写完成,但当前没有挂载的设备 进行挂载 
+综合分区
+	扩展分区 一路回车就好
+	若你在扩展分区是设定 大小,那么 在建立逻辑分区时 只有设定的大小可以分配
+	若在分区完成后系统没有识别分区 使用partprobe(刷新系分区) 强制系统识别分区
+	注意:系统对与扩展分区的容量显示是不正确的,这不是bug
 
 
+总结:
+ 1. 识别硬盘 lsblk
+ 2. 分区划分 fdisk 
+ 3. 刷新分区表 partprobe
+ 4.进行格式化 mkfs.ext4 mkfs.xft  blkid #查询分区信息
+ 5. mount -a 测试挂载  df -h 显示挂载点
+ 6. 永久挂载 修改配置文件/etc/fstab 
+
+DN域名DC域控制器
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+补充:   LDAP (红帽认证考试考点)服务器 (面试大可能会问到)
+	使用LDAP认证,实现网络用户认证,达到用户的集中管理(记住这句话)
+	网络用户:用户信息会放在网络中的LDAP服务器
+	本地用户:用户信息会放在/etc/passwd
+	客户端:classroom
+	1. 安装sssd软件,与ldap服务器 通信       
+	 yum install -y sssd 
+	   rpm -q sssd
+        2.安装authuconfig-gtk图形工具
+	
+本地识别的用户不全是在/etc/oasswd ,也有可能在 ldap中
 
 
