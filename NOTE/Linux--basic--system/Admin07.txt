@@ -1,0 +1,420 @@
+教学环境介绍
+
+– 格式:rht-vmctl 控制指令 虚拟机名
+
+reset(还原)
+
+真机上操作：
+　]# rht-vmctl reset classroom　 //先重置资源服务器
+　]# rht-vmctl reset server
+　]# rht-vmctl reset desktop　　 //再重置练习虚拟机
+
+虚拟机server
+  1.利用root用户进入系统，密码为redhat
+  2.查看系统版本:RHEL 7.0
+  3.查看主机名:server0.example.com
+  4.查看虚拟机eth0的IP地址:172.25.0.11   
+
+虚拟机desktop
+   1.利用root用户进入系统，密码为redhat
+　2.查看系统版本:RHEL 7.0
+　3.查看主机名:desktop0.example.com
+　4.查看虚拟机eth0的IP地址:172.25.0.10
+
+##################################################
+一 添加硬盘
+1.虚拟机server进行关机
+[root@server0 ~]# poweroff 
+Connection to 172.25.0.11 closed by remote host.
+Connection to 172.25.0.11 closed.
+[student@room9pc01 ~]$ 
+
+2.远程管理虚拟机server
+[student@room9pc01 ~]$ ssh -X  root@172.25.0.11
+[root@server0 ~]# lsblk
+
+二 分区规划
+  划分可以使用的5个分区,每个分区10G
+[root@server0 ~]# fdisk  /dev/vdc
+   p 查看分区表
+   n 创建主分区----->回车----->回车---->回车----->在last结束时 +10G
+         ....... 连续划分3个主分区
+   p 查看分区表
+   n 创建扩展分区 
+          ----->回车---->起始回车----->结束回车   将所有空间给扩展分区
+   p 查看分区表
+   n 创建逻辑分区----->起始回车------>结束+10G
+   n 创建逻辑分区----->起始回车------>结束+10G
+   p 查看分区表
+   w 保存并退出
+[root@server0 ~]# lsblk 
+
+
+LVM逻辑卷
+       作用: 整合分散的空间   大小可以动态扩大
+
+   1.零散空闲存储 (物理卷PV)
+   2.整合的虚拟磁盘 (卷组VG)
+   3.虚拟的分区 (逻辑卷LV)
+
+   将众多的物理卷(PV),组建成卷组(VG),再从卷组中划分逻辑卷(LV)
+
+####################################################
+逻辑卷的制作
+successfully(成功)                 
+1.创建卷组名为systemvg
+    格式: vgcreate 卷组名   设备路径........
+
+[root@server0 ~]# vgcreate systemvg /dev/vdc[1-2]
+ 
+[root@server0 ~]# pvs   #查看物理卷信息
+[root@server0 ~]# vgs   #查看卷组信息
+
+2.创建逻辑卷
+    格式: lvcreate -n 逻辑卷名字   -L 逻辑卷大小   卷组名
+
+[root@server0 ~]# lvcreate -n vo -L 16G systemvg 
+  Logical volume "vo" created
+
+[root@server0 ~]# lvs  #查看当前系统中,所有逻辑卷信息
+                                          
+[root@server0 ~]# vgs  #查看当前系统中,所有卷组信息
+###################################################
+逻辑卷的使用                                                    
+1.查看逻辑卷设备文件
+[root@server0 ~]# ls /dev/systemvg/vo 
+[root@server0 ~]# ls -l /dev/systemvg/vo
+[root@server0 ~]# ls /dev/dm-0
+
+2.格式化文件系统,进行挂载
+[root@server0 ~]# mkfs.xfs /dev/systemvg/vo 
+[root@server0 ~]# blkid /dev/systemvg/vo
+
+[root@server0 ~]# vim /etc/fstab 
+ /dev/systemvg/vo  /mylv  xfs defaults 0 0
+[root@server0 ~]# mount -a
+[root@server0 ~]# df -h
+
+##################################################
+逻辑卷的扩展
+一 卷组有足够的剩余空间
+1.扩展空间的大小
+[root@server0 ~]# vgs
+[root@server0 ~]# lvextend -L 18G /dev/systemvg/vo 
+[root@server0 ~]# lvs
+
+2.扩展文件系统的大小
+      扩展ext4: resize2fs 
+      扩展xfs: xfs_growfs 
+[root@server0 ~]# xfs_growfs /dev/systemvg/vo
+[root@server0 ~]# df -h
+
+二 卷组没有足够的剩余空间
+1.扩展卷组的空间
+[root@server0 ~]# vgextend systemvg /dev/vdc3
+[root@server0 ~]# vgs
+
+2.扩展逻辑卷空间的大小
+[root@server0 ~]# vgs
+[root@server0 ~]# lvextend -L 25G /dev/systemvg/vo 
+[root@server0 ~]# lvs
+
+2.扩展逻辑卷文件系统的大小
+[root@server0 ~]# xfs_growfs /dev/systemvg/vo
+[root@server0 ~]# df -h
+
+###################################################
+了解: 逻辑卷可以扩展,也可以缩小
+
+###################################################
+卷组划分空间的单位:PE 
+
+   默认1PE为4M大小
+[root@server0 ~]# vgdisplay systemvg   #显示卷组详细信息
+
+  PE Size               4.00 MiB
+
+ 请划分一个250M的逻辑卷,命名为lvtest01
+[root@server0 ~]# vgchange -s 1M systemvg  #修改PE的大小
+[root@server0 ~]# vgdisplay systemvg
+
+[root@server0 ~]# lvcreate -n lvtest01 -L 250M systemvg 
+[root@server0 ~]# lvs
+
+• 创建卷组的时候设置PE大小
+– vgcreate -s PE大小 卷组名 空闲分区...
+
+• 创建逻辑卷的时候指定PE个数
+– lvcreate -l PE个数  -n 逻辑卷名 卷组名
+
+################################################
+逻辑卷的删除
+ lvremove   vgremove   pvremove
+
+  优先删除逻辑卷,再去删除卷组,最后删除物理卷
+
+[root@server0 ~]# lvremove /dev/systemvg/vo 
+  Logical volume systemvg/vo contains a filesystem in use.
+[root@server0 ~]# umount /mylv/
+[root@server0 ~]# lvremove /dev/systemvg/vo 
+Do you really want to remove active logical volume vo? [y/n]: y
+  Logical volume "vo" successfully removed
+[root@server0 ~]# lvs
+
+  删除卷组,需要首先删除,基于此卷组创建的所有逻辑卷
+   命令格式:vgremove  卷组名
+####################################################
+find高级使用
+
+查找文件
+• 根据预设的条件递归查找对应的文件
+– find [目录] [条件1] [-a|-o] [条件2] ...
+
+– 常用条件表示:
+  -type 类型(l快捷方式、d目录、f文本文件)
+  -name "文档名称"
+  -size +|-文件大小(k、M、G)
+  -user 用户名
+  -mtime 根据文件修改时间
+
+############################################
+  -type 类型(l快捷方式、d目录、f文本文件)
+
+[root@server0 ~]# find /boot/ -type l
+[root@server0 ~]# ls /boot/grub/menu.lst 
+[root@server0 ~]# ls -l /boot/grub/menu.lst
+
+[root@server0 ~]# find /boot/ -type d
+[root@server0 ~]# find /boot/ -type f
+
+[root@server0 ~]# find /root -type d
+[root@server0 ~]# find /root -type f
+
+[root@server0 ~]# man find   #权威帮助信息
+
+################################################
+-name '文档名称'
+
+[root@server0 ~]# find /etc/ -name 'passwd'
+[root@server0 ~]# find /etc/ -name 'passwd*'
+[root@server0 ~]# find /etc/ -name '*passwd*'
+
+[root@server0 ~]# mkdir /root/nsd01
+[root@server0 ~]# mkdir /root/nsd1903
+[root@server0 ~]# touch /root/nsd01.txt
+[root@server0 ~]# find /root/ -name 'nsd*'
+
+[root@server0 ~]# find /root/ -name 'nsd*'  -type f
+[root@server0 ~]# find /root/ -name 'nsd*'  -type d
+
+####################################################
+  -size +|-文件大小(k、M、G)       百度 EB单位
+
+[root@server0 ~]# find /boot/ -size +10M
+[root@server0 ~]# find /boot/ -size +300k
+
+  -user 用户名
+[root@server0 ~]# find /  -user  student
+[root@server0 ~]# ls -ld /home/student
+
+[root@server0 ~]# find /  -user  student -type f
+
+###################################################
+ -mtime 根据文件修改时间
+  所有的时间都是过去时间
+
+ -mtime +10  #十天之前创建或修改的数据
+
+ -mtime -10  #最近十天之内创建或修改的数据
+
+ -mtime +90  #三个月之前创建或修改的数据
+
+[root@server0 ~]# find /var/log/ -mtime +90
+[root@server0 ~]# find /var/log/ -mtime +1000
+
+[root@server0 ~]# ls -l /var/log/yum.log 
+[root@server0 ~]# date    #查看当前系统时间
+##################################################
+find扩展使用
+• 使用find命令的 -exec 操作
+– find .. .. -exec 处理命令 {} \;
+– 优势:以 {} 代替每一个find的查找结果,逐个处理,遇 \; 结束
+
+]# find /boot/ -name 'vm*'
+]# find /boot/ -name 'vm*' -exec  cp  {}  /opt  \;
+]# ls /opt/
+
+]# find /boot/ -size +10M
+]# find /boot/ -size +10M  -exec  cp  {}  /opt  \;
+]# ls /opt/
+
+###################################################
+案例4:查找并处理文件
+• 使用find命令完成以下任务
+– 请创建目录/root/findfiles/ 
+– 找出所有 用户 student 拥有的文件
+– 把它们拷贝到 /root/findfiles/ 文件夹中
+
+]# mkdir /root/findfiles
+
+]# find /  -user student -type f   -exec cp  {} /root/findfiles/  \;
+
+]# ls -A /root/findfiles/
+
+#################################################
+查看当前系统时间:date
+修改时间: date  -s  '年-月-日    时:分:秒'
+
+[root@server0 ~]# date
+[root@server0 ~]# date -s '2008-10-1  10:12:02'
+
+[root@server0 ~]# date
+[root@server0 ~]# date -s '2019-4-10 15:43'
+[root@server0 ~]# date
+
+################################################
+NTP时间同步
+
+NTP网络时间协议
+• Network Time Protocol
+– NTP服务器为客户机提供标准时间
+– NTP客户机需要与NTP服务器保持沟通
+
+NTP服务器:虚拟机classroom
+
+NTP客户机:虚拟机server
+1.安装chrony软件包
+[root@server0 ~]# yum -y install chrony
+    
+软件包 chrony-1.29.1-1.el7.x86_64 已安装并且是最新版本
+无须任何处理
+
+[root@server0 ~]# rpm -q chrony
+chrony-1.29.1-1.el7.x86_64
+
+2.修改配置文件/etc/chrony.conf
+[root@server0 ~]# vim  /etc/chrony.conf
+  以#开头的行,为注释行
+ #server 0.rhel.pool.ntp.org iburst
+ #server 1.rhel.pool.ntp.org iburst
+ #server 2.rhel.pool.ntp.org iburst
+ server classroom.example.com iburst
+
+3.重启服务(程序)
+[root@server0 ~]# systemctl restart chronyd
+[root@server0 ~]# systemctl enable chronyd  #开机自启
+
+  daemon
+    英 [ˈdi:mən] 美 ['di:mən]
+    守护神;（希腊神话中）半人半神的精灵;[计]守护进程(程序)
+
+4.验证
+[root@server0 ~]# date -s '2008-10-1'
+2008年 10月 01日 星期三 00:00:00 CST
+[root@server0 ~]# date
+
+[root@server0 ~]# systemctl restart chronyd
+[root@server0 ~]# date
+[root@server0 ~]# date
+[root@server0 ~]# date
+[root@server0 ~]# date
+
+#################################################
+cron计划任务
+
+cron任务概述
+• 用途:按照设置的时间间隔为用户反复执行某一项固
+定的系统任务
+
+• 软件包:cronie、crontabs
+• 系统服务:crond
+• 日志文件:/var/log/crond
+
+如何编写crontab任务记录
+• 配置格式可参考 /etc/crontab 文件
+   分   时   日   月   周     任务命令行(绝对路径)
+
+   *    *     *     *    *      #每分钟都执行一次
+   30    8    *     *    *     #每天早晨八点半 执行一次
+
+   0     21   *     *    1-5   #周一至周五 晚上的九点正
+
+   0     21   *     *    1,3,5,7    #周一 周三 周五 周日 晚上的九点正
+
+   1     8    1      *     1       #周一与每月一号都会执行
+
+   0     */2   *     *    *      #每隔2个小时执行一次
+
+
+	 *:匹配范围内任意时间
+	,:分隔多个不连续的时间点
+	-:指定连续时间范围
+	/n:指定时间频率,每n ...
+
+
+	执行周期 配置说明
+	   分钟 从0到59之间的整数
+	   小时 从0到23之间的整数
+	   日期 从1到31之间的整数
+	   月份 从1到12之间的整数
+	   星期 0~7之间的整数,0或7代表星期日
+
+管理计划任务策略
+• 使用 crontab 命令
+– 编辑:crontab -e [-u 用户名]
+– 查看:crontab -l [-u 用户名]
+– 清除:crontab -r [-u 用户名]
+
+ 每分钟记录当前系统的时间,写入到/opt/time.txt
+[root@server0 ~]# date
+
+[root@server0 ~]# date >>  /opt/time.txt
+[root@server0 ~]# cat /opt/time.txt
+
+[root@server0 ~]# crontab -e -u root
+* * * * *  date >> /opt/time.txt
+
+[root@server0 ~]# crontab -l -u root
+
+[root@server0 ~]# ls /var/spool/cron/
+[root@server0 ~]# cat /var/spool/cron/root #生成的任务文件
+
+[root@server0 ~]# cat /opt/time.txt 
+
+###############################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
