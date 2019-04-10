@@ -1,0 +1,234 @@
+案例练习,准备:
+            rht-vmctl  reset  classroom
+            rht-vmctl  reset  server
+	        rht-vmctl  reset  desktop
+######################################################
+
+案例1:为虚拟机 server 配置以下永久的静态地址参数
+– 主机名:server0.example.com
+– IP地址:172.25.0.132
+– 子网掩码:255.255.255.0
+rht-vmctl reset calssroom
+ifconfig eth0 172.25.0.132 255.255.255.0 
+hosname server0.example.com
+使用 nmntui 永久
+ manual 手动
+案例2：复制、粘贴、移动
+ 以root用户新建/example/目录，在此目录下新建nsd.txt文件，并进一步完成下列操作
+
+ 1）将“I love Study”写入到文件nsd.txt 
+	[root@server0 ~]# echo 'i love study' > /example/nsd.txt
+	[root@server0 ~]# cat /example/nsd.txt 
+	i love study
+
+ 2）将nsd.txt重命名为mylove.txt
+	[root@server0 ~]# mv /example/nsd.txt /example/mylove.txt
+	[root@server0 ~]# ls /example/
+	mylove.txt
+ 3）将/etc/passwd、/boot、/etc/group同时拷贝到/example/目录下
+	[root@server0 ~]# cp -r /etc/passwd /boot /etc/group /example/ 
+	cp：是否覆盖"/example/passwd"？ yes
+	cp：是否覆盖"/example/group"？ yes
+	[root@server0 ~]# ls /example/
+	boot  group  mylove.txt  passwd
+	[root@server0 ~]# ls /example/boot/
+	config-3.10.0-123.el7.x86_64
+	grub
+	grub2
+	initramfs-0-rescue-946cb0e817ea4adb916183df8c4fc817.img
+	initramfs-3.10.0-123.el7.x86_64.img
+	initrd-plymouth.img
+	symvers-3.10.0-123.el7.x86_64.gz
+	System.map-3.10.0-123.el7.x86_64
+	vmlinuz-0-rescue-946cb0e817ea4adb916183df8c4fc817
+	vmlinuz-3.10.0-123.el7.x86_64
+
+ 4）将ifconfig命令的前两行内容，追加写入mylove.txt
+	[root@server0 ~]# ifconfig |head -2 >> /example/mylove.txt 
+	[root@server0 ~]# cat /example/mylove.txt 
+	i love study
+	eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+		inet 172.25.0.11  netmask 255.255.255.0  broadcast 172.25.0.255
+
+ 5）将/etc/passwd拷贝到/example/中
+	[root@server0 ~]# cp /etc/passwd /example/
+
+ 6）将DNS永久配置文件/etc/resolv.conf，拷贝到/example/目录下
+	[root@server0 ~]# cp /etc/resolv.conf /example/
+
+
+ 7）将开机自动挂载配置文件，拷贝到/example/目录下
+	[root@server0 ~]# cp /etc/fstab /example/
+
+
+案例3:在server上操作,（MBR分区模式）规划分区
+ 添加一块80G的硬盘并规划分区：
+   划分2个10G的主分区；1个12G的主分区;1个20G的逻辑分区。
+	[root@server0 ~]# fdisk /dev/vdc 
+欢迎使用 fdisk (util-linux 2.23.2)。
+
+更改将停留在内存中，直到您决定将更改写入磁盘。
+使用写入命令前请三思。
+
+Device does not contain a recognized partition table
+使用磁盘标识符 0x20a50d42 创建新的 DOS 磁盘标签。
+
+命令(输入 m 获取帮助)：n
+Partition type:
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended
+Select (default p): 
+Using default response p
+分区号 (1-4，默认 1)：
+起始 扇区 (2048-167772159，默认为 2048)：
+将使用默认值 2048
+Last 扇区, +扇区 or +size{K,M,G} (2048-167772159，默认为 167772159)：+10G
+分区 1 已设置为 Linux 类型，大小设为 10 GiB
+*****
+命令(输入 m 获取帮助)：N   
+Partition type:
+   p   primary (2 primary, 0 extended, 2 free)
+   e   extended
+Select (default p): 
+Using default response p
+分区号 (3,4，默认 3)：
+起始 扇区 (41945088-167772159，默认为 41945088)：
+将使用默认值 41945088
+Last 扇区, +扇区 or +size{K,M,G} (41945088-167772159，默认为 167772159)：+12G
+分区 3 已设置为 Linux 类型，大小设为 12 GiB
+******
+ 命令(输入 m 获取帮助)：N
+Partition type:
+   p   primary (3 primary, 0 extended, 1 free)
+   e   extended
+Select (default e): E
+已选择分区 4
+起始 扇区 (67110912-167772159，默认为 67110912)：
+将使用默认值 67110912
+Last 扇区, +扇区 or +size{K,M,G} (67110912-167772159，默认为 167772159)：
+将使用默认值 167772159
+分区 4 已设置为 Extended 类型，大小设为 48 GiB
+ *****
+ 命令(输入 m 获取帮助)：N
+All primary partitions are in use
+添加逻辑分区 5
+起始 扇区 (67112960-167772159，默认为 67112960)：
+将使用默认值 67112960
+Last 扇区, +扇区 or +size{K,M,G} (67112960-167772159，默认为 167772159)：+20G
+分区 5 已设置为 Linux 类型，大小设为 20 GiB
+
+
+   
+
+案例4:在server上操作,分区使用
+
+1、案例3中新添加80G硬盘的第一个逻辑分区
+– 格式化成xfs文件系统，实现该分区开机自动挂载，挂载点为/mnt/xfs
+	[root@server0 ~]# mkfs.xfs /dev/vdc5 
+	[root@server0 ~]# mkdir /mnt/xfs
+	[root@server0 ~]# mount /dev/vdc5 /mnt/xfs/
+	[root@server0 ~]# df -h
+	文件系统        容量  已用  可用 已用% 挂载点
+	/dev/vda1        10G  3.1G  7.0G   31% /
+	devtmpfs        906M     0  906M    0% /dev
+	tmpfs           921M   80K  921M    1% /dev/shm
+	tmpfs           921M   17M  904M    2% /run
+	tmpfs           921M     0  921M    0% /sys/fs/cgroup
+	/dev/vdc5        20G   33M   20G    1% /mnt/xfs
+
+2、案例3中新添加80G硬盘的第一个主分区
+– 完成开机自动挂载，挂载点/mnt/mypart,文件系统为ext4
+[root@server0 ~]# mkfs.ext4 /dev/vdc1
+[root@server0 ~]# mkdir /mnt/mypart
+[root@server0 ~]# mkdir /mnt/mypart
+[root@server0 ~]# vim /etc/fstab 
+/dev/vdc1 /mnt/mypart ext4 defaults 0 0
+
+[root@server0 ~]# mount -a
+[root@server0 ~]# df -h
+文件系统        容量  已用  可用 已用% 挂载点
+/dev/vda1        10G  3.1G  7.0G   31% /
+devtmpfs        906M     0  906M    0% /dev
+tmpfs           921M   80K  921M    1% /dev/shm
+tmpfs           921M   17M  904M    2% /run
+tmpfs           921M     0  921M    0% /sys/fs/cgroup
+/dev/vdc5        20G   33M   20G    1% /mnt/xfs
+/dev/vdc1        20G   45M   19G    1% /mnt/mypart
+
+
+案例5:指定yum软件源
+为 虚拟机server0 指定可用的 yum 软件源
+– YUM软件库的地址为 http://classroom.example.com/content/rhel7.0/x86_64/dvd
+– 将此配置为虚拟机 server0 的默认软件仓库
+– 确认可用的仓库列表
+– 利用yum仓库安装system-config-kickstart 
+– 利用yum仓库安装xeyes
+– 运行xeyes命令查看效果
+[root@server0 ~]# rm -rf /etc/yum.repos.d/*
+[root@server0 ~]# vim /etc/yum.repos.d/dvd.repo
+[reth]
+nmae=server
+baseurl=http://classroom.example.com/content/rhel7.0/x86_64/dvd
+enabled=1
+gpgcheck=0
+
+[root@server0 ~]# vim /etc/yum.repos.d/dvd.repo
+[root@server0 ~]# yum repolist 
+已加载插件：langpacks
+源 'reth' 在配置文件中未指定名字，使用标识代替
+reth                                         | 4.1 kB     00:00     
+(1/2): reth/group_gz                           | 134 kB   00:00     
+(2/2): reth/primary_db                         | 3.4 MB   00:00     
+源标识                          源名称                         状态
+reth                            reth                           4,305
+repolist: 4,305
+[root@server0 ~]# yum -y install system-config-kickstart
+[root@server0 ~]# yum -y install xeyes
+出来了一个眼睛 随鼠标移动
+
+案例6: vim文本编辑器练习，命令模式下的基本操作（重点知识）
+
+ 1）将/etc/passwd的前20行，写入到文件/opt/pass20.txt .	
+	[root@server0 ~]# head -20 /etc/passwd > /opt/pass20.txt
+	[root@server0 ~]# cat /opt/pass20.txt
+
+ 2）将/etc/shadow的前10行,追加写入到文件/opt/pass20.txt 
+	[root@server0 ~]# head -10 /etc/shadow >> /opt/pass20.txt
+
+ 2）利用/opt/pass20.txt，进项如下操作：
+    – 命令模式下移动光标：键盘上下左右键、Home键、End键
+	 home 回到行首 end 回到行尾
+    – 命令模式下行间跳转：到全文的第一行（1G或gg）、到全文的最后一行（G）、到全文的第10行（10G）
+    
+    – 命令模式下复制、粘贴：
+    	 复制1行（yy）、复制3行（3yy）
+    	 粘贴到当前行之后（小写p）
+
+    – 命令模式下删除：
+    	 删除单个字符（x）
+    	 删除到行首（d^）、删除到行尾（d$）
+    	 删除1行（dd）、删除3行（3dd）
+         
+    
+    – 命令模式下查找关键词： 
+    	 搜索（/word）切换结果（n、N）
+
+    – 补充：在命令模式下大写的C，可以删除光标之后，并且进入输入模式
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

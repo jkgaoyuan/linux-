@@ -1,0 +1,326 @@
+教学环境介绍
+
+– 格式:rht-vmctl 控制指令 虚拟机名
+
+reset(还原)
+
+真机上操作：
+　]# rht-vmctl reset classroom　 //先重置资源服务器
+　]# rht-vmctl reset server
+　]# rht-vmctl reset desktop　　 //再重置练习虚拟机
+
+
+
+
+
+虚拟机server
+  1.利用root用户进入系统，密码为redhat
+  2.查看系统版本:RHEL 7.0
+  3.查看主机名:server0.example.com
+  4.查看虚拟机eth0的IP地址:172.25.0.11   
+
+虚拟机desktop
+   1.利用root用户进入系统，密码为redhat
+　2.查看系统版本:RHEL 7.0
+　3.查看主机名:desktop0.example.com
+　4.查看虚拟机eth0的IP地址:172.25.0.10
+
+##################################################
+软件包管理
+
+零散软件管理
+1.首先需要具备软件的安装包
+2.构建Web服务或FTP服务，共享光盘所有内容
+　　　Web服务:提供网页内容的服务
+
+3.将虚拟机classroom已经构建完成Web服务，已经共享光盘所有内容4.真机浏览器，访问测试
+　　　	 classroom.example.com
+
+          content/rhel7.0/x86_64/dvd/Packages/
+5.下载软件包
+
+• 使用wget下载工具
+– wget 软件包的URL网址　　＃默认下载到当前目录下
+
+– wget 软件包的URL网址 　-O(大写) 　/目录路径/新文件名
+
+提供FTP功能的软件包(vsftpd)
+
+当前页面查找:vsftpd
+
+[root@server0 ~]# wget  http://classroom.example.com/content/rhel7.0/x86_64/dvd/Packages/vsftpd-3.0.2-9.el7.x86_64.rpm
+
+[root@server0 ~]# ls
+
+• RPM Package Manager,RPM包管理器
+– rpm -q 软件名             　　　   #查询该软件是否已经安装
+– rpm -ivh 软件名-版本信息.rpm...　　#安装软件包
+– rpm -e 软件名...
+
+[root@server0 ~]# rpm -q firefox    
+firefox-24.5.0-1.el7.x86_64
+[root@server0 ~]# rpm -q haha
+未安装软件包 haha 
+[root@server0 ~]# rpm -q bash
+bash-4.2.45-5.el7.x86_64
+[root@server0 ~]# rpm -q hostname
+
+[root@server0 ~]# rpm -q zip
+
+[root@server0 ~]# rpm -q httpd
+
+]# rpm -ivh /root/vsftpd-3.0.2-9.el7.x86_64.rpm 
+
+]# rpm -q vsftpd　　　#查询是否安装成功
+
+]# rpm -e vsftpd　　　　#卸载软件
+]# rpm -q vsftpd　　　#查询是否卸载成功
+#################################################
+了解:导入新的红帽签名
+]# wget http://classroom.example.com/content/rhel7.0/x86_64/dvd/RPM-GPG-KEY-redhat-release
+
+]# rpm --import /root/RPM-GPG-KEY-redhat-release 
+]# rpm -q vsftpd
+
+]# rpm -ivh /root/vsftpd-3.0.2-9.el7.x86_64.rpm 
+
+########################################
+升级Linux内核
+
+1.下载新的内核软件包
+]# wget http://classroom.example.com/content/rhel7.0/x86_64/errata/Packages/kernel-3.10.0-123.1.2.el7.x86_64.rpm
+
+]# ls
+ 
+2.安装新的内核软件包
+[root@server0 qw~]# uname -r  #查看内核版本
+
+]# rpm -ivh /root/kernel-3.10.0-123.1.2.el7.x86_64.rpm 
+
+[root@server0 ~]# uname -r
+[root@server0 ~]# reboot 
+
+[student@room9pc01 ~]$ ssh -X root@172.25.0.11
+[root@server0 ~]# uname -r
+3.10.0-123.1.2.el7.x86_64
+[root@server0 ~]# 
+################################################
+安装软件包常见提示:
+1.软件包已经安装
+]# rpm -ivh /root/vsftpd-3.0.2-9.el7.x86_64.rpm 
+准备中...                                            ################################# [100%]
+	软件包 vsftpd-3.0.2-9.el7.x86_64 已经安装
+
+[root@server0 ~]# LANG=en　　　　＃讲当前系统语言修改英文
+]# rpm -ivh /root/vsftpd-3.0.2-9.el7.x86_64.rpm 
+Preparing...                                         ################################# [100%]
+	package vsftpd-3.0.2-9.el7.x86_64 is already installed
+[root@server0 ~]#
+ 
+2.软件包的依赖关系
+]# rpm -ivh /root/bind-chroot-9.9.4-14.el7.x86_64.rpm 
+错误：依赖检测失败：
+	bind = 32:9.9.4-14.el7 被 bind-chroot-32:9.9.4-14.el7.x86_64 需要
+
+################################################
+Yum软件包管理
+　　自动解决软件包的依赖关系
+
+Yum配置及使用(Yum软件包仓库)
+
+服务：为客户端自动解决依赖关系安装软件包
+
+服务端：虚拟机classroom　
+　　　1.众多的软件包　　2.仓库数据文件　　３.构建web或ftp服务
+              　光盘中既具备软件包，又具备仓库数据文件
+　　　　　　　软件包	Packages
+　　　　　　　仓库数据文件　repodata
+　　　总结：构建web或ftp服务，共享光盘所有内容
+
+客户端：指定服务端位置
+　　客户端配置文件:/etc/yum.repos.d/*.repo
+        　错误的客户端配置文件，会影响正确的客户端配置文件  
+　　　[] name  baseurl  enabled  gpgcheck      
+
+[root@server0 ~]# rm -rf /etc/yum.repos.d/*
+[root@server0 ~]# vim /etc/yum.repos.d/dvd.repo
+[nsd1903]　　　　　　　＃仓库标识　　
+name=rhel7　　　　　　＃仓库描述信息
+baseurl=http://classroom.example.com/content/rhel7.0/x86_64/dvd　　　　　　　＃指定服务端在哪里
+enabled=1　　　　　　　＃启用本文件
+gpgcheck=0　　　　　　　＃不检测软件包的签名
+
+[root@server0 ~]# yum repolist   #列出仓库信息
+ 
+源标识              源名称            状态
+nsd1903             rhel7             4,305
+repolist: 4,305
+[root@server0 ~]# 
+
+Yum的使用:
+[root@server0 ~]# yum -y install httpd
+[root@server0 ~]# rpm -q httpd
+httpd-2.4.6-17.el7.x86_64
+
+]# yum -y install sssd
+]# yum -y install gcc
+]# yum -y install bind-chroot
+]# yum -y install vsftpd
+]# yum -y install system-config-kickstart 
+
+
+[root@server0 ~]# yum 　remove　 gcc　  #卸载
+
+
+[root@server0 ~]# yum clean all　　＃清空缓存
+
+################################################
+分区规划及使用
+ 
+  扇区大小默认为512字节
+
+硬盘（块设备）分区管理
+
+一块硬盘的“艺术”之旅
+• 识别硬盘 => 分区规划 => 格式化 => 挂载使用
+　毛坯楼层 => 打隔断 => 装修 => 入驻
+
+一 识别硬盘
+[root@server0 ~]# lsblk 　　　　＃显示当前系统中硬盘
+　NAME    　SIZE 　　TYPE 
+　vda     　10G 　　 disk 
+　└─vda1   10G  　part 
+　vdb    　 10G  　　disk 
+
+二 分区规划
+     
+     分区模式：MBR 主引导记录分区模式
+　　• MBR/msdos 分区模式
+　　– 1~4个主分区　或者　3个主分区+1个扩展分区(n个逻辑分区)
+　　– 最大支持容量为 2.2TB 的磁盘
+　　– 扩展分区不能格式化
+　　
+　　/dev/sda5：该设备标识的含义
+　　　　　　　　第一块SCSI接口的设备，第五个分区
+　　　　　　　　第一块SCSI接口的设备，第一个逻辑分区
+
+
+[root@server0 ~]# fdisk  /dev/vdb 
+  n 创建新的分区----->回车----->回车---->回车----->在last结束时 +1G
+  p 查看分区表
+  n 创建新的分区----->回车----->回车---->回车----->在last结束时 +2G
+  d 删除分区
+  w 保存并退出    
+
+[root@server0 ~]# lsblk
+[root@server0 ~]# ls  /dev/vdb[1-2]
+
+三　格式化:赋予空间文件系统
+　　文件系统：数据在空间存储的规则
+
+　　Windows: FAT  NTFS
+    Linux:
+         RHEL6:ext4
+         RHEL7:xfs
+
+• mkfs 工具集
+– mkfs.ext3 分区设备路径
+– mkfs.ext4 分区设备路径
+– mkfs.xfs 分区设备路径
+– mkfs.vfat -F 32 分区设备路径
+
+[root@server0 ~]# mkfs.ext4 /dev/vdb1　＃格式化文件系统
+[root@server0 ~]# blkid /dev/vdb1   #查看文件系统类型
+
+[root@server0 ~]# mkfs.xfs /dev/vdb2　＃格式化文件系统
+[root@server0 ~]# blkid /dev/vdb2　　#查看文件系统类型
+
+四　挂载设备进行使用                            
+[root@server0 ~]# mkdir /mypart1
+[root@server0 ~]# mount /dev/vdb1 /mypart1
+[root@server0 ~]# df -h　　　#显示正在挂载设备的使用情况
+
+[root@server0 ~]# mount /dev/vdb2 /mypart2
+mount: 挂载点 /mypart2 不存在
+
+[root@server0 ~]# mkdir /mypart2
+[root@server0 ~]# mount /dev/vdb2 /mypart2
+[root@server0 ~]# df -h　　　#显示正在挂载设备的使用情况
+###################################################
+五　永久挂载（开机自动挂载）
+实现开机自动挂载
+• 配置文件 /etc/fstab 的记录格式
+   设备路径    挂载点         类型       参数      备份标记     检测顺序
+
+vim命令模式　按o另起新的一行 进入插入模式
+
+[root@server0 ~]# vim /etc/fstab
+ /dev/vdb1 /mypart1  ext4  defaults 0 0
+ /dev/vdb2 /mypart2  xfs  defaults 0 0
+
+[root@server0 ~]# umount /mypart1  　#保证当前没有挂载
+[root@server0 ~]# umount /mypart2　　#保证当前没有挂载
+
+[root@server0 ~]# df -h
+[root@server0 ~]# mount -a
+   检测/etc/fstab开机自动挂载配置文件,格式是否正确
+   检测/etc/fstab中,书写完成,但当前没有挂载的设备,进行挂载 
+[root@server0 ~]# df -h
+###################################################
+综合分区，/dev/vdb继续分区
+最终有3个主分区，分别为1G、2G、2G
+   创建扩展分区 --->  两个逻辑分区，分别为1G、1G
+[root@server0 ~]# fdisk  /dev/vdb
+   p 查看分区表
+   n 创建主分区----->回车----->回车---->回车----->在last结束时 +2G
+   p 查看分区表
+   n 创建扩展分区 
+          ----->回车---->起始回车----->结束回车   将所有空间给扩展分区
+   p 查看分区表
+   n 创建逻辑分区----->起始回车------>结束+1G
+   n 创建逻辑分区----->起始回车------>结束+1G
+   p 查看分区表
+   w 保存并退出
+[root@server0 ~]# partprobe   #刷新分区表
+[root@server0 ~]# lsblk 
+#####################################################
+总结：
+1.识别硬盘　lsblk
+2.分区规划    fdisk
+3.刷新分区表　　partprobe
+4.进行格式化　　mkfs.xfs  mkfs.ext4   blkid
+5.挂载使用　mount  /etc/fstab开机自动挂载   mount -a  df -h
+####################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
