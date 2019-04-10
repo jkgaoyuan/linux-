@@ -163,14 +163,45 @@ vsftpd-3.0.2-9.el7.x86_64
 	  Logical volume "database" created
 
 – 在 datastore 卷组中其PE的大小为1M
+    [root@server0 ~]# vgchange -s 1M datestore
+  Volume group "datestore" successfully changed
+    [root@server0 ~]# vgdisplay datestore ##查询 pe
+      --- Volume group ---
+      VG Name               datestore
+      System ID
+      Format                lvm2
+      Metadata Areas        1
+      Metadata Sequence No  3
+      VG Access             read/write
+      VG Status             resizable
+      MAX LV                0
+      Cur LV                1
+      Open LV               0
+      Max PV                0
+      Cur PV                1
+      Act PV                1
+      VG Size               10.00 GiB
+      PE Size               1.00 MiB
+      Total PE              10236
+      Alloc PE / Size       200 / 200.00 MiB
+      Free  PE / Size       10036 / 9.80 GiB
+      VG UUID               a3rL3Y-YCrx-xjvk-rGPX-WKiO-fMQT-bggoeD
 
 – 使用 EXT4 文件系统对逻辑卷 database 格式化，此逻辑卷应该在开机时自动挂载到 /mnt/database 目录
- 
+    resize2fs /dev/datestore/datebase
+    vim /etc/fstab
+       /dev/datestore/datebase /mont/datebase ext4 defualts 0 0
 
 案例8:虚拟机 server0操作，扩展逻辑卷
 
 – 将/dev/systemvg/vo逻辑卷的大小扩展到20G
+[root@server0 ~]# vgcreate systemvg /dev/vdb1
 
+[root@server0 ~]# lvcreate -n vo -L 4G systemvg
+[root@server0 ~]# mkfs.xfs /dev/systemvg/vo
+[root@server0 ~]# mount /dev/systemvg/vo /opt/datebase/
+[root@server0 ~]# lvextend -L 9G /dev/systemvg/vo
+[root@server0 ~]# resize2fs /dev/systemvg/vo
 
 
 

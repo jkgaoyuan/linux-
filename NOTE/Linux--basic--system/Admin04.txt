@@ -45,7 +45,7 @@
 ##############################################
 重定向输出操作：将前面命令的输出，写入到后面文本文件中
 　　>：覆盖重定向
-　　＞>：追加重定向
+　 >>：追加重定向
 [root@nsd1903 ~]# ls --help
 [root@nsd1903 ~]# ls --help > /opt/ls.txt
 [root@nsd1903 ~]# less  /opt/ls.txt
@@ -100,7 +100,7 @@
 添加用户
 用户基本信息存放在 /etc/passwd 文件（系统级配置文件）
 
-　root:x:0:0:root:/root:/bin/bash
+　root:x:0:0:/root:/root:bin/bash
 用户名:密码占位符:UID:基本组的GID:用户描述信息:家目录:解释器
 
 • 使用 useradd 命令

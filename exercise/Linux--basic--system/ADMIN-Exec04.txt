@@ -101,7 +101,7 @@ usr/sbin/
 	[root@jkgao gaoyuan]# mkdir -p /opt/home03/
 	[root@jkgao gaoyuan]# useradd -d /opt/home03/ nsd03
 	[root@jkgao gaoyuan]# grep nsd03 /etc/passwd
-	nsd03:x:1700:1004::/home/nsd03:/sbin/nologin
+	nsd03:x:1700:1004::/home/nsd03:/sbin/nologingrep
 
     2£©ÉèÖÃnsd03ÃÜÂëÎªredhat
 	[root@jkgao gaoyuan]# echo redhat | passwd --stdin nsd03
