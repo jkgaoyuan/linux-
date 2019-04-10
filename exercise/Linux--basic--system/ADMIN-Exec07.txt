@@ -1,0 +1,178 @@
+案例练习,准备:
+            rht-vmctl  reset  classroom
+            rht-vmctl  reset  server
+	    rht-vmctl  reset  desktop
+######################################################
+
+
+
+案例1:指定yum软件源
+为 server0 指定可用的 yum 软件源
+– YUM软件库的地址为 http://classroom.example.com/content/rhel7.0/x86_64/dvd
+– 将此配置为虚拟机 server0 的默认软件仓库
+rm - rf /etc/yum.repos.d/*
+vim /etc/yum.repos.d/dvd.repo
+[1903]
+baseuel=
+enbaled=1
+gpgcheck=0
+– 确认可用的仓库列表
+yum repolist
+– 利用yum仓库安装httpd与vsftpd
+[root@server0 ~]# yum -y install httpd
+[root@server0 ~]# yum -y install vsftpd
+
+– 利用rpm命令检测是否安装成功
+[root@server0 ~]# rpm -q httpd
+httpd-2.4.6-17.el7.x86_64
+[root@server0 ~]# rpm -q vsftpd
+vsftpd-3.0.2-9.el7.x86_64
+
+案例2：虚拟机Server上操作
+  1. 新建目录结构/nsd1903/test
+	[root@server0 ~]# mkdir -p /nsd1903/test
+	
+
+  2. 在目录/nsd1903/test创建文件1903.txt并写入内容 NSD  Student
+	[root@server0 ~]# touch 1903.txt /nsd1903/test/
+	[root@server0 ~]# echo 'NSD Student'> /nsd1903/test/1903.txt
+  3. 将/nsd1903/test/1903.txt文件复制到/root目录下，同时 改名为 tedu.txt
+	[root@server0 ~]# cp /nsd1903/test/1903.txt /tedu.txt
+
+  4. 将/etc/passwd 、/etc/resolv.conf、/etc/hosts 同时拷贝到/nsd1903/test/目录下
+	[root@server0 ~]# cp -r /etc/passwd /etc/resolv.conf /etc/hosts /nsd1903/test/
+
+  5. 将文件 /nsd1903/test/hosts 重改名为 hs.txt 
+	[root@server0 ~]# mv /nsd1903/test/hosts /nsd1903/test/hs.txt
+
+  6. 创建目录结构/boot/kernel
+	[root@server0 ~]# mkdir /boot/kernel
+
+  7. 将目录 /boot内容中以 vm 开头的 复制到/boot/kernel目录下 
+	[root@server0 ~]# find /boot/ -name 'vm*' -exec cp {} /boot/kernel/ \;
+
+
+
+案例5:虚拟机 server0上操作，查找并处理文件
+ – 创建目录/root/findfiles/
+	[root@server0 ~]# mkdir /root/findfiles
+
+ – 利用find查找所有用户 student 拥有的必须是文件,把它们拷贝到 /root/findfiles/ 文件夹中
+	  [root@server0 ~]# find / -user student -type f -exec cp {} /root/findfiles/ \;
+
+– 利用find查找/boot目录下大于10M并且必须是文件，拷贝到/opt
+	[root@server0 ~]# find /boot/ -size +10M -type f -exec cp {} /opt/ \;
+
+ – 利用find查找/boot/ 目录下以 vm 开头且必须是文件，拷贝到/opt
+	[root@server0 ~]# find /boot/ -name 'vm*' -type f -exec cp {} /opt/ \;
+
+ – 利用find查找/boot/ 目录下为快捷方式
+	[root@server0 ~]# find /boot/ -type l
+ – 利用find查找/etc 目录下，以 tab 作为结尾的 必须是文件
+	^x 开头
+       x$ x 结尾   
+	^$ 匹配空行
+	[root@server0 ~]# find /etc/ -type f -name 'tab$'
+
+
+案例6:虚拟机 server0上操作,查找并提取文件内容
+    1.在文件 /usr/share/dict/words 中查找到所有包含字符串 seismic 的行,将输出信息,写入到/opt/nsd18.txt
+	[root@server0 ~]# grep seismic /usr/share/dict/words > /opt/nsd18.txt
+
+    2.查看内核版本，将显示结果重定向到/root/version.txt
+	[root@server0 ~]# uname -r > /root/version.txt
+
+    3.查看红帽系统版本，将显示结果追加到/root/version.txt
+	[root@server0 ~]# cat /etc/redhat-release >> /root/version.txt
+    4.查看主机名将显示结果追加到/root/version.txt
+	[root@server0 ~]# hostname >> /root/version.txt 
+    5.将/etc/fstab文件中以UUID开头的信息，写入到/root/fstab.txt
+	[root@server0 ~]# grep ^UUID /etc/fstab > /root/fstab.txt
+    6.提取/etc/passwd以bash结尾的行，将其信息写入/opt/pass.txt
+	[root@server0 ~]# grep bash$ /etc/passwd > /opt/pass.txt
+    7.复制/etc/login.defs文件到当前目录下，改名为init.txt
+	[root@server0 ~]# cp /etc/login.defs  init.txt
+
+    8.提取init.txt文件里的有效配置（去除以#号开头，去除空行），保存为init2.txt
+	[root@server0 ~]# grep -v ^# /root/init.txt | grep -v ^$  > init2.txt
+案例7:在server上操作,（MBR分区模式）规划分区
+ 添加一块60G的硬盘并规划分区：
+   划分2个10G的主分区；1个12G的主分区;1个10G的逻辑分区。
+   
+ lsblk	
+ fdisk	
+
+
+
+案例6:虚拟机 server0操作，构建 LVM 存储
+1
+– 新建一个名为 systemvg 的卷组 
+	
+– 在此卷组中创建一个名为 vo 的逻辑卷，大小为8G 
+– 将逻辑卷 vo 格式化为 xfs 文件系统 
+– 将逻辑卷 vo 挂载到 /vo 目录，并在此目录下建立一个测试文件 votest.txt，内容为“I AM KING.” 
+– 实现逻辑卷vo开机自动挂载到/vo
+
+	[root@server0 ~]# vgcreate systemvg /dev/vdc1 ###########创建卷组
+	  Physical volume "/dev/vdc1" successfully created
+	  Volume group "systemvg" successfully created
+	[root@server0 ~]# pvs
+	  PV         VG       Fmt  Attr PSize  PFree 
+	  /dev/vdc1  systemvg lvm2 a--  10.00g 10.00g
+	[root@server0 ~]# pvs^C
+	[root@server0 ~]# lvcreate -n vo -L 8G systemvg ##创建逻辑卷
+	  Logical volume "vo" created
+	[root@server0 ~]# lvs
+	  LV   VG       Attr       LSize Pool Origin Data%  Move Log Cpy%Sync Convert
+	  vo   systemvg -wi-a----- 8.00g                                             
+	[root@server0 ~]# mkfs.xfs /dev/systemvg/vo #格式化
+	meta-data=/dev/systemvg/vo       isize=256    agcount=4, agsize=524288 blks
+		 =                       sectsz=512   attr=2, projid32bit=1
+		 =                       crc=0
+	data     =                       bsize=4096   blocks=2097152, imaxpct=25
+		 =                       sunit=0      swidth=0 blks
+	naming   =version 2              bsize=4096   ascii-ci=0 ftype=0
+	log      =internal log           bsize=4096   blocks=2560, version=2
+		 =                       sectsz=512   sunit=0 blks, lazy-count=1
+	realtime =none                   extsz=4096   blocks=0, rtextents=0
+	[root@server0 ~]# df -h
+	文件系统        容量  已用  可用 已用% 挂载点
+	/dev/vda1        10G  3.1G  7.0G   31% /
+	devtmpfs        906M     0  906M    0% /dev
+	tmpfs           921M   80K  921M    1% /dev/shm
+	tmpfs           921M   17M  904M    2% /run
+	tmpfs           921M     0  921M    0% /sys/fs/cgroup
+	[root@server0 ~]# mkdir /vo #创建挂载点
+	[root@server0 ~]# mount /dev/systemvg/vo /vo/ #挂载
+	[root@server0 ~]# ehco 'i am king' > /vo/votest.txt
+	bash: ehco: 未找到命令...
+	相似命令是： 'echo'
+	[root@server0 ~]# echo 'i am king' > /vo/votest.txt
+	[root@server0 ~]# cat /vo/votest.txt
+	i am king
+	[root@server0 ~]# vim /etc/fstab 
+[root@server0 ~]# mount -a
+
+
+案例7:虚拟机 server0操作，构建 LVM 存储(修改PE大小)
+– 新的逻辑卷命名为 database，其大小为50个PE的大小，属于 datastore 卷组 
+	[root@server0 ~]# vgcreate datestore /dev/vdc2
+	  Physical volume "/dev/vdc2" successfully created
+	  Volume group "datestore" successfully created
+	[root@server0 ~]# lvcreate -n database -l 50 datestore
+	  Logical volume "database" created
+
+– 在 datastore 卷组中其PE的大小为1M
+
+– 使用 EXT4 文件系统对逻辑卷 database 格式化，此逻辑卷应该在开机时自动挂载到 /mnt/database 目录
+ 
+
+案例8:虚拟机 server0操作，扩展逻辑卷
+
+– 将/dev/systemvg/vo逻辑卷的大小扩展到20G
+
+
+
+
+
+
