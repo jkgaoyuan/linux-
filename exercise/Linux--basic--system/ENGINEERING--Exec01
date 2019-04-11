@@ -1,0 +1,44 @@
+wget http://classroom/pub/materials/userlist
+#################使用文件 userlist 和 batchuser 脚本创建  list中用户  解释器为/bin/false
+[root@server0 ~]# vim /root/batchusrs.sh
+[root@server0 ~]# chmod +x /root/batchusrs.sh
+#!/bin/bash
+if [ $# -eq 0 ] ; then ###目录不为空(判断参数为空 ，为空则执行) $# 统计变量的个数
+        echo 'usage:/root/batchusrs'
+        exit
+elif [ ! -f $1  ] ; then  #####判断参数  ’不是文件 ‘ ，为真则执行 ###-f 是命令 test 的选项  -d 也是 ###$1 输入的
+第一个变量
+     echo 'INTEROUT FILE NOT FIND'
+     exit
+else
+   for name in $(cat $1) ###$(命令 )将命令的结果当作变量
+        do
+        useradd -s /bin/false $name
+        done
+fi
+
+######判断参数  不是文件
+ [  ! –f  "$1"  ]
+#############  判断目录 为空
+ [ $# -eq 0 ]
+
+################################################
+创建 /root/foo.sh
+1) 当运行/root/foo.sh redhat ,输出 fedora
+2）当运行/root/foo.sh fedora ,输出 redhat
+3）当没有任何参数或者参数错误 输出 /root/foo.sh redhat | fedora
+ [root@server0 ~]# vim /root/foo.sh
+ #!/bin/bash
+if [ $1 =  "redhat"  ] ;then
+echo fedora
+elif [ $1 = "fedora"  ] ;then
+echo redhat
+elif [ $# -eq 0 ] ;then
+ echo '/root/foo.sh redhat |fedora'
+ exit
+else
+ echo '/root/foo.sh redhat |fedora'
+ exit
+[root@server0 ~]# chmod +x /root/foo.sh
+[root@server0 ~]# /root/foo.sh redhat
+fedora
