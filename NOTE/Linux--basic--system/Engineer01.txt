@@ -1,0 +1,471 @@
+教学环境介绍
+
+– 格式:rht-vmctl 控制指令 虚拟机名
+
+reset(还原)
+
+真机上操作：
+　]# rht-vmctl reset classroom　 //先重置资源服务器
+　]# rht-vmctl reset server
+　]# rht-vmctl reset desktop　　 //再重置练习虚拟机
+##################################################
+Shell脚本基础
+
+     脚本:一个可以执行的文件,运行可以实现某种功能
+
+    创建用户zhangsan ------->  useradd zhangsan
+   
+1. 编写一个面世问候 /root/hello.sh 脚本
+– 显示出一段话 “Hello World”
+[root@server0 ~]# vim  /root/hello.sh
+echo Hello World
+
+[root@server0 ~]# chmod +x /root/hello.sh  #赋予执行权限
+[root@server0 ~]# /root/hello.sh   #以绝对路径运行
+ 
+规范Shell脚本的一般组成
+• #! 环境声明,以下代码由那个程序进行运行
+• # 注释文本
+• 可执行代码
+
+
+
+2. 编写一个能输出系统信息的 /root/sysinfo 脚本
+1)输出当前红帽系统的版本信息
+2)输出当前使用的内核版本
+3)输出当前系统的主机名
+
+[root@server0 ~]# vim /root/sysinfo
+ #!/bin/bash
+ cat /etc/redhat-release
+ uname -r
+ hostname
+ ifconfig | head -2
+
+[root@server0 ~]# chmod +x /root/sysinfo
+[root@server0 ~]# /root/sysinfo
+
+################################################
+重定向输出
+      >:只收集前面命令的正确输出
+     2>:只收集前面命令的错误输出
+     &>:收集前面命令的所有输出
+[root@server0 ~]# echo 123 > /opt/1.txt
+[root@server0 ~]# cat /opt/1.txt
+[root@server0 ~]# cat /a
+[root@server0 ~]# cat /opt/1.txt  /a
+
+[root@server0 ~]# cat /opt/1.txt  /a   > /opt/b.txt
+[root@server0 ~]# cat /opt/b.txt
+
+[root@server0 ~]# cat /opt/1.txt  /a   2> /opt/b.txt 
+[root@server0 ~]# cat /opt/b.txt
+
+[root@server0 ~]# cat /opt/1.txt  /a  &> /opt/b.txt 
+[root@server0 ~]# cat /opt/b.txt
+
+##################################################
+补充:
+    单引号 '  ' :屏蔽所有的特殊符号,原样输出
+
+  [root@server0 ~]# echo  ' * ? | . .. &  '
+
+   $( ) 或 反撇号 ` `:将命令输出结果,直接参与下一次运行
+
+[root@server0 opt]# cd /opt/
+[root@server0 opt]# mkdir $(hostname)
+
+[root@server0 opt]# date +%F
+[root@server0 opt]# mkdir mydir-$(date +%F)
+
+#################################################
+ 案例:书写一个创建用户,设置密码的脚本user.sh  
+     /dev/null:黑洞设备	  
+
+[root@server0 /]# vim /root/user.sh
+ #!/bin/bash
+ useradd nsd04 &> /dev/null
+ echo 用户nsd04创建成功
+ echo 123 | passwd --stdin  nsd04 &> /dev/null
+ echo 用户nsd04密码设置成功
+
+[root@server0 /]# chmod +x /root/user.sh
+[root@server0 /]# /root/user.sh
+
+  为了让脚本适应多变的环境与多种不同需求,所以使用变量
+
+   变量:会变化的量      容器=存放可以变化的量
+
+    以不变的名称,存放可以变化的值
+    变量名=存放的值
+
+• 以不变的名称存放的可能会变化的值         
+ – 变量名=变量值
+ – 方便以固定名称重复使用某个值
+ – 提高对任务需求、运行环境变化的适应能力
+
+[root@server0 /]# cat /root/user.sh 
+ #!/bin/bash
+ a=nsd07                     #定义变量a,储存值nsd07
+ useradd  $a &> /dev/null
+ echo  用户$a创建成功
+ echo  123  |  passwd --stdin  $a  &>  /dev/null
+ echo  用户$a密码设置成功
+
+
+定义/赋值变量
+• 设置变量时的注意事项
+– 等号两边不要有空格
+– 变量名只能由字母/数字/下划线组成,区分大小写
+– 变量名不能以数字开头,不要使用关键字和特殊字符
+– 若指定的变量名已存在,相当于为此变量重新赋值
+
+查看/引用变量
+– 引用变量值:$变量名
+– 查看变量值:echo $变量名、echo ${变量名}
+[root@server0 /]# a=redhat
+[root@server0 /]# echo $a
+[root@server0 /]# echo $a7
+[root@server0 /]# echo ${a}7
+
+变量的种类
+
+环境变量:变量名为大写,变量的值有系统定义完成
+
+   USER=存储当前登录系统的用户
+[root@server0 /]# echo $USER
+root
+[root@server0 /]# su - student
+[student@server0 ~]$ echo $USER
+student
+[student@server0 ~]$ exit
+logout
+[root@server0 /]# 
+
+位置变量
+• 在执行脚本时提供的命令行参数
+– 表示为 $n,n为序号
+– $1、$2、.. .. ${10}、${11}、.. ..
+
+[root@server0 /]# vim /root/1.sh 
+#!/bin/bash
+echo $1
+echo $2
+[root@server0 /]# chmod +x /root/1.sh
+[root@server0 /]# /root/1.sh dc tc
+
+[root@server0 /]#  vim /root/user.sh
+#!/bin/bash
+#a=nsd07
+useradd $1 &> /dev/null
+echo 用户$1创建成功
+echo 123 | passwd --stdin  $1 &> /dev/null
+echo 用户$1密码设置成功
+[root@server0 /]#  /root/user.sh dc
+
+
+[root@server0 /]# vim /root/cat.sh
+ #!/bin/bash
+ cat -n  $1  |  head -$2
+
+[root@server0 /]# chmod +x /root/cat.sh
+[root@server0 /]# /root/cat.sh /etc/passwd   3
+[root@server0 /]# /root/cat.sh /etc/shadow   2
+
+  降低脚本的使用难度,可以产生交互
+   read  -p '屏幕提示信息'
+
+         1.直接产生交互
+         2.记录用户在键盘上的输入内容
+         3.将 用户在键盘上的输入内容,赋值给一个变量储存
+
+[root@server0 /]# cat /root/user.sh 
+#!/bin/bash
+read -p '请输入您要创建的用户名:'   a
+read -p '请输入您要设置的密码:'   b
+useradd $a &> /dev/null
+echo 用户$a创建成功
+echo $b | passwd --stdin  $a &> /dev/null
+echo 用户$a密码设置成功
+[root@server0 /]# 
+
+
+
+预定义变量
+• 用来保存脚本程序的执行信息
+– 直接使用这些变量
+– 不能直接为这些变量赋值
+
+   $# 已加载的位置变量的个数
+   $? 程序退出后的状态值,0表示正常,其他值异常
+
+[root@server0 /]# vim /root/1.sh 
+ #!/bin/bash
+ echo $1
+ echo $2
+ echo $#
+
+[root@server0 /]# /root/1.sh  haha  xixi 
+[root@server0 /]# /root/1.sh  haha  xixi dc tc
+[root@server0 /]# /root/1.sh  
+
+##################################################
+条件测试
+
+     [   测试表达式   ]
+
+
+常用的测试选项
+• 检查文件状态
+  -e:文档存在为真
+  -d:文档存在,且必须为目录才为真
+  -f:文档存在,且必须为文件才为真
+[root@server0 /]# [  -e   /etc/passwd  ]
+[root@server0 /]# echo $?
+
+[root@server0 /]# [  -d   /etc/passwd  ]
+[root@server0 /]# echo $?
+
+[root@server0 /]# [  -d   /etc/  ]
+[root@server0 /]# echo $?
+
+[root@server0 /]# [  -f   /etc/fstab  ]
+[root@server0 /]# echo $?
+
+
+• 比较整数大小
+   -gt:大于
+   -ge:大于等于
+   -eq:等于
+   -ne:不等于
+   -lt:小于
+   -le:小于等于
+[root@server0 /]# [  1  -eq  1  ]
+[root@server0 /]# echo $?
+0
+[root@server0 /]# [  1  -gt  1  ]
+[root@server0 /]# echo $?
+1
+[root@server0 /]# [  1  -ge  1  ]
+[root@server0 /]# echo $?
+0
+
+• 字符串比对 
+     ==: 两个字符串一样为真
+     !=: 两个字符串不一样为真
+[root@server0 /]# [  haha  !=  student ]
+[root@server0 /]# echo $?
+0
+[root@server0 /]# [ haha  ==  haha  ]
+[root@server0 /]# echo $?
+0
+[root@server0 /]# [ $USER  == root  ]
+[root@server0 /]# echo $?
+0
+##################################################
+if选择结构
+
+双分支
+	if  [条件测试];then
+	  命令序列xx
+	else
+	  命令序列yy
+	fi
+
+[root@server0 /]# vim /root/if01.sh 
+ #!/bin/bash
+ if  [  $1  -eq  1  ];then
+   echo hello
+ else
+   echo hi
+ fi
+[root@server0 /]# /root/if01.sh  1
+[root@server0 /]# /root/if01.sh  2
+
+[root@server0 /]# vim /root/if02.sh   
+ #!/bin/bash
+ if [ $# -eq 0  ];then
+   echo 您没有输入参数
+ else
+   echo 您一共输入了 $# 个参数
+ fi
+
+[root@server0 /]# /root/if02.sh dc tc
+ 您一共输入了2个参数
+[root@server0 /]# /root/if02.sh 
+ 您没有输入参数
+
+##################################################
+if多分支处理
+
+	if  [条件测试1];then
+	  命令序列xx
+	elif  [条件测试2];then
+	  命令序列yy
+
+	else
+	  命令序列zz
+	fi
+
+案例:
+   利用read 读入用户输入的成绩
+   如果用户输入的成绩大于等于90,则输出 优秀
+   如果用户输入的成绩大于等于80,则输出 良好
+   如果用户输入的成绩大于等于70,则输出 一般
+   如果用户输入的成绩大于等于60,则输出 合格
+   如果以上条件均不满足,则输出 '再牛的肖邦,也弹不出哥的悲伤'
+
+[root@server0 /]# vim  /root/if03.sh
+ #!/bin/bash
+ read  -p  '请输入您的成绩:'    num
+ if  [ $num -ge 90 ];then
+    echo 优秀
+ elif [ $num -ge 80 ];then
+    echo 良好
+ elif [ $num -ge 70 ];then
+    echo 一般
+ elif [ $num -ge 60 ];then
+    echo 合格
+ else
+    echo '再牛的肖邦,也弹不出哥的悲伤'
+ fi 
+[root@server0 /]# 
+
+###################################################
+案例:书写一个判断用户的脚本
+   利用位置变量$1,进行判断:
+     如果用户存在,输出用户基本信息(id 用户)
+     如果用户不存在,则创建该用户,输出用户创建成功
+   
+[root@server0 /]# vim  /root/if04.sh 
+ #!/bin/bash
+ id $1 &> /dev/null
+ if  [ $? -eq 0 ];then
+  echo 用户已存在
+  id $1
+ else
+  useradd $1
+  echo 用户创建成功
+ fi
+
+
+案例:
+   利用read 读入用户输入的IP地址
+     如果本机能够ping通该IP地址,则输出 可以通信        
+     如果本机不能够ping通该IP地址,则输出 不可以通信
+    ping  -c选项:指定ping几个包结束
+[root@server0 /]# vim  /root/if05.sh
+ #!/bin/bash
+ read -p  '请输入您要测试的IP地址:'   ip
+ ping -c 2  $ip &> /dev/null
+ if  [ $? -eq 0 ];then
+   echo $ip可以通信
+ else
+   echo $ip不可以通信
+ fi
+
+##################################################
+
+for循环结构:解决反复执行重复性的操作
+
+
+	for  变量名  in 值列表
+	do
+	    命令序列
+	done
+
+[root@server0 /]# vim /root/for01.sh
+ #!/bin/bash
+ for  a  in  lisi  zhangsan  wangwu  dc  tc
+ do
+  useradd $a  &> /dev/null
+  echo  $a创建成功
+ done
+[root@server0 /]# 
+
+  值的列表可以不参与循环体
+[root@server0 /]# cat /root/for01.sh
+ #!/bin/bash
+ for a  in  {1..10}
+ do
+  echo I LOVE DC
+ done
+
+  造数工具:  {起始..结束}    {3..27} = 制造连续的数字 3到27
+
+[root@server0 /]# cat /root/for02.sh
+ #!/bin/bash
+ for  a  in  {1..10}
+ do
+  useradd nsd$a  &> /dev/null
+  echo nsd$a创建成功
+ done
+
+####################################################
+案例4:编写一个判断脚本
+在 server0 上创建 /root/foo.sh 脚本
+1)当运行/root/foo.sh redhat,输出为fedora
+2)当运行/root/foo.sh fedora,输出为redhat
+3)当没有任何参数或者参数不是 redhat 或者fedora时,
+其错误输出产生以下信息: /root/foo.sh redhat|fedora
+
+####################################################
+
+案例5:编写一个批量添加用户脚本
+在 server0 上创建 /root/batchusers 脚本
+1)此脚本要求提供用户名列表文件作为参数
+2)如果没有提供参数,此脚本应该给出提示
+ Usage: /root/batchusers,退出并返回相应值
+3)如果提供一个不存在的文件,此脚本应该给出提
+示 Input file not found,退出并返回相应值
+4)新用户的登录Shell为 /bin/false,无需设置密码
+5)用户列表测试文件:
+http://classroom/pub/materials/userlist
+###################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
