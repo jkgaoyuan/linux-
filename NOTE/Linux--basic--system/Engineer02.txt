@@ -1,0 +1,357 @@
+教学环境介绍
+
+– 格式:rht-vmctl 控制指令 虚拟机名
+
+reset(还原)
+
+真机上操作：
+　]# rht-vmctl reset classroom　 //先重置资源服务器
+　]# rht-vmctl reset server
+　]# rht-vmctl reset desktop　　 //再重置练习虚拟机
+
+####################################################
+案例4:编写一个判断脚本
+在 server0 上创建 /root/foo.sh 脚本
+1)当运行/root/foo.sh redhat,输出为fedora
+2)当运行/root/foo.sh fedora,输出为redhat
+3)当没有任何参数或者参数不是 redhat 或者fedora时,
+   其错误输出产生以下信息: /root/foo.sh redhat|fedora
+
+[root@server0 ~]# vim /root/foo.sh    
+ #!/bin/bash
+ if [ $# -eq 0 ];then
+  echo '/root/foo.sh redhat|fedora' >&2 #输出变成错误输出
+  exit 38     #程序退出返回值
+ elif [ $1 == redhat ];then
+  echo fedora
+ elif [ $1 == fedora ];then
+  echo redhat 
+ else
+  echo '/root/foo.sh redhat|fedora' >&2 #输出变成错误输出
+  exit 39     #程序退出返回值
+ fi
+ 
+[root@server0 ~]# /root/foo.sh tc  
+[root@server0 ~]# echo  $?
+
+
+####################################################
+
+案例5:编写一个批量添加用户脚本
+在 server0 上创建 /root/batchusers 脚本
+1)此脚本要求提供用户名列表文件作为参数
+2)如果没有提供参数,此脚本应该给出提示
+  Usage: /root/batchusers,退出并返回相应值
+3)如果提供一个不存在的文件,此脚本应该给出提
+示 Input file not found,退出并返回相应值
+4)新用户的登录Shell为 /bin/false,无需设置密码
+5)用户列表测试文件:
+[root@server0 ~]# vim /root/userlist 
+duanwu
+zhongqiu
+zhsan
+[root@server0 ~]# vim /root/batchusers
+#!/bin/bash
+if  [ $# -eq 0 ];then               #判断用户是否输入参数
+ echo 'Usage: /root/batchusers' >&2
+ exit 2
+elif  [ -f $1 ];then      #判断用户输入参数,是否存在且为文件
+ for a  in  $(cat  $1)
+ do
+  useradd  -s /bin/false $a  &> /dev/null
+  echo  $a创建成功
+ done
+else
+ echo  'Input file not found' >&2
+ exit  3
+fi
+[root@server0 ~]# /root/batchusers  /root/userlist
+
+###################################################
+系统安全保护,SELinux安全机制
+• Security-Enhanced Linux
+– 美国NSA国家安全局主导开发,一套增强Linux系统安
+全的强制访问控制体系
+– 集成到Linux内核(2.6及以上)中运行
+– RHEL7基于SELinux体系针对用户、进程、目录和文件
+提供了预设的保护策略,以及管理工具
+
+• SELinux的运行模式
+– enforcing(强制)、permissive(宽松)
+– disabled(彻底禁用)
+
+ 任何模式变成disabled(彻底禁用)模式,必须修改配置文件重启系统
+
+• 切换运行模式
+– 临时切换:setenforce 1|0
+– 固定配置:/etc/selinux/config 文件
+虚拟机server
+[root@server0 ~]# getenforce     #查看当前SELinux状态
+[root@server0 ~]# setenforce 0   #修改当前SELinux状态
+[root@server0 ~]# getenforce 
+[root@server0 ~]# vim /etc/selinux/config  #永久配置文件
+   命令模式按大写的C,可以删除光标之后进入插入模式
+ SELINUX=permissive
+   
+虚拟机desktop
+[root@desktop0 ~]# getenforce 
+[root@desktop0 ~]# setenforce 0
+[root@desktop0 ~]# getenforce 
+[root@desktop0 ~]# vim /etc/selinux/config 
+ SELINUX=permissive
+###################################################
+配置用户环境
+
+• 影响指定用户的 bash 解释环境
+– ~/.bashrc,每次开启 bash 终端时生效
+
+• 影响所有用户的 bash 解释环境
+– /etc/bashrc,每次开启 bash 终端时生效
+
+[root@server0 ~]# vim /root/.bashrc 
+alias hello='echo hello'
+[root@server0 ~]# vim /home/student/.bashrc
+alias hi='echo hi'
+[root@server0 ~]# vim /etc/bashrc 
+alias tcc='echo dcc'
+开启一个新的终端,再去测试(退出远程管理,在从新进行远程管理)
+[root@server0 ~]# hello
+[root@server0 ~]# hi       #执行失败
+[root@server0 ~]# tcc
+
+[root@server0 ~]# su - student
+[student@server0 ~]$ hello     #执行失败
+[student@server0 ~]$ hi
+[student@server0 ~]$ tcc
+[student@server0 ~]$ exit
+
+
+
+
+真机上的操作:定义别名
+[student@room9pc01 ~]$ vim /home/student/.bashrc 
+   alias  gos='ssh -X root@172.25.0.11'
+   alias  god='ssh -X root@172.25.0.10'
+
+真机上新开一个终端,进行验证
+
+##################################################
+防火墙策略管理
+
+一  虚拟机server搭建基本Web服务
+
+Web服务:提供一个页面内容的服务
+
+1.安装httpd软件包
+[root@server0 ~]# yum -y install httpd
+[root@server0 ~]# rpm -q httpd
+
+2.重启httpd服务
+[root@server0 ~]# systemctl restart httpd
+
+3.本机通过浏览器进行测试:
+[root@server0 ~]# firefox 172.25.0.11
+
+4.在虚拟机server书写一个页面文件
+      默认存放网页文件的路径: /var/www/html
+      默认页面文件名称:index.html
+[root@server0 ~]# vim /var/www/html/index.html
+ <marquee><font  color=red><h1>NSD1903阳光明媚
+   滚动          字体颜色  红色        标题字体
+[root@server0 ~]# firefox 172.25.0.11
+
+二  虚拟机server构建FTP服务器         
+   FTP服务:文件传输服务
+      默认FTP共享路径:/var/ftp
+
+1.安装vsftpd软件包
+[root@server0 ~]# yum -y install vsftpd
+
+2.重启vsftpd服务
+[root@server0 ~]# systemctl restart vsftpd
+
+3.验证FTP服务:
+[root@server0 ~]# firefox ftp://172.25.0.11
+
+#################################################
+防火墙策略
+      作用:隔离
+
+    硬件防火墙
+    软件防火墙
+    
+firewalld服务基础
+
+Linux的防火墙体系
+ • 系统服务:firewalld
+ • 管理工具:firewall-cmd、firewall-config
+
+
+预设安全区域
+• 根据所在的网络场所区分,预设保护规则集
+– public:仅允许访问本机的sshd  ping  dhcpd服务
+– trusted:允许任何访问
+– block:阻塞任何来访请求(明确拒绝,客户端有接收回应)
+– drop:丢弃任何来访的数据包(直接丢弃,客户端没有接收回应) 节省服务器资源
+
+
+ 数据包: 目标IP地址   源IP地址   数据
+
+防火墙判定的规则:匹配及停止
+1.查看请求数据包中源IP地址,然后查询防火墙所有区域,那个区域有该IP地址的规则,则进入该区域
+
+2.进入默认区域public(由root指定)
+
+###############################################
+一  防火墙默认区域的修改
+虚拟机server:
+]# firewall-cmd --get-default-zone   #查看默认区域
+虚拟机desktop:
+]# ping  -c 2 172.25.0.11   #可以通信
+
+虚拟机server:
+]# firewall-cmd --set-default-zone=block   #修改默认区域
+]# firewall-cmd --get-default-zone        #查看默认区域
+虚拟机desktop:
+]# ping -c 2 172.25.0.11   #不可以通信,有回应
+
+虚拟机server:
+]# firewall-cmd --set-default-zone=drop  #修改默认区域
+]# firewall-cmd --get-default-zone      #查看默认区域
+虚拟机desktop:
+]# ping -c 2 172.25.0.11   #不可以通信,没有回应
+
+
+二  默认区域public 仅允许访问本机的sshd  ping  dhcpd服务
+虚拟机server:
+]# firewall-cmd  --set-default-zone=public 
+]# firewall-cmd  --get-default-zone 
+虚拟机desktop:
+]# ping -c 2 172.25.0.11   #可以通信
+
+在区域中添加允许访问的服务或协议
+             http:超文本传输协议
+             https:安全超文本传输协议
+             DNS:域名解析协议
+             FTP:文件传输协议
+             TFTP:简单文件传输协议
+             telnet:远程管理协议
+             pop3:邮件协议(用户收邮件协议)
+             SMTP:邮件协议(用户发邮件协议)
+             SNMP:简单的网络管理协议
+虚拟机server:  
+# firewall-cmd --zone=public --list-all  #查看区域规则
+# firewall-cmd --zone=public --add-service=http #添加协议
+# firewall-cmd --zone=public --list-all  #查看区域规则
+虚拟机desktop
+# firefox 172.25.0.11  #可以访问
+# firefox ftp://172.25.0.11  #不可以访问
+
+虚拟机server:
+]# firewall-cmd --zone=public --add-service=ftp #添加协议
+]# firewall-cmd --zone=public --list-all  #查看区域规则
+虚拟机desktop
+]# firefox ftp://172.25.0.11  #可以访问
+
+####################################################
+永久的防火墙规则  永久(permanent)
+虚拟机server
+]# firewall-cmd --reload    #重新加载所有防火墙策略
+]# firewall-cmd --zone=public --list-all  #查看区域策略
+
+]# firewall-cmd --permanent --zone=public --add-service=http        #永久添加策略
+
+]# firewall-cmd --zone=public --list-all  #查看区域策略
+
+]# firewall-cmd --reload   #重新加载所有防火墙策略
+]# firewall-cmd --zone=public --list-all  #查看区域策略
+
+####################################################
+补充:
+  单独拒绝虚拟机desktop访问虚拟机server所有请求
+虚拟机server
+]# firewall-cmd --zone=block --add-source=172.25.0.10
+]# firewall-cmd --zone=block --list-all 
+
+虚拟机desktop 访问测试 
+]#  ping  172.25.0.11 #不可以访问
+]#  firefox  172.25.0.11  #不可以访问
+真机  访问测试
+]#  ping  172.25.0.11 #可以访问
+]#  firefox  172.25.0.11  #可以访问
+####################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
