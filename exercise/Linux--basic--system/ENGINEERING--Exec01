@@ -1,32 +1,47 @@
 wget http://classroom/pub/materials/userlist
-#################ʹ���ļ� userlist �� batchuser �ű�����  list���û�  ������Ϊ/bin/false
+#################使用文件 userlist 和 batchuser 脚本创建  list中用户  解释器为/bin/false
 [root@server0 ~]# vim /root/batchusrs.sh
 [root@server0 ~]# chmod +x /root/batchusrs.sh
 #!/bin/bash
-if [ $# -eq 0 ] ; then ###Ŀ¼��Ϊ��(�жϲ���Ϊ�� ��Ϊ����ִ��) $# ͳ�Ʊ����ĸ���
+if [ $# -eq 0 ] ; then ###目录不为空(判断参数为空 ，为空则执行) $# 统计变量的个数
         echo 'usage:/root/batchusrs'
         exit
-elif [ ! -f $1  ] ; then  #####�жϲ���  �������ļ� �� ��Ϊ����ִ�� ###-f ������ test ��ѡ��  -d Ҳ�� ###$1 �����
-��һ������
+elif [ ! -f $1  ] ; then  #####判断参数  ’不是文件 ‘ ，为真则执行 ###-f 是命令 test 的选项  -d 也是 ###$1 输入的
+第一个变量
      echo 'INTEROUT FILE NOT FIND'
      exit
 else
-   for name in $(cat $1) ###$(���� )������Ľ����������
+   for name in $(cat $1) ###$(命令 )将命令的结果当作变量
         do
         useradd -s /bin/false $name
         done
 fi
+#######!/bin/bash
+if [ $# -eq 0 ]; then
+  echo NULL >&2 #变成错误输出
+  exit 6  ###### 状态返回值的设定
+elif [ $1 = redhat  ] ; then
+  echo foedar
+  exit 0  ###### 状态返回值的设定
+elif [ $1 = fedora  ] ; then
+  echo redhat   
+  exit 0  ###### 状态返回值的设定,该数值的设定在红帽的考试中会要求到
+else
+  echo '/root/foo.sh redhat |fedora ' >&2 #变成错误输出
+  exit 6  ###### 状态返回值的设定
+fi#######################老师优化后
 
-######�жϲ���  �����ļ�
- [  ! �Cf  "$1"  ]
-#############  �ж�Ŀ¼ Ϊ��
+#########################################
+######判断参数  不是文件
+ [  ! –f  "$1"  ]
+#############  判断目录 为空
  [ $# -eq 0 ]
 
 ################################################
-���� /root/foo.sh
-1) ������/root/foo.sh redhat ,��� fedora
-2��������/root/foo.sh fedora ,��� redhat
-3����û���κβ������߲������� ��� /root/foo.sh redhat | fedora
+创建 /root/foo.sh
+1) 当运行/root/foo.sh redhat ,输出 fedora
+2）当运行/root/foo.sh fedora ,输出 redhat
+3）当没有任何参数或者参数错误 输出 /root/foo.sh redhat | fedora
  [root@server0 ~]# vim /root/foo.sh
  #!/bin/bash
 if [ $1 =  "redhat"  ] ;then
@@ -42,3 +57,17 @@ else
 [root@server0 ~]# chmod +x /root/foo.sh
 [root@server0 ~]# /root/foo.sh redhat
 fedora
+############################# 老师的版本
+if [ $# -eq 0 ]; then
+  echo NULL >&2 #变成错误输出
+  exit 6  ###### 状态返回值的设定
+elif [ $1 = redhat  ] ; then
+  echo foedar
+  exit 0  ###### 状态返回值的设定
+elif [ $1 = fedora  ] ; then
+  echo redhat   
+  exit 0  ###### 状态返回值的设定,该数值的设定在红帽的考试中会要求到
+else
+  echo '/root/foo.sh redhat |fedora ' >&2 #变成错误输出
+  exit 6  ###### 状态返回值的设定
+fi
