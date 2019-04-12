@@ -9,7 +9,8 @@ SHELL SCRIPT  SHELL 脚本(目前不做要求,之后会专门讲)
 	cat /etc/redhat-release >> /root/name.txt
 	cat /root/name.txt
 
-Shell脚本的组成
+Shell脚本的组成 
+练习题 请查看 ENGERINGER---01练习题
 #! 环境声明  #! /bin/bash
 # 注释文本
 # 可执行代码
@@ -132,6 +133,20 @@ eg: 创一个以当前日期为名的目录
  -e 文档存在为真
  -d 文档存在,且必须为目录为真
  -f 文档存在,且必须文件为真
+ eg: 
+这是一个 文件测试的脚本 
+#!/bin/bash
+if [ -f $1  ];then
+  echo file
+elif [ -d $1 ];then
+  echo  doctum
+elif [ -e $1 ] ;then
+echo EXIT 
+else
+    echo NULL
+    exit 6
+fi
+
 比较整数大小(小数之后在学)
   -gt    -ge -eq  -ne  -lt   -le
    大于 大于等于 等于 不等  小于  小于等于
