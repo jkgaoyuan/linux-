@@ -1,0 +1,203 @@
+######################################################
+SHELL SCRIPT  SHELL 脚本(目前不做要求,之后会专门讲)
+脚本:一个可以执行的文件,运行可以实现某种功能(类似于某种程序)
+[root@server0 ~]# vim /root/helooworld.sh  #创建脚本
+[root@server0 ~]#chmod ugo+x /root/helooworld.sh  #赋予执行权限
+[root@server0 ~]# /root/helooworld.sh  #绝对路径执行
+	echo hello world !
+	uname -r > /root/name.txt
+	cat /etc/redhat-release >> /root/name.txt
+	cat /root/name.txt
+
+Shell脚本的组成
+#! 环境声明  #! /bin/bash
+# 注释文本
+# 可执行代码
+eg:
+	#!/bin/bash
+	uname -r
+	hostname
+	cat /etc/redhat-release
+	ifconfig | head -2
+	grep bin /etc/passwd | tail -2
+
+变量
+ 以不变的名称存放变化的值
+ 如何创建变量
+   变量名=存放值
+   变量名要求:  = 两边不能有空格 (shell规定) 
+		变量名只能由数字字母下划线组成,区分大小写且不能以数字开头(用户不可以 系统可以),
+		不要使用关键词作为名字,
+		若变量名已存在,则会对该变量重新赋值
+ 调用变量 
+     $变量名 
+     ${变量名}	 ########变量与常量结合
+eg:
+	[root@server0 ~]# a=10086
+	[root@server0 ~]# echo $a
+	10086
+	[root@server0 ~]# a=redhat
+	[root@server0 ~]# echo ${a}7  ########变量与常量结合
+	redhat7
+变量分类(运维角度)
+环境变量 : 变量名大写,变量的值有系统定义完成(有系统完成,开机的过程中定义完成)
+	PWD PAHT USER LOGNAE SHELL HOME
+                  当前登录用户
+位置变量 : 执行脚本时提供命令行参数 ,系统自动完成
+	表示$n, n为序号
+	在执行脚本时 后接的第一个参数 会传递给 $1
+	[root@server0 ~]# vim /root/user.sh
+	echo successfuly useradd $1      参数
+	[root@server0 ~]# /root/user.sh nsd001
+ 	###########################################
+	[root@server0 ~]# vim /etc/cat.sh
+	#~/bim/bash
+	cat -n $1 | head -$2   head / tail 默认显示前10行
+	[root@server0 ~]# /etc/cat.sh /etc/passwd
+
+shell 交互 信息
+   read 
+	1.直接产生交互
+	2.记录用户在键盘上的输入
+	3.讲用户在键盘的输入复制给一个变量储存
+eg:设定用户名和密码创建用户
+	[root@server0 ~]# vim /root/user.sh
+	#!/bin/bash
+	# echo 请输入USERNAME
+	read -p ':请输入USERNAME' a
+	read -p ':PASSWD' b
+
+	#echo 请输入PASSWD
+	#read b
+	#read -p 请输入USERNAME
+	#read -p 请输入PASSWD
+
+	
+预定义变量
+	useradd $a &> /dev/null
+	echo successfuly useradd $a
+	echo $b | passwd --stdin $a &> /dev/null
+	echo successfuly passwd $a
+	        
+	$# 统计用户的输入信息(if判断 常用)
+	[root@server0 ~]# /root/1.txt 1 2 3 4 5 6 
+	#!/bin/bash
+	echo $1
+	echo $2
+	echo $#
+	1
+	2
+	6
+	$?程序退出后状态显示  (if 判断中 命令是否成功)
+	0 正常 
+	非0 不正常
+自定义变量
+   用户自己定义 
+
+
+
+重定向输出
+(补充追加重定向>>)
+ > 只收集正确输出
+ 2> 只收集错误输入
+ &> 收集所有输出
+补充: 
+  单引号 ''  屏蔽所有的特殊符号 原样输出
+ 
+   反撇号`` 或者$() : 将命令的输出,直接参与下次运行
+   	[root@server0 ~]# mkdir /$(hostname)
+	[root@server0 ~]# ls /
+	bin   dev  home  lib64  mnt  proc  run   server0.example.com  sys  usr
+	boot  etc  lib   media  opt  root  sbin  srv                  tmp  var
+eg: 创一个以当前日期为名的目录
+	[root@server0 ~]# mkdir mydate-$(date +%F)  
+#####date +%F 注意这里的+%F   
+显示完整日期 [student@gao ME]$ date +%F  2019-04-11
+
+	[root@server0 ~]# ls
+	anaconda-ks.cfg  mkdir              Pictures
+	Desktop          Music              Public
+	Documents        mydate-2019-04-11  sysinfo.sh
+	Download         Templates
+	helooworld.sh    name.txt           Videos
+##############################################################
+黑洞设备 
+/dev/null 
+专门为写脚本产生的无用数据而生 
+无限制 把无用的数据 定向到 黑洞即可
+####################################################################
+条件测试
+ [ 测试表达式 ] 注意空格 
+常用的测试选项
+ -e 文档存在为真
+ -d 文档存在,且必须为目录为真
+ -f 文档存在,且必须文件为真
+比较整数大小(小数之后在学)
+  -gt    -ge -eq  -ne  -lt   -le
+   大于 大于等于 等于 不等  小于  小于等于
+字符串的比较
+  == :两个字符串一样为真
+echo $?  0为真
+ != 不等于为真
+echo $?  0 为真 
+################################
+if 选择结构
+双分支
+	if[ 条件 ];then
+ 	   命令
+	else
+	   命令
+	fi
+###############################
+if 多分支处理
+	if [ 条件 ];than
+	命令1
+	elif [ 条件 ];than
+	命名2
+	  *
+	  *
+	  *
+      elif [ 条件 ]
+	命令n
+	else
+	命令
+	fi
+eg:检测用户是否存在 ,不存在则创建
+
+[root@server0 ~]# vim /root/user.sh
+
+#!/bin/bash
+# echo 请输入USERNAME
+       read -p '输入用户:' a
+       id $a &> /dev/null
+       if [ $? -eq 0 ];then
+            echo 用户存在
+            id $a
+       else
+            echo 用户不存在 
+#       read -p '请输入USERNAME' a
+            echo 正在创建用户$a
+            read -p 'PASSWD' b
+            useradd $a &> /dev/null
+            echo successfuly useradd $a
+            echo $b | passwd --stdin $a &> /dev/null
+            echo successfuly passwd $a
+        fi
+~    
+循环结构
+	有限次循环
+	for循环 结构 
+	for 变量名 in 值列表 
+	do 
+	   命令
+	done	
+	   命令
+值得列表可以不参与循环
+数值范围
+{起始..结束}
+{1..100} = 1-100 连续的数字
+
+
+
+
+
