@@ -3,7 +3,7 @@ wget http://classroom/pub/materials/userlist
 [root@server0 ~]# vim /root/batchusrs.sh
 [root@server0 ~]# chmod +x /root/batchusrs.sh
 #!/bin/bash
-if [ $# -eq 0 ] ; then ###目录不为空(判断参数为空 ，为空则执行) $# 统计变量的个数
+if [ $# -eq 0 ] ; then ###目用户是否输入参数(判断参数为空 ，为空则执行) $# 统计变量的个数
         echo 'usage:/root/batchusrs'
         exit 6
 elif [ ! -f $1  ] ; then  #####判断参数  ’不是文件 ‘ ，为真则执行 ###-f 是命令 test 的选项  -d 也是 ###$1 输入的
@@ -19,6 +19,21 @@ fi
 
 
 #######################老师优化后
+#!/bin/bash
+if [ $# -eq 0  ]; then #########判断输入参数为空
+ echo NULL 
+ exit 6
+elif [ ! -f $1 ] ;then #### 判[ -f $1 ] 断文件是否存在且目录为真 加上::::       ! 表示取反
+  echo no file 
+  exit 6
+else
+        for name in $(cat $1)
+        do
+          useradd -s /bin/false  $name &> /dev/null
+           echo $name 创建成功
+        done
+fi
+
 
 #########################################
 ######判断参数  不是文件
