@@ -5,31 +5,20 @@ wget http://classroom/pub/materials/userlist
 #!/bin/bash
 if [ $# -eq 0 ] ; then ###目录不为空(判断参数为空 ，为空则执行) $# 统计变量的个数
         echo 'usage:/root/batchusrs'
-        exit
+        exit 6
 elif [ ! -f $1  ] ; then  #####判断参数  ’不是文件 ‘ ，为真则执行 ###-f 是命令 test 的选项  -d 也是 ###$1 输入的
 第一个变量
      echo 'INTEROUT FILE NOT FIND'
-     exit
+     exit 6
 else
    for name in $(cat $1) ###$(命令 )将命令的结果当作变量
         do
         useradd -s /bin/false $name
         done
 fi
-#######!/bin/bash
-if [ $# -eq 0 ]; then
-  echo NULL >&2 #变成错误输出
-  exit 6  ###### 状态返回值的设定
-elif [ $1 = redhat  ] ; then
-  echo foedar
-  exit 0  ###### 状态返回值的设定
-elif [ $1 = fedora  ] ; then
-  echo redhat   
-  exit 0  ###### 状态返回值的设定,该数值的设定在红帽的考试中会要求到
-else
-  echo '/root/foo.sh redhat |fedora ' >&2 #变成错误输出
-  exit 6  ###### 状态返回值的设定
-fi#######################老师优化后
+
+
+#######################老师优化后
 
 #########################################
 ######判断参数  不是文件
@@ -48,7 +37,7 @@ if [ $1 =  "redhat"  ] ;then
 echo fedora
 elif [ $1 = "fedora"  ] ;then
 echo redhat
-elif [ $# -eq 0 ] ;then
+elif [ $# -eq 0 ] ;then###############3判断输入是否为空
  echo '/root/foo.sh redhat |fedora'
  exit
 else
