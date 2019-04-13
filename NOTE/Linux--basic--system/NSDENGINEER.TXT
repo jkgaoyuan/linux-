@@ -214,5 +214,215 @@ eg:检测用户是否存在 ,不存在则创建
 
 
 
+＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃
 
+#####################################################
+系统安全保护
+SElinux 安全机制 
+linux 内核 已经集成 (2.6以上)
+SElinu 运行的三种模式
+enforcing (默认)强制    permissive  宽松    disable  彻底禁用
+任何模式变为disable(彻底禁用)模式,必须修改配置文件 重启
+任何模式的转换都需要修改配置文件 ,重启后生效
+ 切换运行模式 (下次开机失效)
+     (零时设置) 
+     gentenforce ##########查看selinu 状态
+        enforce  强制模式
+     setenforce 0 ################修改当前selinux状态
+	Permissive  (宽松模式)
+       永久修改 (修改配置文件＃系统下次启动生效)
+修改  vim /etc/selinux/config 
+      SELINU=permissive  ##########宽松模式
+vim 中命令模式下按 C 光标之后被删除
+###############################
+配置用户环境
+ 开启新终端后生效
+  影响指定用户的bash 解释器
+  ~ /.bashrc,每次开启bash 终端生效 ####注意这是一个隐藏文件 
+  [root@server0 ~]# vim /root/.bashrc 修改root 用户的
+  [student@gao ~]$ vim /home/student/.bashrc   $####修改用户studen 的bash .添加别名
+	  alias gos='ssh -X root@172.25.0.11'
+	#mount | grep qemu &> /dev/null
+	alias god='ssh -X root@172.25.0.10'
+
+  影响所有用户的 bash 解释器
+  [root@server0 ~]# vim /etc/bashrc
+###################################
+防火墙策略的管理(基础阶段)
+  在之后的服务学习中注意 selinux 状态 处于 permissive 或者 disable 
+一 搭建基本的web服务 (不涉及优化) 
+   web 服务 :提供页面内容服务
+  1. yum 安装  httpd 
+   2. 重启 httpd 服务
+[root@server0 ~]# systemctl restart httpd 
+   3. 本机测试 访问 182.25.0.11 
+   filefox 访问 172.25.0.11
+    在-X远程访问 Firefox 时保证 本机物理机 的Firefox没有开启 ,否则会出现错误
+   4.在example.server中写一个网页
+     网页默认存放路径: /var/www/html/ 当该路径下没有页面时会自定显示测试页面
+     默认页面文件名称: index.html
+二 构建FTP服务器
+   ftp服务默认共享路径: /var/ftp
+  1. 安装 vsftp
+    yum -y install vsftpd
+   2. 重启服务 
+    systemctl restart vsftpd 
+   3.验证 ftp 
+    [root@server0 ~]# firefox ftp://172.25.0.11 
+#############################
+防火墙策略
+   作用:隔离
+            硬件防火墙 : huawei 思科 h3c 
+            软件防火墙 : firewalld linux 默认安装启动
+系统服务 :firewalld
+     管理工具: firewall-cmd   firewall-cofig(图形)
+     预设安全区域
+	     首先判定请求 应该划分给某个区域
+	     根据不同区域设置不同规则
+　　　目前只讲四个区域	
+-------public: 仅允许访问本机的sshd ping dhcpd 服务
+-------trusted:允许任何访问
+-------block: 阻塞任何来访请求 (有明确拒绝,客户端有接受回应)
+-------drop:丢弃任何来访数据包 (直接丢弃,客户端没有回应,,,,节省资源)
+
+配置规则位置
+     --运行时(runtime)
+     --永久(permanent)
+
+ 数据包:目标地址 源IP地址 数据
+ 防火墙判定规则;
+	1.查看请求数据包中源IP 地址,然后查看防火墙所有区域,那个区域有源IP规则，则进入该区域
+
+
+	2.进入默认区域ｐｕｂｌｉｃ（由ｒｏｏｔ指定）
+防火墙的规则中不允许　同一个ｓｏｕｒｃｅ　ｉｐ添加到两个块中　不然会报错
+################################################33
+一　防火墙默认区域的修改
+　　查看防火墙默认区域
+　　firewall-cmd --get-default-zone 
+    firewall-cmd--set-default-zone=block ###设定防火墙默认区域为ｂｌｏｃｋ
+  在区域中添加允许访问的服务ＯＲ协议 (背下来)
+	　九大协议
+　　　　　ｈｔｔｐ：超文本传输协议　　           端口: 80
+　　　　　ｈｔｔｐｓ：安全超文本传输协议              443
+	　ＤＮＳ：　域名解析协议			 53                        
+	　ＦＴＰ　：文件传输协议                       21
+	　ＴＦＴＰ：简单文件传输协议                   69
+	　ｔｅｌｎｅｔ：　远程管理协议                 23
+　　　　　ｐｏｐ３：邮件协议　（收）                  110
+	　ＳＭＴＰ：邮件协议　（发）                   25
+　　　　　ＳＮＭＰ：　简单的网络管理协议　            161
+ｅｇ：　给ｓｅｒｖｅｒ0　的ｆｉｒｅｗａｌｌ的ｐｕｂｌｉｃ添加　ｈｔｔｐ　和ｆｔｐ协议
+查看ｆｉｒｅｗａｌｌ的ｐｕｂｌｉｃ域的规则
+[root@server0 ~]# firewall-cmd --zone=public --list -all　＃＃＃查看区域规则
+[root@server0 ~]# firewall-cmd --zone=public --add-service=http
+[root@server0 ~]# firewall-cmd --zone=public --list-all 
+[root@server0 ~]# firewall-cmd --zone=public --list-all 
+public (default, active)
+  interfaces: eth0
+  sources: 
+  services: dhcpv6-client http ssh
+  ports: 
+  masquerade: no
+  forward-ports: 
+  icmp-blocks: 
+  rich rules: 
+＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃
+永久的防火墙规则
+使用选项
+　－－ｐｅｒｍａｎｅｎｔ　
+注意设置玩永久防火墙后记得重新加载
+ｅｇ：
+[root@desktop0 ~]# firewall-cmd --permanent --zone=public --add-service=ftp ＃＃＃＃永久加载策略
+　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　需要添加的服务名
+[root@desktop0 ~]# firewall-cmd --reload 　＃＃＃＃＃重新加载防火墙策略
+
+[root@desktop0 ~]# firewall-cmd --permanent --zone=public --remove-service=ftp #################删除规则（配置文件）　－－ｐｅｒｍａｎｅｎｔ　修改配置文件
+[root@desktop0 ~]# firewall-cmd --reload ＃＃＃＃重新加载防火墙策略
+
+
+＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃
+
+
+使用防火墙实现端口转发（实现本机的端口映射）
+端口：　标示　服务/协议/程序端口
+　　　　可以使用ｒｏｏｔ　用户修改服务/协议/程序的
+	端口标示程序（防火墙也就是通过端口来判断服务/程序）
+一般来说　服务有着默认端口
+　　　本地应用的端口重定向（端口１－－端口２）
+　　　比如，访问一下两个地址可以看到相同的页面：
+客户端访问：172.250.11：80　-------＞防火墙-----------＞172.25.0.11：8000
+
+
+[root@server0 ~]# firewall-cmd --permanent --zone=public --add-forward-port=port=8000:proto=tcp:toport=80　＃＃＃＃＃＃＃＃＃＃设置端口转发　注意格式　
+　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　这里第二个ｐｏｒｔ就无无法ｔａｂ了＃指定转发端口　指定传输协议　＃＃指定目标端口　　
+[root@server0 ~]# firewall-cmd --reload 　　＃＃＃＃＃＃＃＃＃＃重新加载ｆｉｒｅｗａｌｌ
+success
+[root@server0 ~]# firewall-cmd --zone=public --list-all 
+public (default, active)
+  interfaces: eth0
+  sources: 
+  services: dhcpv6-client http ssh
+  ports: 
+  masquerade: no
+  forward-ports: port=8000:proto=tcp:toport=80:toaddr=
+  icmp-blocks: 
+  rich rules:
+＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃
+触发挂载
+　1.关闭ｓｅｒｖｅｒ，添加光驱
+　2.安装软件包　实现挂载软件　ａｕｔｏｆｓ
+[root@server0 ~]# yum -y install autofs
+
+[root@server0 ~]# systemctl restart autofs
+[root@server0 ~]# systemctl enable autofs　　＃＃＃设置开机自启
+[root@server0 ~]# cd /misc/cd　　＃＃＃＃＃＃＃＃＃＃＃＃当用户进入／ｍｉｓｃ／ｃｄ　目录的时候（特定条件）　　ａｕｔｏｆｓ　自动创建挂载点且自动挂载，其他路径不可以，　一段时间后自动卸载，用的时候自动挂载
+＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃
+[root@server0 ~]# ls /etc/auto.master　　＃＃触发挂载主配置文件
+/etc/auto.master
+[root@server0 ~]# ls /etc/auto.misc 　　＃＃＃＃挂载配置文件
+/etc/auto.misc
+触发挂载必须为两层目录
+　　　/nsd/　　第一层监控点，由auto.master 设定
+	abc　　　
+####################
+[root@server0 ~]# vim /etc/auto.master　　＃＃＃当我们需要修改　监控点的时候添加（注意不要删除　原本的　写上自己的　规则就好）　/nsd    /etc/test.misc
+　　
+ 监控点　　指定挂载在配置文件的路径
+/misc   /etc/auto.misc
+翻译：设置挂载点为　/misc ，想要知道挂载什么设备．请看/etc/auto.misc
+
+[root@server0 cd]# vim /etc/test.misc
+
+abc    -fstype=xfs,rw :/dev/vdb1　　＃＃＃＃＃＃＃＃＃＃＃＃＃格式
+
+root@server0 cd]# cd /nsd/abc ####使用
+
+＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃
+添加一个ｓｗａｐ分区（交换分区）
+　　　作用：在一定程度上缓解内存需求，当物理机器内存不足时讲一部分数据放到ｓｗａｐ中，其他平台叫做　虚拟内存
+　Ｌｉｎｕｘ　一般也是使用分区空间来充当交换空间
+　可以由多个分区来组成．
+
+怎么设置
+
+[root@desktop0 ~]# fdisk /dev/vdb　＃　创建一个分区
+[root@desktop0 ~]# mkswap /dev/vdb1　　＃格式化　为ｓｗａｐ
+正在设置交换空间版本 1，大小 = 524284 KiB
+无标签，UUID=b9ae5113-aea8-4e4d-8b05-81974f61d1be
+[root@desktop0 ~]# blkid /dev/vdb1　　＃查看文件系统类型　　　＃＃＃＃　df -h 相当于　打开我的电脑后看到的　磁盘信息　,lsblk 相当与　磁盘管理后看到的
+/dev/vdb1: UUID="b9ae5113-aea8-4e4d-8b05-81974f61d1be" TYPE="swap"
+[root@desktop0 ~]# swapon /dev/vdb1 　　＃＃＃＃＃＃＃＃＃＃打开ｓｗａｐ分区
+[root@desktop0 ~]# swapon -s　　　　　　　＃＃＃＃＃＃＃＃＃＃查看ｓｗａｐ分区信息
+文件名				类型		大小	已用	权限
+/dev/vdb1                              	partition	524284	0	-1
+[root@desktop0 ~]# swapoff /dev/vdb1 ＃＃＃＃＃＃＃关闭　swap 分区
+
+
+[root@desktop0 ~]# vim /etc/fstab 　＃＃＃设置ｓｗａｐ分区开机自动挂载
+
+[root@desktop0 ~]# swapon -a 　＃＃＃自动挂载ｓｗａｐ分区
+[root@desktop0 ~]# swapon -s　＃＃＃３显示　ｓｗａｐ分区信息
+文件名				类型		大小	已用	权限
+/dev/vdb1   
 
