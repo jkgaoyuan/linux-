@@ -1,0 +1,261 @@
+教学环境介绍
+
+– 格式:rht-vmctl 控制指令 虚拟机名
+
+reset(还原)
+
+真机上操作：
+　]# rht-vmctl reset classroom　 //先重置资源服务器
+　]# rht-vmctl reset server
+　]# rht-vmctl reset desktop　　 //再重置练习虚拟机
+
+
+
+
+
+####################################################
+防火墙策略管理
+
+一  虚拟机server搭建基本Web服务
+1.安装httpd软件包
+[root@server0 ~]# yum -y install httpd
+2.重启httpd服务
+[root@server0 ~]# systemctl restart httpd
+3.在虚拟机server书写一个页面文件
+      默认存放网页文件的路径: /var/www/html
+      默认页面文件名称:index.html
+
+]# echo '<h1>NSD1903' > /var/www/html/index.html
+
+
+[root@server0 ~]# firefox 172.25.0.11
+
+
+#################################################
+防火墙策略
+      作用:隔离
+
+    硬件防火墙
+    软件防火墙
+    
+firewalld服务基础
+
+Linux的防火墙体系
+ • 系统服务:firewalld
+ • 管理工具:firewall-cmd、firewall-config
+
+
+预设安全区域
+• 根据所在的网络场所区分,预设保护规则集
+– public:仅允许访问本机的sshd  ping  dhcpd服务
+– trusted:允许任何访问
+– block:阻塞任何来访请求(明确拒绝,客户端有接收回应)
+– drop:丢弃任何来访的数据包(直接丢弃,客户端没有接收回应) 节省服务器资源
+
+
+ 数据包: 目标IP地址   源IP地址   数据
+
+防火墙判定的规则:匹配及停止
+1.查看请求数据包中源IP地址,然后查询防火墙所有区域,那个区域有该IP地址的规则,则进入该区域
+
+2.进入默认区域public(由root指定)
+
+###############################################
+在区域中添加允许访问的服务或协议
+
+            http:超文本传输协议  默认端口:80
+            https:安全超文本传输协议  默认端口:443
+            DNS:域名解析协议 默认端口:53
+            FTP:文件传输协议 默认端口:21
+            TFTP:简单文件传输协议  默认端口:69
+            telnet:远程管理协议  默认端口:23
+            pop3:邮件协议(用户收邮件协议)  默认端口:110
+            SMTP:邮件协议(用户发邮件协议)  默认端口:25
+            SNMP:简单的网络管理协议 默认端口:161
+
+
+
+
+虚拟机server:  
+# firewall-cmd --zone=public --list-all  #查看区域规则
+# firewall-cmd --permanent --zone=public --add-service=http  #添加协议
+
+# firewall-cmd --zone=public --list-all
+# firewall-cmd --reload   #重新加载防火墙所有策略
+# firewall-cmd --zone=public --list-all  #查看区域规则
+虚拟机desktop
+# firefox 172.25.0.11    #可以访问
+
+####################################################
+补充:
+  单独拒绝虚拟机desktop访问虚拟机server所有请求
+虚拟机server
+]# firewall-cmd --zone=block --add-source=172.25.0.10
+]# firewall-cmd --zone=block --list-all 
+
+虚拟机desktop 访问测试 
+]#  ping  172.25.0.11 #不可以访问
+]#  firefox  172.25.0.11  #不可以访问
+真机  访问测试
+]#  ping  172.25.0.11 #可以访问
+]#  firefox  172.25.0.11  #可以访问
+####################################################
+  端口: 编号 标识服务或协议或程序
+          可以利用root用户修改 服务或协议或程序的端口
+
+
+实现本机的端口映射
+• 本地应用的端口重定向(端口1 --> 端口2)                    
+– 从客户机访问 端口1 的请求,自动映射到本机 端口2
+– 比如,访问以下两个地址可以看到相同的页面:
+客户端访问是:172.25.0.11 5423 ----->防火墙----->172.25.0.11 80
+
+虚拟机server
+]# firewall-cmd --permanent --zone=public 
+--add-forward-port=port=5423:proto=tcp:toport=80
+
+]# firewall-cmd --reload  //重载配置
+]# firewall-cmd --zone=public --list-all 
+
+虚拟机desktop
+]# firefox 172.25.0.11:5423    #访问时加上端口
+###################################################
+
+
+#####################################################
+触发挂载
+1.关闭虚拟机server,添加光驱设备,将光盘放入
+
+2.安装autofs可以实现触发挂载软件
+[root@server0 ~]# yum -y install autofs
+3.重启autofs服务
+[root@server0 ~]# systemctl restart autofs
+[root@server0 ~]# systemctl enable autofs
+4.进行触发挂载
+[root@server0 ~]# ls /misc
+[root@server0 ~]# ls /misc/cd
+
+#################################################
+]# ls /etc/auto.master  #触发挂载的主配置文件
+]# ls /etc/auto.misc    #挂载配置文件
+
+ 触发挂载必须为二层目录结构
+
+  /nsd/第一层称之为监控点,必须有管理员亲自创建
+
+监控点由/etc/auto.master设置
+[root@server0 /]# vim /etc/auto.master  
+ /misc   /etc/auto.misc
+ /nsd    /etc/test
+
+ 监控点      指定挂在配置文件的路径
+翻译:
+设置监控点为/misc,要想知道挂载什么设备,请看/etc/auto.misc文件
+
+[root@server0 /]# fdisk /dev/vdb
+[root@server0 /]# mkfs.xfs /dev/vdb1
+[root@server0 /]# vim /etc/test 
+abc      -fstype=xfs,rw      :/dev/vdb1
+挂载点      文件系统类型及参数           挂载设备
+
+[root@server0 /]# systemctl restart autofs
+[root@server0 /]# cd /nsd/abc
+
+###############################################
+添加一个 swap分区(交换分区)
+   作用:在一定程度上,缓解内存不足
+   相当于虚拟内存
+
+  Linux一般使用分区空间,来充当交换空间
+
+[root@server0 ~]# fdisk /dev/vdb   #划分一个512M的分区
+[root@server0 ~]# mkswap /dev/vdb1  #格式化交换文件系统
+[root@server0 ~]# blkid /dev/vdb1  #查看文件系统类型
+
+[root@server0 ~]# swapon -s   #查看交换空间组成  成员信息
+[root@server0 ~]# swapon /dev/vdb1   #启用 
+[root@server0 ~]# swapon -s   #查看交换空间组成  成员信息
+[root@server0 ~]# swapoff /dev/vdb1   #停用 
+
+[root@server0 ~]# vim   /etc/fstab 
+/dev/vdb1   swap   swap   defaults  0  0
+                                                                                
+[root@serverX ~]# swapon  -a     //检测/etc/fstab交换分区，书写正确会进行启用
+[root@serverX ~]# swapon  -s     //查看交换分区启用情况
+ 
+###################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
