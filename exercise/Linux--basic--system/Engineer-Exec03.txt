@@ -100,7 +100,7 @@ yum -y install mariadb-server
 数据库文件的 URL为:http://classroom/pub/materials/users.sql
 	     wget http://classroom/pub/materials/users.sql
 	     ls
-	     mysql -u root -p nsd < /root/users.sql
+	     mysql -u root -p nsd < /root/users.sql ##在终端中执行不在mariadb中
 
 		MariaDB [nsd]> show tables;
 		+---------------+
@@ -114,6 +114,32 @@ yum -y install mariadb-server
 案例6:在server上操作，使用数据库查询
 
 1)查询base表所有内容
+    MariaDB [nsd]> select * from base;
+    +------+---------+------------+
+    | id   | name    | password   |
+    +------+---------+------------+
+    |    1 | Tom     | 123        |
+    |    2 | Barbara | 456        |
+    |    3 | James   | solicitous |
+    |    4 | Smith   | tarena     |
+    |    5 | Barbara | pwd123     |
+    +------+---------+------------+
+    5 rows in set (0.00 sec)
+
+2)查询location表所有内容
+    MariaDB [nsd]> select * from location;
+    +------+-----------+
+    | id   | city      |
+    +------+-----------+
+    |    1 | Beijing   |
+    |    2 | Paris     |
+    |    3 | Sunnyvale |
+    |    4 | Berlin    |
+    |    5 | Sunnyvale |
+    +------+-----------+
+    5 rows in set (0.00 sec)
+
+3)查询base表的结构
 	MariaDB [nsd]> desc base;
 +----------+-------------+------+-----+---------+-------+
 | Field    | Type        | Null | Key | Default | Extra |
@@ -123,7 +149,9 @@ yum -y install mariadb-server
 | password | varchar(24) | YES  |     | NULL    |       |
 +----------+-------------+------+-----+---------+-------+
 
-2)查询location表所有内容
+
+4)查询location表的结构
+
 	MariaDB [nsd]> desc location;
 +-------+-------------+------+-----+---------+-------+
 | Field | Type        | Null | Key | Default | Extra |
@@ -132,11 +160,6 @@ yum -y install mariadb-server
 | city  | varchar(20) | YES  |     | NULL    |       |
 +-------+-------------+------+-----+---------+-------+
 
-3)查询base表的结构
-
-desc base;
-4)查询location表的结构
-desc location;
 5)查询base表内容,只显示name字段
 MariaDB [nsd]> select name from base;
 +---------+
@@ -153,14 +176,53 @@ MariaDB [nsd]> select name from base;
 	select user,host,password from user;
 
 7)密码是 solicitous 的人的名字?
-	
+   MariaDB [nsd]> select name from base where password='solicition';
+
 8)有多少人的姓名是 Barbara 同时居住在 Sunnyvale?
- select count(*) from base,location where base.name='Barbara' and location.city='Sunnyvale' and base.id=location.id; 
+ select count(*) from base,location where base.name='Barbara' and location.city='Sunnyvale' and base.id=location.id;
 9)在base表中追加记录  id为6，name为Barbara，password为900
+    MariaDB [nsd]> insert base values('6','Barbara','900');
+    Query OK, 1 row affected (0.00 sec)
+
+    MariaDB [nsd]> select * from base;
+    +------+---------+------------+
+    | id   | name    | password   |
+    +------+---------+------------+
+    |    1 | Tom     | 123        |
+    |    2 | Barbara | 456        |
+    |    3 | James   | solicitous |
+    |    4 | Smith   | tarena     |
+    |    5 | Barbara | pwd123     |
+    |    6 | Barbara | 900       |
+    +------+---------+------------+
+    6 rows in set (0.00 sec)
 
 10)在location表中追加记录  id为6，city为Sunnyvale
 
+        MariaDB [nsd]> insert location values('6','Sunnyvale');
+        Query OK, 1 row affected (0.01 sec)
+
+        MariaDB [nsd]> select * from base;
+        +------+---------+------------+
+        | id   | name    | password   |
+        +------+---------+------------+
+        |    1 | Tom     | 123        |
+        |    2 | Barbara | 456        |
+        |    3 | James   | solicitous |
+        |    4 | Smith   | tarena     |
+        |    5 | Barbara | pwd123     |
+        +------+---------+------------+
+        5 rows in set (0.00 sec)
+
+
 11)再次查询有多少人的姓名是 Barbara 同时居住在 Sunnyvale?
+MariaDB [nsd]> select count(*) from base,location where base.name='Barbara' and location.city='Sunnyvale'and base.id=location.id;
++----------+
+| count(*) |
++----------+
+|        2 |
++----------+
+1 row in set (0.00 sec)
 
 
 
@@ -173,19 +235,90 @@ MariaDB [nsd]> select name from base;
 – 第3个分区 /dev/vdb3 的大小为 100M
 – 第4个分区 /dev/vdb4为扩展分区
 – 在划分三个分区逻辑分区/dev/vdb[5-6]，
-– 分区大小依次为500M、2000M
+– 分区大小依次为500M、2000M.
+  fdisk /dev/vdb
+
+vdb    253:16   0   10G  0 disk
+├─vdb1 253:17   0    3G  0 part
+├─vdb2 253:18   0  200M  0 part
+├─vdb3 253:19   0  100M  0 part
+├─vdb4 253:20   0    1K  0 part
+├─vdb5 253:21   0  500M  0 part
+└─vdb6 253:22   0    2G  0 part
 
 
 案例8：发布iSCSI网络磁盘
 
  1）配置 server0 提供 iSCSI 服务，要求如下：
  2）磁盘名为iqn.2016-02.com.example:server0
+     [root@server0 ~]# yum -y install targetcli.noarch
+     [root@server0 ~]# targetcli
+     /> iscsi/ create iqn.2016-02.com.example:sercer0
+    Created target iqn.2016-02.com.example:sercer0.
+    Created TPG 1.
+    /> ls
+    o- / ........................................................................................................ [...]
+  o- backstores ............................................................................................. [...]
+  | o- block ................................................................................. [Storage Objects: 1]
+  | | o- iscsi_store .................................................. [/dev/vdb1 (3.0GiB) write-thru deactivated]
+  | o- fileio ................................................................................ [Storage Objects: 0]
+  | o- pscsi ................................................................................. [Storage Objects: 0]
+  | o- ramdisk ............................................................................... [Storage Objects: 0]
+  o- iscsi ........................................................................................... [Targets: 1]
+  | o- iqn.2016-02.com.example:sercer0 .................................................................. [TPGs: 1]
+  |   o- tpg1 .............................................................................. [no-gen-acls, no-auth]
+  |     o- acls ......................................................................................... [ACLs: 0]
+  |     o- luns ......................................................................................... [LUNs: 0]
+  |     o- portals ................................................................................... [Portals: 0]
+  o- loopback ........................................................................................ [Targets: 0]
+/>
+
  3）服务端口为 3260
- 4）使用 iscsi_store（后端存储的名称） 作其后端卷，其大小为 3GiB
+ > iscsi/iqn.2016-02.com.example:server0/tpg1/portals create   172.25.0.11
+
+
+ 4）使用 iscsi_store（后端存储的名称） 作其后端卷，其大小为 3GiB  ##已经格式好的 磁盘
+   /> backstores/block create name=iscsi_store dev=/dev/vdb1  ####设置后端储从
+Created block storage object iscsi_store using /dev/vdb1.
+/> ls
+    o- / ........................................................................................................ [...]
+      o- backstores ............................................................................................. [...]
+      | o- block ................................................................................. [Storage Objects: 1]
+      | | o- iscsi_store .................................................. [/dev/vdb1 (3.0GiB) write-thru deactivated]
+      | o- fileio ................................................................................ [Storage Objects: 0]
+      | o- pscsi ................................................................................. [Storage Objects: 0]
+      | o- ramdisk ............................................................................... [Storage Objects: 0]
+      o- iscsi ........................................................................................... [Targets: 0]
+      o- loopback ........................................................................................ [Targets: 0]
+##############配置lun
+      iscsi/iqn.2016-02.com.example:sercer0/tpg1/luns create /backstores/block/iscsi_store
+    Created LUN 0.
+    /> ls
+    o- / ........................................................................................................ [...]
+      o- backstores ............................................................................................. [...]
+      | o- block ................................................................................. [Storage Objects: 1]
+      | | o- iscsi_store .................................................... [/dev/vdb1 (3.0GiB) write-thru activated]
+      | o- fileio ................................................................................ [Storage Objects: 0]
+      | o- pscsi ................................................................................. [Storage Objects: 0]
+      | o- ramdisk ............................................................................... [Storage Objects: 0]
+      o- iscsi ........................................................................................... [Targets: 1]
+      | o- iqn.2016-02.com.example:sercer0 .................................................................. [TPGs: 1]
+      |   o- tpg1 .............................................................................. [no-gen-acls, no-auth]
+      |     o- acls ......................................................................................... [ACLs: 0]
+      |     o- luns ......................................................................................... [LUNs: 1]
+      |     | o- lun0 ................................................................. [block/iscsi_store (/dev/vdb1)]
+      |     o- portals ................................................................................... [Portals: 0]
+      o- loopback ........................................................................................ [Targets: 0]
  5）此磁盘服务只能被 desktop0.example.com 访问，在Server0上配置客户端ACL为iqn.2016-02.com.example:desktop0
+/> iscsi/iqn.2016-02.com.example:server0/tpg1/acls create iqn.2016-02.com.example:desktop0
+
  6）配置虚拟机desktop0 使用 虚拟机server0 提供 iSCSI 服务
+[root@desktop0 ~]# rpm -q  iscsi-initiator-utils iscsi-initiator-utils-6.2.0.873-21.el7.x86_64
+[root@desktop0 ~]# vim /etc/iscsi/initiatorname.iscsi InitiatorName=iqn.2016-02.com.example:desktop0
 
-
+[root@desktop0 ~]# systemctl restart iscsid Warning: Unit file of iscsid.service changed on disk, 'systemctl daemon-reload' recommended.
+[root@desktop0 ~]# systemctl daemon-reload
+[root@desktop0 ~]# systemctl restart iscsid
 
 
 

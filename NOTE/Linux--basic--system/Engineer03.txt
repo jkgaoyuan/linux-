@@ -296,10 +296,10 @@ Bye
   location.city='Sunnyvale' and base.id=location.id; 
 
 > insert base values('6','Barbara','789'); #插入表记录
-> select * from base;
+> select * from base;#查看表内容
 
-> insert location values('6','Sunnyvale'); #插入表记录
-> select * from location;
+> insert location values('6','Sunnyvale'); #插入表记录 追加记录
+> select * from location; #查看表内容
 
 
 1. 禁止空密码root用户访问 mariadb数据库

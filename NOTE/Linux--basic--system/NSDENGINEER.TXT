@@ -270,7 +270,7 @@ enforcing (默认)强制    permissive  宽松    disable  彻底禁用
 修改  vim /etc/selinux/config 
       SELINU=permissive  ##########宽松模式
 vim 中命令模式下按 C 光标之后被删除
-###############################
+###############################永久别名
 配置用户环境
  开启新终端后生效
   影响指定用户的bash 解释器
