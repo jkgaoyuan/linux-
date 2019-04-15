@@ -1,3 +1,25 @@
+Skip to content
+ 
+Search or jump to…
+
+Pull requests
+Issues
+Marketplace
+Explore
+ 
+@jkgaoyuan 
+ Watch 0
+ Star 0  Fork 0 jkgaoyuan/linux-
+ Code  Issues 0  Pull requests 0  Projects 0  Wiki  Insights  Settings
+Branch: master 
+linux-/NOTE/Linux--basic--system/NSDENGINEER.TXT
+Find file Copy path
+@jkgaoyuan jkgaoyuan Update NSDENGINEER.TXT
+747b0b2 24 seconds from now
+1 contributor
+219 lines (198 sloc)  5.56 KB
+RawBlameHistory
+  
 ######################################################
 SHELL SCRIPT  SHELL 脚本(目前不做要求,之后会专门讲)
 脚本:一个可以执行的文件,运行可以实现某种功能(类似于某种程序)
@@ -102,6 +124,7 @@ eg:设定用户名和密码创建用户
  > 只收集正确输出
  2> 只收集错误输入
  &> 收集所有输出
+>&2  将正确输出转化为错误 输出
 补充: 
   单引号 ''  屏蔽所有的特殊符号 原样输出
  
@@ -214,7 +237,20 @@ eg:检测用户是否存在 ,不存在则创建
 
 
 
-＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃
+
+
+© 2019 GitHub, Inc.
+Terms
+Privacy
+Security
+Status
+Help
+Contact GitHub
+Pricing
+API
+Training
+Blog
+About
 
 #####################################################
 系统安全保护
@@ -358,7 +394,7 @@ public (default, active)
 　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　这里第二个ｐｏｒｔ就无无法ｔａｂ了＃指定转发端口　指定传输协议　＃＃指定目标端口　　
 [root@server0 ~]# firewall-cmd --reload 　　＃＃＃＃＃＃＃＃＃＃重新加载ｆｉｒｅｗａｌｌ
 success
-[root@server0 ~]# firewall-cmd --zone=public --list-all 
+[root@server0 ~]# firewall-cmd --zone=public --list-all ＃＃＃注意lsit后面没有空格　
 public (default, active)
   interfaces: eth0
   sources: 
@@ -425,4 +461,351 @@ root@server0 cd]# cd /nsd/abc ####使用
 [root@desktop0 ~]# swapon -s　＃＃＃３显示　ｓｗａｐ分区信息
 文件名				类型		大小	已用	权限
 /dev/vdb1   
+
+
+
+＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃３３
+ｉｓｃｓｉ　网络磁盘服务  类似于　ｓｈｅｌｌ　脚本的地位　也就是说必须学好
+　　作用：主要用在集群中　高可用　
+　　工作模式：　基于　ｃ/ｓ架构的虚拟磁盘技术
+　　　　　　　　服务器提供磁盘空间，客户机链接并且当成本地磁盘使用
+服务端：虚拟机　ｓｅｒｖｅｒ提供磁盘空间　　　
+		＃＃＃＃＃装包　配置　启动服务
+环境准备　
+　1.　ｆｉｒｅｗａｌｌ　设置
+	[root@server0 ~]# firewall-cmd --set-default-zone=trusted 
+	success
+	＃＃＃＃ｄｅｓｋｔｏｐ也要将防火墙　设置为　允许所有
+	＃＃安装软件包
+	[root@server0 ~]# yum -y install targetcli 
+	＃＃配置　可以支持全程ｔａｂ
+	＃使用ｆｄｉｓｋ　分一个空闲分区　不用格式化(没有文件系统)
+	[root@server0 ~]# fdisk /dev/vdb
+	
+　2.运行targetcli 进行设置	
+	将使用targetcli 比喻成　快递运输　主机　他会要求原包装（backstore）　且木箱子(target)   将原包装装进木箱子，　关联起来（lun）　，指定定收件人　（acl 访问控制）
+	target，磁盘组
+　　		是客户端的访问目标，作为一个框架，由多个lun 组成
+	lun，逻辑单元(将后端存储放入磁盘组)
+ 　　		每一个lun 需要关联到某一个后端设备存储中，在客户端会视为一块虚拟磁盘
+
+
+
+
+
+	进入targetcli　　＃＃＃＃默认exit退出命令　保存配置文件＃＃　ｃｔｒｌ　＋　Ｃ　是不会保存配置文件的
+	[root@server0 ~]# targetcli 
+		/> ls　＃查看需要配置的文件
+	o- / ..................................................................... [...]
+	　／ｄｅｖ／ｖｄｄ１　后端存储
+	  o- backstores .......................................................... [...]
+	　
+	  | o- block .............................................. [Storage Objects: 0]
+	  | o- fileio ............................................. [Storage Objects: 0]
+	  | o- pscsi .............................................. [Storage Objects: 0]
+	  | o- ramdisk ............................................ [Storage Objects: 0]
+	  o- iscsi ........................................................ [Targets: 0]
+	  o- loopback ..................................................... [Targets: 0]
+	1）＃创建后端储存（backstore，后端存储）	
+	/> backstores/block create name=iscsi_store dev=/dev/vdb1
+	创建成功
+	Created block storage object iscsi_store using /dev/vdb1.
+	/> 
+	2）＃创建　target，磁盘组（木质箱子）
+		ISCSI Quanlified Name (iqn)命名规范（不符合创建时不通过）
+		iqn.yyy-mm.倒叙域名：自定义标示
+		用来识别target 磁盘组，也用来识别客户机身份
+		名称例子：
+		iqn.2016-02.com.example:server0
+	iqn.2016-02.com.example:desktop0
+	/> iscsi/ create iqn.2019-04.com.example:server0
+	Created target iqn.2019-04.com.example:server0.
+	Created TPG 1.＃创建成功
+	3）配置　lun ，　关联（木箱子）
+	/> iscsi/iqn.2019-04.com.example:server0/tpg1/luns create /backstores/block/iscsi_store 
+	Created LUN 0.＃成功
+	4）配置acl 访问控制设置客户端声称的名字，（需要手写）名字需要符合iqn 命名规范，设置的名字需要在客户端在写一遍
+	/> iscsi/iqn.2019-04.com.example:server0/tpg1/acls create iqn.2019-04.com.example:desktop0
+	Created Node ACL for iqn.2019-04.com.example:desktop0　
+	Created mapped LUN 0.＃　成功
+　　　　5）指定端口，网卡（服务器肯定不止一个网卡）　　　　　　　　　　　＃指定ｉｐ，若不愿指定　可以写成　0.0.0.0，写四0，意味这访问我的任何ＩＰ就好，只要你能ｐｉｎｇ通
+	/> iscsi/iqn.2019-04.com.example:server0/tpg1/portals create 172.25.0.11
+	Using default IP port 3260　＃默认
+	Created network portal 172.25.0.11:3260.＃创建成功
+	查看　
+	/> ls 
+	o- / ........................................... [...]
+	  o- backstores ................................ [...]
+	  | o- block .................... [Storage Objects: 1]
+	  | | o- iscsi_store  [/dev/vdb1 (3.0GiB) write-thru activated]
+	  | o- fileio ................... [Storage Objects: 0]
+	  | o- pscsi .................... [Storage Objects: 0]
+	  | o- ramdisk .................. [Storage Objects: 0]
+	  o- iscsi .............................. [Targets: 1]
+	  | o- iqn.2019-04.com.example:server0 ..... [TPGs: 1]
+	  |   o- tpg1 ................. [no-gen-acls, no-auth]
+	  |     o- acls ............................ [ACLs: 1]
+	  |     | o- iqn.2019-04.com.example:desktop0  [Mapped LUNs: 1]
+	  |     |   o- mapped_lun0  [lun0 block/iscsi_store (rw)]
+	  |     o- luns ............................ [LUNs: 1]
+	  |     | o- lun0 .... [block/iscsi_store (/dev/vdb1)]
+	  |     o- portals ...................... [Portals: 1]
+	  |       o- 172.25.0.11:3260 ................... [OK]
+	  o- loopback ........................... [Targets: 0]
+	/> exit 保存（不要用ｃｔｒｌ　＋　Ｃ）
+	/> exit
+	Global pref auto_save_on_exit=true
+	Last 10 configs saved in /etc/target/backup.
+	Configuration saved to /etc/target/saveconfig.json
+　　　3.重启服务
+	[root@server0 ~]# systemctl restart target　＃重启服务
+	[root@server0 ~]# systemctl enable target　　＃开机自启
+	ln -s '/usr/lib/systemd/system/target.service' '/etc/systemd/system/multi-user.target.wants/target.service'　
+	＃制作快捷方式，不是报错
+	[root@server0 ~]# 
+
+客户端：
+1.安装软件包　iscsi-initiator-utils
+	[root@desktop0 ~]# yum -y install iscsi-initiator-utils
+2.修改配置文件，指定客户端生的命令
+	[root@desktop0 ~]# vim /etc/iscsi/initiatorname.iscsi 
+	InitiatorName=iqn.2019-04.com.example:desktop0
+3.重启服务　iscsid 服务，用于识别客户端声称名字＃修改完　配置文件后需要重启服务
+	[root@desktop0 ~]# systemctl restart iscsid
+	有时会出现　需要使用　systemctl daemon-reload 　刷新命令
+4.发现，链接　iscsi 磁盘 ###告诉快递的位置
+	iscsiadm 
+	由于命令太长　使用mna iscsiadm 　／example  在查找例子 　ＥＸＡＭＬＰＥＳ中的　将第一个例子复制出来
+	[root@desktop0 ~]# man iscsiadm
+	[root@desktop0 ~]# iscsiadm --mode discoverydb --type sendtargets --portal 172.25.0.11 --discover
+	172.25.0.11:3260,1 iqn.2019-04.com.example:server0
+5.重启　iscsi 服务（客户端）
+	[root@desktop0 ~]# systemctl restart iscsi　　＃＃＃＃＃重启服务　＃＃这个　服务名字ｉｓｃｓｉ　　没有　ｄ
+	[root@desktop0 ~]# systemctl enable iscsi　　＃＃＃＃＃＃＃开机自启
+	[root@desktop0 ~]# lsblk 
+	NAME   MAJ:MIN RM SIZE RO TYPE MOUNTPOINT　　＃查看磁盘
+	sda      8:0    0   3G  0 disk 　　＃＃＃ｉｓｃｓｉ　磁盘　　　　　　　
+	vda    253:0    0  10G  0 disk 
+	└─vda1 253:1    0  10G  0 part /
+	vdb    253:16   0  10G  0 disk 
+	[root@desktop0 ~]# 
+systemctl students
+＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃
+提问ＩＱＮ的两个作用：　1.用来识别target 磁盘组，2.也用来识别客户机身份
+
+＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃
+
+数据库的基本管理　　
+什么是数据库：	
+	存放数据的仓库
+数据库结构:
+在数据库中，有许多的库，每个库中存在表格
+分类：　
+ＭＩＣＳＲＯＦＴ　－－－　ＳＱＬ　ＳＥＲＶＥＲ　
+ＩＢＭ　　　　　　－－－　ＤＢ２
+甲骨文　　　　　　－－－　Orcale  MySQL 
+社区开源　　　　　－－－　Maira DB　和　MySQL 的作者是一个人
+（软件）Maria DB
+一.环境准备＆重启服务
+安装　　
+	[root@server0 ~]# yum -y install mariadb-server
+重启服务
+	[root@server0 ~]# systemctl restart mariadb
+卸载　 ####这个是和删根一样的操作，别用
+	[root@server0 ~]# yum remove mariadb-server　
+二.数据库基本操作
+＃＃＃＃＃＃＃＃＃＃＃＃＃所有命名都已　；　结尾　，不然报错
+增删改查
+[root@server0 ~]# mysql　　＃＃＃进入数据库
+	Welcome to the MariaDB monitor.  Commands end with ; or \g.
+	Your MariaDB connection id is 2
+	Server version: 5.5.35-MariaDB MariaDB Server
+
+	Copyright (c) 2000, 2013, Oracle, Monty Program Ab and others.
+
+	Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [(none)]> 
+MariaDB [(none)]> show databases;＃＃＃＃查看数据库　，注意这里的ｄａｔａｂａｓｅｓ　有ｓ　
+MariaDB [(none)]> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| gaoyaun            |
+| mysql              |
+| nsd1903            |
+| performance_schema |
+| test               |
++--------------------+
+6 rows in set (0.00 sec)
+
+
+
+MariaDB [(none)]> create database gaoyaun;＃＃＃＃＃＃创建库　　ｄａｔａｂａｓｅ　　没有ｓ
+Query OK, 1 row affected (0.00 sec)
+
+
+MariaDB [(none)]> drop database nsd1903;　＃＃＃＃删除库
+Query OK, 0 rows affected (0.00 sec)
+
+
+
+三.为数据库管理员设置密码
+　　数据库管理员：　ｒｏｏｔ　，数据库所有用户信息由数据库中的ＭＹＳＱＬ管理
+　　系统管理员：　　ｒｏｏｔ　，系统所有的用户信息，由　／ｅｔｃ／ｐａｓｓｗｄ管理
+设置数据库管理员密码
+[root@server0 ~]# mysqladmin -u root password '123'###注意格式　
+登录
+[root@server0 ~]# mysql -u root -p 　＃交互式
+Enter password: 
+MariaDB [(none)]> 
+
+[root@server0 ~]#　mysql -u root -p123 ## 非交互　
+MariaDB [(none)]> 
+
+四.表格操作;表记录，表字段
+　　　　　　　行　　　列
+	　　　３表记录　　５表字段
+	编号　姓名　性别　联系方式　　　地址　
+	　1　　ａ　　ｗ　　　ａａａ　　　ｎ　
+　　　　　2　　ｂ　　ｍ　　　ｂｂｂ　　　ｗ
+　　　　　3　　ｃ　　ｗ	ｃｃｃ　　　ｅ
+
+增删改查　: instal delea update  select
+　　　＃＃＃＃进入　mysql 库
+	MariaDB [(none)]> use mysql;
+	###进入其他库　
+	show tables;
+	####查看表结构
+      desc user;
+
+数据库的导入／恢复　
+　　　
+[root@server0 ~]# mysql -u root -p123 nsd1903 < /root/users.sql 
+
+表格查询：　
+select　　表字段　from 表名
+
+MariaDB [nsd1903]> select * from base  ####相对路径路径　
+MariaDB [mysql]> select * from nsd1903.base;　＃＃＃＃＃绝对路径
++------+---------+------------+
+| id   | name    | password   |
++------+---------+------------+
+|    1 | Tom     | 123        |
+|    2 | Barbara | 456        |
+|    3 | James   | solicitous |
+|    4 | Smith   | tarena     |
+|    5 | Barbara | pwd123     |
++------+---------+------------+
+
+MariaDB [nsd1903]> select id,name from base;
++------+---------+
+| id   | name    |
++------+---------+
+|    1 | Tom     |
+|    2 | Barbara |
+|    3 | James   |
+|    4 | Smith   |
+|    5 | Barbara |
++------+---------+
+
+有条件查询：
+　查找指定条件的
+	  			字段		            字段
+MariaDB [nsd1903]> select * from base where password='123';
++------+------+----------+
+| id   | name | password |
++------+------+----------+
+|    1 | Tom  | 123      |
++------+------+----------+
+
+
+MariaDB [nsd1903]> select name,password from base where name='tom';
++------+----------+
+| name | password |
++------+----------+
+| Tom  | 123      |
++------+----------+
+
+
+MariaDB [nsd1903]> select id,name from base where name='tom';
++------+------+
+| id   | name |
++------+------+
+|    1 | Tom  |
++------+------+
+
+禁止网络进行链接，只服务与本机
+[root@server0 ~]# vim /etc/my.cnf　　＃主配置文件
+skip-networking //手写
+systemctl restart mariadb  //重启服务
+＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃
+数据库授权　
+　－除了　root 用户，此nsd1903数据库只能被　lisi 查询，密码123　＃＃不需要创建系统用户
+　	
+	GRANT 权限列表　ON 数据库名 TO　用户名@客户地址 IDENTIFIED BY '密码'; 
+	grant select on nsd1903.* to lisi@localhost identified by '123'; 
+	当用户ｌｉｓｉ在本地使用　123　登录
+
+联合多表查询
+        查询　有多少人姓名　Ｂarbara　同时住在　ＳＵＮＮＹＶＡＬＥ
+MariaDB [nsd1903]> select count(*) from base,location where base.name='Barbara' and location.city='Sunnyvale' and base.id=location.id; 
+
+
+
+禁止空密码root 用户访问 mariadb 数据库 
+MariaDB [nsd1903]> use mysql  # 进入mysql                    表            表字段
+MariaDB [mysql]> select user,host,password from user; ##查看user中的 user,host,password
++------+---------------------+-------------------------------------------+
+| user | host                | password                                  |
++------+---------------------+-------------------------------------------+
+| root | localhost           | *23AE809DDACAF96AF0FD78ED04B6A265E05AA257 |
+| root | server0.example.com |                                           |
+| root | 127.0.0.1           |                                           |
+| root | ::1                 |                                           |
+|      | localhost           |                                           |
+|      | server0.example.com |                                           |
+| lisi | localhost           | *23AE809DDACAF96AF0FD78ED04B6A265E05AA257 |
++------+---------------------+-------------------------------------------+
+7 rows in set (0.00 sec)
+
+MariaDB [mysql]> delete from user where password='';      # 删除表中密码为空的
+Query OK, 5 rows affected (0.00 sec)
+
+MariaDB [mysql]> select user,host,password from user;    ##查看user表中 表字段
++------+-----------+-------------------------------------------+
+| user | host      | password                                  |
++------+-----------+-------------------------------------------+
+| root | localhost | *23AE809DDACAF96AF0FD78ED04B6A265E05AA257 |
+| lisi | localhost | *23AE809DDACAF96AF0FD78ED04B6A265E05AA257 |
++------+-----------+-------------------------------------------+
+2 rows in set (0.00 sec)
+
+
+MariaDB [mysql]> flush privileges;####刷新user所有记录 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
