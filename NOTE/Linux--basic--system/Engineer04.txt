@@ -1,0 +1,379 @@
+教学环境介绍
+
+– 格式:rht-vmctl 控制指令 虚拟机名
+
+reset(还原)
+
+真机上操作：
+　]# rht-vmctl reset classroom　 //先重置资源服务器
+　]# rht-vmctl reset server
+　]# rht-vmctl reset desktop　　 //再重置练习虚拟机
+
+####################################################
+环境准备:
+虚拟机server
+]# firewall-cmd --set-default-zone=trusted  #允许所有访问
+
+虚拟机desktop
+]# firewall-cmd --set-default-zone=trusted  #允许所有访问
+
+####################################################
+配置NFS共享
+
+NFS共享概述
+• Network File System,网络文件系统
+– 用途:为客户机提供共享使用的文件夹
+– 协议:NFS(TCP/UDP 2049)、RPC(TCP/UDP 111)
+
+• 所需软件包:nfs-utils
+• 系统服务:nfs-server
+
+虚拟机server:
+1.安装软件包nfs-utils
+[root@serverq0 ~]# rpm -q nfs-utils
+nfs-utils-1.3.0-0.el7.x86_64
+
+2.创建共享目录
+[root@server0 ~]# mkdir /public
+[root@server0 ~]# echo 123 > /public/1.txt
+[root@server0 ~]# ls /public/
+
+3.修改配置文件/etc/exports,指定共享的目录
+[root@server0 ~]# vim  /etc/exports
+[root@server0 ~]# man  exports
+– 共享的文件夹路径    客户机地址(权限)    客户机地址(权限) .. ..
+
+  /public     *(ro)
+
+
+[root@server0 ~]# systemctl restart nfs-server
+[root@server0 ~]# systemctl enable nfs-server
+
+#################################################
+客户端虚拟机desktop 
+1.查看服务端共享路径
+[root@desktop0 ~]# showmount -e 172.25.0.11
+Export list for 172.25.0.11:
+/public  *
+[root@desktop0 ~]# 
+
+2.挂载访问
+[root@desktop0 ~]# mkdir /mnt/nfs
+[root@desktop0 ~]# mount 172.25.0.11:/public  /mnt/nfs/
+[root@desktop0 ~]# df -h
+[root@desktop0 ~]# ls /mnt/nfs
+
+3.开机自动挂载
+  _netdev:声明为网络设备
+              开机启动Linux系统时,首先具备网络参数后,再进行挂载本设备
+
+[root@desktop0 ~]# vim /etc/fstab
+  设备路径    挂载点    类型     参数    备份标记   检测顺序
+172.25.0.11:/public  /mnt/nfs  nfs  defaults,_netdev 0 0
+
+[root@desktop0 ~]# umount /mnt/nfs/
+[root@desktop0 ~]# df -h
+[root@desktop0 ~]# mount -a
+[root@desktop0 ~]# df -h
+#####################################################
+
+虚拟机server:
+   1.利用NFS服务发布/nsd共享目录
+[root@server0 ~]# mkdir /nsd
+[root@server0 ~]# echo 123 > /nsd/a.txt
+[root@server0 ~]# ls /nsd/
+   2.允许所有客户端进行只读访问
+[root@server0 ~]# cat /etc/exports
+/public   *(ro)
+/nsd   *(ro)
+
+虚拟机desktop:
+   1.完成开机自动挂载到本机/mnt/test目录
+ 172.25.0.11:/nsd  /mnt/test nfs defaults,_netdev 0 0
+
+[root@desktop0 ~]# df  -ah  #显示当前系统,所有正在挂载信息
+####################################################
+HTTP服务基础
+
+一 构建基本Web主机
+Web通信基本概念
+• 基于 B/S(Browser/Server)架构的网页服务
+– 服务端提供网页
+– 浏览器下载并显示网页
+• Hyper Text Markup Language(html),超文本标记语言
+• Hyper Text Transfer Protocol(http),超文本传输协议 默认端口 80
+
+
+
+虚拟机server:
+]# yum -y install httpd
+]# systemctl restart httpd
+]# echo '<h1>NSD1903' > /var/www/html/index.html
+
+虚拟机desktop
+]# firefox 172.25.0.11
+
+####################################################
+web服务器的软件
+   httpd(Apache软件基金会)
+
+• 提供的默认配置
+– Listen:监听地址:端口(80)
+– ServerName:本站点注册的DNS名称(空缺)
+– DocumentRoot:网页根目录(/var/www/html)
+
+  DNS服务器:虚拟机classroom提供域名解析
+            server0.example.com
+            www0.example.com
+            webapp0.example.com
+测试解析结果:
+[root@server0 ~]# nslookup server0.example.com
+[root@server0 ~]# nslookup www0.example.com
+[root@server0 ~]# nslookup webapp0.example.com
+
+##################################################
+DocumentRoot:网页文件根目录(/var/www/html)   
+
+虚拟机server
+]# mkdir /var/www/myweb
+]# echo '<h1>wo shi myweb' > /var/www/myweb/index.html
+]# ls /var/www/myweb/
+]# vim /etc/httpd/conf/httpd.conf 
+
+ DocumentRoot "/var/www/myweb"
+
+]# systemctl restart httpd
+
+虚拟机desktop
+]# firefox 172.25.0.11   #测试访问结果
+#####################################################
+网络路径与实际路径
+
+客户端访问:
+ firefox 172.25.0.11:80-->服务端  httpd-->DocumentRoot /var/www/myweb-->index.html
+
+
+客户端 : firefox 172.25.0.11/abc
+服务端实际路径: : /var/www/myweb/abc/index.html
+
+客户端 : firefox 172.25.0.11/var/www/myweb/abc
+服务端实际路径: /var/www/myweb/var/www/myweb/abc
+
+虚拟机server
+]# mkdir /var/www/myweb/abc
+]# echo '<h1>wo shi abc' > /var/www/myweb/abc/index.html
+
+虚拟机desktop
+]# firefox 172.25.0.11      #测试访问结果
+]# firefox 172.25.0.11/abc  #测试访问结果
+
+##################################################
+ 客户端访问Web: 直接输入IP地址 = 服务端 DocumentRoot
+
+###################################################
+配置文件调用
+• 配置文件路径
+– /etc/httpd/conf/httpd.conf  #主配置文件
+– /etc/httpd/conf.d/*.conf    #调用配置文件
+
+###################################################
+虚拟Web主机
+
+虚拟主机的含义及类型
+• 虚拟Web主机
+– 由同一台服务器提供多个不同的Web站点
+
+• 区分方式
+ – 基于域名的虚拟主机
+ – 基于端口的虚拟主机
+ – 基于IP地址的虚拟主机
+ 
+            server0.example.com
+            www0.example.com
+            webapp0.example.com
+
+<VirtualHost  IP地址:端口>
+  ServerName  此站点的DNS名称
+  DocumentRoot  此站点的网页根目录
+</VirtualHost>
+
+]# vim /etc/httpd/conf.d/nsd01.conf
+ <VirtualHost  *:80> #本机所有IP地址的80端口启用虚拟Web主机
+   ServerName  server0.example.com  #设置网站访问的域名
+   DocumentRoot  /var/www/qq        #设置网页文件根目录
+ </VirtualHost>
+
+ <VirtualHost  *:80>
+   ServerName  www0.example.com
+   DocumentRoot  /var/www/baidu
+ </VirtualHost>
+]# mkdir /var/www/qq  /var/www/baidu        
+]# echo '<h1>QQ' > /var/www/qq/index.html
+]# echo '<h1>百度' > /var/www/baidu/index.html
+
+]# systemctl  restart  httpd
+
+###############################################
+ DocumentRoot 路径尽量放在/var/www , SELinux策略
+
+###############################################
+虚拟Web主机优先级,由上到下优先级递减
+一旦使用了虚拟Web主机,所有的页面都必须使用虚拟Web主机来呈现
+
+<VirtualHost  *:80>
+  ServerName www0.example.com
+  DocumentRoot  /var/www/baidu
+</VirtualHost>
+<VirtualHost  *:80>
+  ServerName server0.example.com
+  DocumentRoot  /var/www/qq
+</VirtualHost>
+<VirtualHost  *:80>
+  ServerName  webapp0.example.com
+  DocumentRoot  /var/www/myweb
+</VirtualHost>
+####################################################
+补充: Samba共享服务 (Windows平台与Linux平台   跨平台的共享)
+
+      协议:smb(沟通验证身份)   cifs(存储或传输数据)
+
+默认情况下必须通用户验证,才可以访问
+专门用于Samba共享服务,验证的用户:Samba共享帐号
+1.必须要有相应的本地用户对应           
+2.采用独立的密码设置             
+                                     
+
+虚拟机server:     
+1.安装软件包samba
+[root@server0 ~]# yum -y install samba
+
+2.创建Samba共享帐号
+]# useradd -s /sbin/nologin harry
+]# pdbedit -a harry      #将用户添加为Samba共享帐号
+new password:
+retype new password:
+
+   pdbedit -x 用户名     #删除Samba共享帐号
+   pdbedit -L  #查看当前系统,所有的Samba共享帐号
+
+3.修改配置文件
+[root@server0 ~]# vim /etc/samba/smb.conf 
+在命令模式下,输入G(大写)到全文的最后一行
+
+[nsd]                #设置共享名
+path = /common       #设置实际共享的目录
+
+[root@server0 ~]# mkdir /common
+[root@server0 ~]# echo 123 > /common/123.txt
+[root@server0 ~]# ls /common/
+
+4.重启smb服务
+[root@server0 ~]# systemctl restart smb
+
+5.修改SELinux策略,布尔值策略(功能的开关)
+ samba_export_all_ro : Samba服务只读共享功能
+
+]# getenforce   #查看SELinux状态
+]# getsebool -a | grep samba   #查看SELinux所有布尔值
+
+]# setsebool samba_export_all_ro  on  #修改SELinux布尔值
+
+]# getsebool -a | grep samba
+]# getenforce 
+
+
+虚拟机desktop:
+1.安装软件包,支持Samba共享的挂载,让本机识别cifs协议
+]# yum -y install cifs-utils
+]# rpm -q  cifs-utils
+
+2.挂载访问Samba共享
+]# mkdir /mnt/smb
+]# mount -o user=harry,pass=123  //172.25.0.11/nsd   /mnt/smb/
+
+格式:
+mount -o user=用户名,pass=密码  //服务端IP地址/共享名   挂载点
+
+]# df -h
+
+3.开机自动挂载,书写/etc/fstab      
+
+//172.25.0.11/nsd /mnt/smb  cifs defaults,_netdev,user=harry,pass=123 0 0
+
+[root@desktop0 ~]# umount /mnt/smb/
+[root@desktop0 ~]# mount -a
+[root@desktop0 ~]# df -h
+
+##############################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
