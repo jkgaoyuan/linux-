@@ -1,0 +1,116 @@
+案例练习,准备:
+            rht-vmctl  reset  classroom
+            rht-vmctl  reset  server
+	        rht-vmctl  reset  desktop
+######################################################
+
+案例1：实现的防火墙配置
+  1）修改虚拟机 server0防火墙配置，将默认区域修改为trusted
+  2）修改虚拟机 desktop0防火墙配置，将默认区域修改为trusted
+	[root@server0 ~]# firewall-cmd --set-default-zone=trusted 
+	success
+	[root@server0 ~]# firewall-cmd --get-default-zone 
+	trusted
+
+	[root@desktop0 ~]# firewall-cmd --set-default-zone=trusted 
+	success
+
+案例2:配置nfs文件夹共享，防火墙默认区域设置为trusted
+  在 server0 上发布共享文件夹
+  1）搭建nfs共享，实现共享本机/public
+  2）共享给所有人可以访问，并且具备只读权限
+	server端
+	[root@server0 ~]# yum -y install nfs-utils
+	已加载插件：langpacks
+	软件包 1:nfs-utils-1.3.0-0.el7.x86_64 已安装并且是最新版本
+	无须任何处理
+	[root@server0 ~]# mkdir /public
+	[root@server0 ~]# echo 'i am public' > /public/test.txt
+	[root@server0 ~]# cat /public/test.txt
+	i am public
+	[root@server0 ~]# vim /etc/exports
+	/public  *(ro)
+	[root@server0 ~]# systemctl restart nfs-server
+	装包 配置 启服务
+	客户端
+	[root@desktop0 ~]# showmount -e 172.25.0.11
+	Export list for 172.25.0.11:
+	/public *
+	[root@desktop0 ~]# mkdir /mnt/nfs
+	[root@desktop0 ~]# mount 172.25.0.11:/public /mnt/nfs/
+	[root@desktop0 ~]# df -h
+	文件系统             容量  已用  可用 已用% 挂载点
+	/dev/vda1             10G  3.0G  7.1G   30% /
+	devtmpfs             906M     0  906M    0% /dev
+	tmpfs                921M   80K  921M    1% /dev/shm
+	tmpfs                921M   17M  904M    2% /run
+	tmpfs                921M     0  921M    0% /sys/fs/cgroup
+	172.25.0.11:/public   10G  3.1G  7.0G   31% /mnt/nfs
+
+
+
+  在 desktop0 上访问共享文件夹
+  1）访问 server0 上发布共享/public,
+  2）实现开机自动挂载到/mnt/test
+[root@desktop0 ~]# yum -y install nfs-utils
+	vim /etc/fstab
+172.25.0.11:/public     /mnt/nfs        nfs defaults,_netdev     0 0 
+mount -a
+
+案例3:为虚拟机 server 配置以下虚拟Web主机
+- 实现三个网站的部署
+- 实现客户端访问server0.example.com网页内容为 卖女孩的小火柴
+- 实现客户端访问www0.example.com网页内容为  奔跑吧骆驼
+- 实现客户端访问webapp0.example.com网页内容为 20里春风不如你
+[root@server0 ~]# yum -y install httpd
+[root@server0 ~]# vim /etc/httpd/conf.d/html.conf
+	<Virtualhost *:80>
+	 DocumentRoot /var/www/myweb
+	 ServerName server0.example.com
+	</VirtualHost>
+	<Virtualhost *:80>
+	 DocumentRoot /var/www/luo
+	 ServerName www0.example.com
+	</VirtualHost>
+	<Virtualhost *:80>
+	 DocumentRoot /var/www/20
+	 ServerName webapp0.example.com
+	</VirtualHost>
+
+[root@server0 ~]# mkdir /var/www/luo
+[root@server0 ~]# mkdir /var/www/20
+
+[root@server0 ~]# echo '<h1><marquee>买火柴的小女孩' > /var/www/myweb/index.html
+[root@server0 ~]# echo '<h1><marquee>20里春分不如你' > /var/www/20/index.html
+[root@server0 ~]# echo '<h1><marquee>奔跑吧骆驼' > /var/www/luo/index.html
+
+
+
+
+案例4(了解):配置Samba文件夹共享，防火墙默认区域设置为trusted，修改SElinux状态为Enforcing
+  在 server0 上发布共享文件夹
+  1）发布目录 /nb，共享名为 niu
+  2）用户 kenji 对共享 niu 可读，密码是 123
+	
+ 在 desktop0 上访问共享文件夹
+  1）访问 server0 上发布共享文件夹,实现开机自动挂载到/mnt/nsd
+  2）实现对/mnt/nsd目录可以读
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
