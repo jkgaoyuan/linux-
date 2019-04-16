@@ -291,7 +291,7 @@ vim 中命令模式下按 C 光标之后被删除
   1. yum 安装  httpd 
    2. 重启 httpd 服务
 [root@server0 ~]# systemctl restart httpd 
-   3. 本机测试 访问 182.25.0.11 
+   3. 本机测试 访问 172.25.0.11
    filefox 访问 172.25.0.11
     在-X远程访问 Firefox 时保证 本机物理机 的Firefox没有开启 ,否则会出现错误
    4.在example.server中写一个网页
@@ -835,7 +835,8 @@ WEB 服务器
  基于B/S(browser/server)其核心依然是cs 架构的网页服务 
 -服务端提供网页
 -浏览器下载并显示网页
-
+记得 将防火墙设置为trusted，才能使用 desktop 访问 serve
+firewall-cmd --set-default-zone=trusted
 server
    20  yum -y install httpd
    23  systemctl restart httpd           # 网页默认路径 /var/www/html/
