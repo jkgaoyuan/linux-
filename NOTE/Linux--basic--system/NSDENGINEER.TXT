@@ -968,6 +968,238 @@ vim /etc/fstab
 
 
 
+############################
+课程准备
+搭建web服务
+要求要有三个 不同的页面 使用三个不同的域名
+
+
+#############################
+web访问限制
+客户机地址限制
+位置: 调用配置文件
+
+若格式忘记的话,可主配置文件,中可以查到
+[root@server0 ~]# vim /etc/httpd/conf/httpd.conf 
+   ######对//var/www设置
+		<Directory "/var/www">
+		    AllowOverride None
+		    # Allow open access:
+		    Require all granted
+		</Directory>
+
+
+使用: <Directory></Directory>
+对于目录设置的 权限子目录默认继承,
+除非对于子目录有明确规定
+
+
+eg:
+<Directory 目标地址1>
+Require all denied /granted 拒绝/允许/
+Require ip 172.0.0.1::1 172.25.0.11 允许部分ip访问/
+</Diretcory>
+
+<Directory /var/www/web01>
+Require all denied #拒绝所有人访问
+</Diretcory>
+
+<Directory /var/www/web02>
+Require all granted #允许所有人访问
+</Diretcory>
+
+<Directory /var/www/web02>
+Require ip 172.0.0.1::1 172.25.0.11 #允许部分用户访问
+</Diretcory>
+
+###############
+自定WEB根目录
+ 调整web站点 server0.example.com的网页目录
+  要求修改selinux 为permissive 宽松模式
+  主配置文件中设定了 网页根目录 /var/www 
+  我们可以在调用配置文件中修改  网页文件根目录
+	
+ 
+要求如下 
+1)新建 /webroot 作为站点目录
+
+	mkdir /webroot
+	echo 'i am webroot' > /webroot/index.html
+	vim /etc/httpd/conf.d/ruler.conf #调用配置文件--允许访问设置
+
+		<Directory /var/www/web02/pirment>
+		Require ip 172.25.0.11
+		</Directory>
+		<Directory /webroot>
+		 Require all granted
+		</Directory>
+	vim /etc/httpd/conf.d/html.conf #调用配置文件--虚拟主机设置
+		<virtualhost *:80>
+		documentroot /webroot
+		servername server0.example.com
+		</virtualhost>
+
+2)修改selinux策略,安全上下文(标签)
+###查看selinux的标签值
+	[root@server0 ~]# ls -Zd /var/www/ ### -Zd 查看selinux中标记
+	drwxr-xr-x. root root system_u:object_r:httpd_sys_content_t:s0 /var/www/
+	[root@server0 ~]# ls -Zd /webroot/
+	drwxr-xr-x. root root unconfined_u:object_r:default_t:s0 /webroot/
+
+  参照表中目录,重新设定目录的属性
+	--chcon [-R] --reference=目录模板 新目录
+	--chcon -R --reference=/var/www  /webroot
+	eg:
+	  chcon -R --reference=/var/www /webroot
+
+	  firefox server0.example.com
+
+###############################################
+部署动态网站
+
+静态网站
+    服务端的原始网页 与浏览器中访问的网页相同
+    由web服务软件处理所有请求
+    有文本 图片等静态资源
+动态网站
+   服务端的原始网页 不等于浏览器访问网页
+   由web服务软件接受请求,动态程序转后端模块处理
+  PHP网页 python网页 JSP网页
+#################################
+eg:
+部署Python动态网页,为站点 webapp0.example.com
+虚拟机
+1.下载 网页文件
+	[root@server0 ~]# vim /etc/httpd/conf.d/html.conf 
+	[root@server0 ~]# cd /var/www/web03
+
+	[root@server0 web03]# wget http://classroom.example.com/pub/materials/webinfo.wsgi
+
+	[root@server0 web03]# ls
+	index.html  webinfo.wsgi
+
+2. 实现客户端方便访问,设置页面跳转(页面别名 地址重写) ####重点 操作 务必学会
+当客户端访问 网络路径,讲实际路径 页面呈现
+
+	[root@server0 ~]# vim /etc/httpd/conf.d/html.conf
+
+	<virtualhost *:80>
+	documentroot /var/www/web03
+	alias /  /var/www/web03/webinfo.wsgi #注意alias的位置 必须在Documentroot之下
+	servername webapp0.example.com
+	</virtualhost>
+
+  	alise 网络路径 实际路径
+   	alias /  /var/www/web03/webinfo.wsgi
+ 
+   	alias  / :用户直接输入域名
+	[root@server0 ~]# systemctl restart httpd  ###重启服务
+	[root@server0 ~]# firefox webapp0.example.com #本地测试
+3.server上安装mod_wsgi
+   yum -y install mod_wsgi
+
+4.修改配置文件.添加翻译配置
+ 
+	[root@server0 ~]# vim /etc/httpd/conf.d/html.conf
+
+	<virtualhost *:80>
+	documentroot /var/www/web03
+	WsgiScriptalias /  /var/www/web03/webinfo.wsgi 	
+	#注意alias的位置 必须在Documentroot之下,需要在Alisa前面添加wsgiScript
+	servername webapp0.example.com
+	</virtualhost>
+5.修改端口
+     这一步 selinux  会影响 httpd 服务启动
+	listen 8909 ####httpd 监听端口 修改侦听端口
+	<virtualhost *:8909> ###  设置虚拟web主机端口 (网页提供访问端口)
+	documentroot /var/www/web03
+	wsgiscriptalias /  /var/www/web03/webinfo.wsgi
+	servername webapp0.example.com
+	</virtualhost>
+6.修改selinux  策略 ,非默认端口开放策略
+
+	[root@server0 ~]# vim /etc/httpd/conf.d/html.conf 
+
+	listen 8909
+	<virtualhost *:8909>
+	documentroot /var/www/web03
+	wsgiscriptalias /  /var/www/web03/webinfo.wsgi
+	servername webapp0.example.com
+	</virtualhost>
+
+	[root@server0 ~]# semanage port -a -t http_port_t -p tcp 8909
+			
+ 			-a 添加 -t类型  -p协议
+	libsemanage.semanage_exec_prog: Child process /sbin/load_policy did not exit cleanly.
+	libsemanage.semanage_reload_policy: load_policy returned error code -1.
+	ValueError: 无法提交 semanage 事务
+	[root@server0 ~]# systemctl restart httpd
+	[root@server0 ~]# firefox webapp0.example.com:8909
+
+#####################################################
+web服务中,端口优先级最高
+############################################
+安全web服务(第一阶段,作为补充内容)
+
+	  PKI 公钥基础设施
+	公钥:主要用来加密数据
+	私钥:解密数据
+	数字证书:证明拥有者的合法性权威性 (单位名称 ,有效期,公钥,颁发机构及签名)
+	Certificate Authority, 数字证书授权中心:负责证书的申请 审核 颁发 鉴定 撤销
+
+	公私钥 算是比较安全的 非对称算法
+
+一个安全的网站 所需要的: 
+	网站证书
+	根证书
+	数字证书
+	公私钥
+部署安全web server服务器
+1.部署网站证书 
+	 cd /etc/pki/tls/certs
+	 wget http://classroom.example.com/pub/tls/certs/server0.crt
+2.部署根证书
+ 在当前路径下
+ 	wget http://classroom.example.com/pub/example-ca.crt
+3.部署解密 秘钥
+
+路径/etc/pki/tls/private
+
+	[root@server0 certs]# cd /etc/pki/tls/private/
+
+	[root@server0 private]# wget  http://classroom.example.com/pub/tls/private/server0.key
+
+
+4.安装软件,实现加密web传输 mod_ssl
+ 	yum -y install mod_ssl
+	[root@server0 private]# cd /etc/httpd/conf.d/
+	[root@server0 conf.d]# ls
+	autoindex.conf  README      ssl.conf      welcome.conf
+	html.conf       ruler.conf  userdir.conf
+5.修改配置文件
+	vim 末行模式  :set nu 开启行号 
+	vim ssl.conf 
+
+59行	<VirtualHost _default_:443>  ###设置端口
+	DocumentRoot "/var/www/web01"
+      ServerName www0.example.com:443
+	<VirtualHost>
+100 SSLCertificateFile /etc/pki/tls/certs/server0.crt ###指定网站证书
+
+107 SSLCertificateKeyFile /etc/pki/tls/private/server0.key###指定秘钥
+
+122 SSLCACertificateFile /etc/pki/tls/certs/example-ca.crt ##指定CA 证书
+
+
+重启服务
+
+systemctl restart httpd
+
+
+访问
+Firefox 
+
+
 
 
 
