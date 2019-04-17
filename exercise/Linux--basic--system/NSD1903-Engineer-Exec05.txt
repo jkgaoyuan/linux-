@@ -123,13 +123,53 @@ systemctl restart httpd
 	</virtualhost>
 [root@server0 ~]# semanage port -a -t http_port_t -p tcp 8909
 [root@server0 ~]# systemctl restart httpd
-
+[root@server0 web02]# firefox server0.example.com:8909
 案例5：配置安全Web服务
 为站点 http://www0.example.com 配置TLS加密 
 1）一个已签名证书从以下地址获取 http://classroom/pub/tls/certs/server0.crt 
 2）此证书的密钥从以下地址获取 http://classroom/pub/tls/private/server0.key 
 3）此证书的签名授权信息从以下地址获取 http://classroom/pub/example-ca.crt
 
+
+
+]# cd /etc/pki/tls/certs/
+]# wget http://classroom.example.com/pub/tls/certs/server0.crt
+
+]# ls
+
+2.部署根证书(工商局的信息)
+]# cd /etc/pki/tls/certs/
+]# wget http://classroom.example.com/pub/example-ca.crt
+
+]# ls
+
+3.部署用于解密数据的秘钥
+]# cd /etc/pki/tls/private/
+]# wget http://classroom.example.com/pub/tls/private/server0.key
+
+]# ls
+
+4.安装mod_ssl软件,实现加密Web传输
+[root@server0 /]# yum -y install mod_ssl
+[root@server0 /]# ls /etc/httpd/conf.d/
+
+5.修改配置文件/etc/httpd/conf.d/ssl.conf
+[root@server0 /]# vim /etc/httpd/conf.d/ssl.conf
+ vim末行模式   :set  nu   开启行号功能
+
+ 59 DocumentRoot "/var/www/web01"
+ 60 ServerName www0.example.com:443
+#指定网站证书
+100 SSLCertificateFile /etc/pki/tls/certs/server0.crt
+
+#指定秘钥
+107 SSLCertificateKeyFile /etc/pki/tls/private/server0.key
+
+#指定根证书
+122 SSLCACertificateFile /etc/pki/tls/certs/example-ca.crt
+[root@server0 /]# systemctl restart httpd
+最后测试:
+[root@server0 /]# firefox https://www0.example.com
 
 
 
