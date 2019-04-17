@@ -1,0 +1,151 @@
+案例练习,准备:
+            rht-vmctl  reset  classroom
+            rht-vmctl  reset  server
+	       rht-vmctl  reset  desktop
+######################################################
+
+案例1:为虚拟机 server 配置以下虚拟Web主机
+- 实现三个网站的部署
+- 实现客户端访问server0.example.com网页内容为 大圣归来
+- 实现客户端访问www0.example.com网页内容为  大圣又归来
+- 实现客户端访问webapp0.example.com网页内容为 大圣累了
+yum -y install httpd 
+vim /etc/httpd/conf.d/heml.conf	
+	<virtualhost *:80> 
+	documentroot /var/www/web01
+	servername server0.example.com
+	</virtualhost>
+	<virtualhost *:80> 
+	documentroot /var/www/web02
+	servername www0.example.com
+	</virtualhost>
+	<virtualhost *:80> 
+	documentroot /var/www/web03
+	servername webap0.example.com
+	</virtualhost>
+mkdir /var/www/web01  /var/www/web02 /var/www/web03
+ehco '大圣归来' > /var/www/web01/index.html
+ehco '大圣又归来' > /var/www/web02/index.html
+ehco '大圣不来了' > /var/www/web03/index.html
+systemctl restart httpd
+
+案例2:为虚拟机 server 配置Web访问控制
+在 Web 网站 http://server0.example.com 的 DocumentRoot 目录下创建一个名为 private 的子目录，要求如下：
+1）在server0.example.com的DocumentRoot目录下，private的子目录里书写网页文件index.html内容为  大圣偷偷归来
+2）此页面只能在本机浏览，但是从其他系统不能访问这个目录的内容
+
+	[root@server0 ~]# mkdir /var/www/web01/private
+	
+	[root@server0 ~]# vim /etc/httpd/conf.d/ruler.conf 
+	
+	<directory /var/www/web01/private>
+	require ip 172.25.0.11
+	</directory>
+
+
+	[root@server0 ~]# echo '大圣偷偷归来' > /var/www/web01/private/
+	-bash: /var/www/web01/private/: 是一个目录
+	[root@server0 ~]# echo '大圣偷偷归来' > /var/www/web01/private/index.html
+	[root@server0 ~]# systemctl restart httpd.service 
+	[root@server0 ~]# systemctl restart httpd
+	[root@server0 ~]# vim /etc/httpd/conf.d/html.conf 
+		<virtualhost *:80>
+		documentroot /var/www/web01
+		servername server0.example.com
+		</virtualhost>
+	[root@server0 ~]# systemctl restart httpd
+	[root@server0 ~]# systemctl restart httpd^C
+	[root@server0 ~]# firefox server0.example.com/private
+
+
+
+
+
+案例3:为虚拟机 server 使用自定Web根目录
+
+调整 Web 站点 http://server0.example.com 的网页目录，要求如下：
+1）新建目录 /webroot，作为此站点新的网页目录
+2）确保站点 http://server0.example.com  仍然可访问
+	[root@server0 ~]# mkdir /weroot   #创建目录
+	[root@server0 ~]# ls -Zd /var/www/ /weroot/
+	drwxr-xr-x. root root system_u:object_r:httpd_sys_content_t:s0 /var/www/
+	drwxr-xr-x. root root unconfined_u:object_r:default_t:s0 /weroot/
+	[root@server0 ~]# ls -Zd /weroot/
+	drwxr-xr-x. root root unconfined_u:object_r:default_t:s0 /weroot/
+	[root@server0 ~]# chcon -R --reference=/var/www /weroot/  #设置selinux 策略 上下文(标签)
+	[root@server0 ~]# ls -Zd /weroot/
+	drwxr-xr-x. root root system_u:object_r:httpd_sys_content_t:s0 /weroot/
+	[root@server0 ~]# vim /etc/httpd/conf.d/ruler.conf
+	 <Directory /weroot>
+		require all granted   ###允许所有访问		
+	 </Directory>
+	[root@server0 ~]# vim /etc/httpd/conf.d/html.conf 
+	<virtualhost *:80>   ###设置 Documentroot 路径为/weroot
+	documentroot /weroot
+	servername server0.example.com
+	</virtualhost>
+
+	[root@server0 ~]# systemctl restart httpd
+	[root@server0 ~]# vim /etc/httpd/conf.d/html.conf 
+	[root@server0 ~]# echo '大圣偷偷归来' > /weroot/index.html
+	[root@server0 ~]# 
+
+
+
+
+
+案例4：为虚拟机 server 部署动态WSGI站点
+为站点 webapp0.example.com 配置提供动态Web内容，要求如下：
+1）此虚拟主机侦听在端口8909
+2）测试网页从以下地址下载，不要作任何更改http://classroom/pub/materials/webinfo.wsgi 
+3）从浏览器访问 http://webapp0.example.com:8909 可接收到动态生成的 Web 页面
+
+[root@server0 ~]# cd /var/www/web03
+[root@server0 web03]# wget http://classroom/pub/materials/webinfo.wsgi 
+[root@server0 ~]# /etc/httpd/conf.d/ruler.conf #中不变
+[root@server0 web03]# vim /etc/httpd/conf.d/html.conf 
+	<virtualhost *:80>
+	documentroot /var/www/web03
+	alias / /var/www/web03/webinfo.wsgi
+	servername webapp0.example.com
+	</virtualhost>
+[root@server0 web03]# systemctl restart httpd.service 
+[root@server0 web03]# firefox webapp0.example.com  #本地测试
+[root@dserver0 ~]# yum -y install mod_wsgi
+[root@server0 ~]# vim /etc/httpd/conf.d/h.conf
+
+	listen 8909
+	<virtualhost *:8909>
+	documentroot /var/www/web02
+	wsgiscriptalias / /var/www/web02/webinfo.wsgi
+	servername webapp0.example.com
+	#alias / /var/www/web02/webinfo.wsgi
+	</virtualhost>
+[root@server0 ~]# semanage port -a -t http_port_t -p tcp 8909
+[root@server0 ~]# systemctl restart httpd
+
+案例5：配置安全Web服务
+为站点 http://www0.example.com 配置TLS加密 
+1）一个已签名证书从以下地址获取 http://classroom/pub/tls/certs/server0.crt 
+2）此证书的密钥从以下地址获取 http://classroom/pub/tls/private/server0.key 
+3）此证书的签名授权信息从以下地址获取 http://classroom/pub/example-ca.crt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
