@@ -1,0 +1,211 @@
+教学环境介绍  
+– 格式:rht-vmctl   控制指令    虚拟机名
+
+真机上操作：
+　]# rht-vmctl reset classroom　 //先重置资源服务器
+　]# rht-vmctl reset server
+　]# rht-vmctl reset desktop　　 //再重置练习虚拟机
+####################################################
+环境准备:
+虚拟机server
+]# firewall-cmd --set-default-zone=trusted  #允许所有访问
+
+虚拟机desktop
+]# firewall-cmd --set-default-zone=trusted  #允许所有访问
+
+###################################################
+基础邮件服务          
+
+电子邮件通信
+• 电子邮件服务器的基本功能
+– 为用户提供电子邮箱存储空间(用户名@邮件域名)
+– 处理用户发出的邮件 —— 传递给收件服务器
+– 处理用户收到的邮件 —— 投递到邮箱
+
+
+快速部署postfix邮件服务器
+• 装包、配置、起服务
+– 默认的标准配置即可为本机提供发/收邮件服务
+– 若有必要,可扩大服务范围(邮件域)
+
+DNS服务器:虚拟机classroom
+         
+         yg@server0.example.com
+         xln@server0.example.com
+
+虚拟机server:
+1.安装软件postfix,提供邮件功能的软件
+[root@server0 ~]# rpm -q postfixpostfix-2.10.1-6.el7.x86_64
+[root@server0 ~]# 
+                                                      
+2. 修改配置文件/etc/postfix/main.cf
+vim末行模式  :set  nu
+
+99 myorigin = server0.example.com  #默认补全邮箱帐号后缀
+116 inet_interfaces = all     #本机所有网卡都提供邮件服务
+164 mydestination =  server0.example.com 
+                                                              #判断为本域邮件依据
+
+       收件人:xln@server0.example.com
+
+3.重启postfix邮件服务
+[root@server0 ~]# systemctl restart postfix
+使用mail命令发信/收信
+– mail -s  '邮件标题'    -r  发件人    收件人[@收件域]...
+
+• mail 收信操作
+– mail [-u 用户名]
+
+[root@server0 ~]# useradd yg
+[root@server0 ~]# useradd xln
+
+[root@server0 ~]# mail -s 'test01' -r yg  xln
+haha xixi hehe lele 
+.                          #当只有一个点时,提交并发送邮件
+EOT
+[root@server0 ~]# echo dc | mail -s 'test02' -r yg  xln
+
+[root@server0 ~]# mail -u xln
+Heirloom Mail version 12.5 7/5/10.  Type ? for help.
+"/var/mail/xln": 2 messages 2 new
+>N  1 yg@server0.example.c  Thu Apr 18 10:31  18/588   
+
+> 1     #输入邮件的编号1,查看邮件内容
+####################################################
+准备交换分区
+
+交换空间(虚拟内存):缓解内存不足
+
+mkswap  swapon  swapoff  swapon -s     swapon -a
+
+
+parted分区工具(划分GPT分区模式)
+
+   GPT分区模式: 128个主分区,最大空间18EB
+
+
+[root@server0 ~]# parted /dev/vdb 
+(parted) mktable  gpt      #初始化磁盘,不能重复执行
+(parted) mkpart            #划分新的分区
+分区名字?                                 #随便写
+文件系统类型？[ext2]?  xfs    #随便写不起实际作用
+起始点？ 0                       
+结束点？ 2G   
+ 忽略/Ignore/放弃/Cancel? Ignore 
+(parted) print 
+(parted) unit GB     #显示单位
+                                                  (parted) print 
+(parted) quit
+(parted) rm          #删除分区        
+[root@server0 ~]# lsblk 
+###################################################
+配置IPv6地址
+
+• IPv4 地址表示
+– 32个二进制位,点 分隔的十进制数
+
+• IPv6 地址表示
+– 128个二进制位, 利用冒号分隔 8 部分,最终每一部分由16进制数标识
+– 每段内连续的前置 0 可省略、连续的多个 : 可简化为 ::
+– 例如: 2003:ac18:0000:0000:0000:0000:0000:0305
+      2003:ac18::305
+
+
+为虚拟机server:配置IPv6地址2003:ac18::305/64
+
+1.利用nmcli命令查看网卡名称
+[root@server0 ~]# nmcli connection show
+名称         
+System eth0
+
+2.修改地址                                                            
+]# nmcli connection modify 'System eth0' 
+   ipv6.method manual ipv6.addresses 2003:ac18::305/64  
+   connection.autoconnect yes
+
+]# nmcli connection 修改  '识别的网卡名称' 
+   ipv6.方法 手工配置 ipv6.地址 2003:ac18::305/64  
+     每次开机自动启用
+
+3.激活配置
+[root@server0 ~]# nmcli connection up 'S(tab)'
+[root@server0 ~]# ifconfig | less
+  inet6 2003:ac18::305  prefixlen 64 
+
+[root@server0 ~]# ping6 2003:ac18::305
+##################################################
+
+配置聚合连接(链路聚合)
+
+• team,聚合连接(也称为链路聚合)
+– 由多块网卡(team-slave)一起组建而成的虚拟网卡,即"组队"
+
+– 作用1:热备份(activebackup)连接冗余
+
+
+                eth1        eth2
+                   
+                               虚拟网卡 team0  192.168.1.1
+
+虚拟机配置链路聚合:
+1.创建虚拟网卡team0 ,参考 man teamd.conf 全文搜索/example
+
+]# nmcli connection add type team      
+ con-name team0 ifname  team0 autoconnect yes           
+ config   '{"runner": {"name": "activebackup"}}'
+
+]# nmcli connection 添加  类型  team(组队)
+      配置文件名  team0  网卡命名为 team0  每次开机自动启用
+      配置  链路聚合以activebackup(热备)工作的方式
+
+]# ifconfig     #查看team0网卡的生成
+ 
+如果有敲错,请删除从新创建team0
+]# nmcli connection delete team0  
+
+2.添加成员
+]# nmcli connection add type team-slave 
+ con-name team0-1 ifname eth1 master team0 
+
+]# nmcli connection add type team-slave 
+ con-name team0-2 ifname eth2 master team0
+
+]# nmcli connection 添加   类型   组队-成员 
+ 配置文件名 team0-1  网卡设备名   eth1   主设备为 team0 
+
+]# ls /etc/sysconfig/network-scripts/  #查看生成的配置文件
+
+如果有敲错,请删除从新创建team0
+]# nmcli connection delete team0-1  (生成配置文件名)
+]# nmcli connection delete team0-2  (生成配置文件名)
+
+
+3.配置IP地址,再激活
+]# nmcli connection modify team0      
+   ipv4.method manual ipv4.addresses 192.168.1.1/24 
+   connection.autoconnect yes
+
+]# nmcli connection up team0    #激活team0
+
+]# ifconfig team0 | head -2    #查看team0的IP地址信息
+
+]# teamdctl team0 state      #查看team0信息
+
+]# ifconfig eth2 down        #将eth2网卡禁用
+]# teamdctl team0 state      #查看team0信息
+
+]# ifconfig eth2 up          #将eth2网卡启用
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,25 +1,4 @@
-Skip to content
- 
-Search or jump to…
 
-Pull requests
-Issues
-Marketplace
-Explore
- 
-@jkgaoyuan 
- Watch 0
- Star 0  Fork 0 jkgaoyuan/linux-
- Code  Issues 0  Pull requests 0  Projects 0  Wiki  Insights  Settings
-Branch: master 
-linux-/NOTE/Linux--basic--system/NSDENGINEER.TXT
-Find file Copy path
-@jkgaoyuan jkgaoyuan Update NSDENGINEER.TXT
-747b0b2 24 seconds from now
-1 contributor
-219 lines (198 sloc)  5.56 KB
-RawBlameHistory
-  
 ######################################################
 SHELL SCRIPT  SHELL 脚本(目前不做要求,之后会专门讲)
 脚本:一个可以执行的文件,运行可以实现某种功能(类似于某种程序)
@@ -38,10 +17,10 @@ Shell脚本的组成
 # 可执行代码
 eg:
 	#!/bin/bash
-	uname -r
-	hostname
-	cat /etc/redhat-release
-	ifconfig | head -2
+	uname -r #查看内核信息
+	hostname #查看主机名称
+	cat /etc/redhat-release #查看 系统信息
+	ifconfig | head -2  #查看ip
 	grep bin /etc/passwd | tail -2
 
 变量
@@ -97,7 +76,7 @@ eg:设定用户名和密码创建用户
 
 	
 预定义变量
-	useradd $a &> /dev/null
+	useradd $a &> /dev/null   ### &>  将错误信息和正确信息传递给 下一部
 	echo successfuly useradd $a
 	echo $b | passwd --stdin $a &> /dev/null
 	echo successfuly passwd $a
@@ -127,6 +106,7 @@ eg:设定用户名和密码创建用户
 >&2  将正确输出转化为错误 输出
 补充: 
   单引号 ''  屏蔽所有的特殊符号 原样输出
+  $(hostname) 将变量作为一个参数
  
    反撇号`` 或者$() : 将命令的输出,直接参与下次运行
    	[root@server0 ~]# mkdir /$(hostname)
@@ -234,23 +214,6 @@ eg:检测用户是否存在 ,不存在则创建
 数值范围
 {起始..结束}
 {1..100} = 1-100 连续的数字
-
-
-
-
-
-© 2019 GitHub, Inc.
-Terms
-Privacy
-Security
-Status
-Help
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About
 
 #####################################################
 系统安全保护
@@ -570,7 +533,7 @@ iscsi 　网络磁盘服务(共享磁盘/分区) 类似于　ｓｈｅｌｌ　�
 2.修改配置文件，指定客户端生的命令
 	[root@desktop0 ~]# vim /etc/iscsi/initiatorname.iscsi 
 	InitiatorName=iqn.2019-04.com.example:desktop0
-3.重启服务　iscsid 服务，用于识别客户端声称名字＃修改完　配置文件后需要重启服务
+3.数据库重启服务　iscsid 服务，用于识别客户端声称名字＃修改完　配置文件后需要重启服务
 	[root@desktop0 ~]# systemctl restart iscsid
 	有时会出现　需要使用　systemctl daemon-reload 　刷新命令
 4.发现，链接　iscsi 磁盘 ###告诉快递的位置
@@ -668,9 +631,9 @@ MariaDB [(none)]>
 　　　　　　　行　　　列
 	　　　３表记录　　５表字段
 	编号　姓名　性别　联系方式　　　地址　
-	　1　　ａ　　ｗ　　　ａａａ　　　ｎ　
-　　　　　2　　ｂ　　ｍ　　　ｂｂｂ　　　ｗ
-　　　　　3　　ｃ　　ｗ	ｃｃｃ　　　ｅ
+	 1　　ａ　　ｗ　　　ａａａ　　　ｎ　
+     2　　ｂ　　ｍ　　　ｂｂｂ　　　ｗ
+　　　3　　ｃ　　ｗ	 ｃｃｃ　　　ｅ
 
 增删改查　: instal delea update  select
 　　　＃＃＃＃进入　mysql 库
@@ -1125,7 +1088,7 @@ eg:
 	<virtualhost *:8909>
 	documentroot /var/www/web03
 	wsgiscriptalias /  /var/www/web03/webinfo.wsgi
-	servername webapp0.example.com
+	servername webapp0.example.c    om
 	</virtualhost>
 
 	[root@server0 ~]# semanage port -a -t http_port_t -p tcp 8909
@@ -1198,23 +1161,121 @@ systemctl restart httpd
 
 
 访问
-Firefox 
+Firefox firefox https://webapp0.example.com
+
+
+##########################
+邮件服务器
+ DNS 服务器 : classroom # 由于目前没有学校DNS服务的搭建
+
+1.server 安装postfix,提供邮件服务软甲
+
+[root@server0 ~]# yum -y install postfix
+
+2.Firewall 设置 trusted 且修改 /etc/post/main.cf
+
+ 99 myorigin = server0.example.com
+ 99 myorigin = $mydomain ##变量调用 #默认补全后缀
+ 116 inet_interfaces = all  ##本机任何一张网卡都提供 邮件服务
+ 164 mydestination = $myhostname, localhost.$mydomain, localhost
+ 164 mydestination = server0.example.com ##判断为本域邮件依据
+##重启服务
+[root@server0 ~]# systemctl restart postfix.service
+
+####使用mail 命令发信
+记得先创建收件人 发件人
+mail -s '邮件标题' -r 发件人  收件人@收件域
+
+
+    [root@server0 ~]# mail -s '买车吗' -r yg xln
+    买 奔驰吗?  66 万 ,漏油内种. 一公里没开
+    .
+    EOT
 
 
 
+非交互
+echo dc | mail -s '主题' -r 发件人  收件人
+
+mail 收信
+mail -u 用户
+
+    [root@server0 ~]# mail -u xln
+        Heirloom Mail version 12.5 7/5/10.  Type ? for help.
+        "/var/mail/xln": 1 message 1 new
+        >N  1 yg@server0.example.c  Thu Apr 18 10:36  18/637   "买车吗"
+        &
+        Message  1:
+#############################
+parted分区工具(GPT分区专用)
+全程支持tab
+GPT最多: 128 主分区
+不像fdisk上 w 才写入磁盘, parted 在 你回车时候就已经修改硬盘信息了
+
+[root@server0 ~]# parted /dev/vdb
+(parted) mktable gpt ###指定分区模式 ,每个分区只能执行一次
+(parted) mkpart #交互式,不支持 中文特殊字符
+分区名称? #中文特殊字符
+文件系统类型? #xfs ...
+起始点? 0 #默认设置
+结束点? +2G
+(parted) print  #显示分区信息
+
+rm 删除分区####
+rm 2 # 分区编号
+#############
+配置 ipv6
+128二进制,冒号分割的十六进制,
+eg: 配置 2003:ac18::308/64
+
+nmcli connection show #查看网卡信息
+v4 v6 都可以 使用这条命令
+nmcli connection modify
+   配置                                 #网卡名称 上面查看              #手动                                                    #开机自动链接
+[root@server0 ~]# nmcli connection modify 'System eth0' ipv6.method manual ipv6.addresses '2003:ac18::305/64' connection.autoconnect yes
+  激活链接
+[root@server0 ~]# nmcli connection up 'System eth0'
+[root@server0 ~]# ifconfig |head -5
+    eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+            inet 172.25.0.11  netmask 255.255.255.0  broadcast 172.25.0.255
+            inet6 2003:ac18::305  prefixlen 64  scopeid 0x0<global>
+
+ping6 2003:ac18::305  ###用ping 不识别
+################################
+链路聚合
+team  聚合链路
+ 由多块网卡一起组建而成的虚拟网卡
+ 作用1 论询式(team-slave) 流量负载均衡
+ 作用2 热备份(activebackup) 链接冗余
 
 
+怎么做:
+1.创建虚拟网卡
+team0
+参考man teamd.conf
+                                 配置文件名字     网卡名字                              这里的 '' "" 不能改变
+nmcli connection add type team config-name team0 ifname team0 autoconnect yes config '{"runner" :{"name": "activebackup"}}'
+
+由于这条命令不会覆盖错位的数据 所以 需要删除后 重新 输入
+                                       虚拟网卡名字
+[root@server0 ~]# nmcli connection delete team0
+
+2.添加成员
+
+[root@server0 ~]# nmcli connection add type team-slave con-name team-1 ifname eth1 master team0
+[root@server0 ~]# nmcli connection add type team-slave con-name team-2 ifname eth2 master team0
+
+配置文件
+[root@server0 ~]# ls /etc/sysconfig/network-scripts/
 
 
+3.配置 IP 并激活
+###配置 ip
+[root@server0 ~]# nmcli connection modify team0 ipv4.method manual ipv4.addresses 192.168.1.1/24 connection.autoconnect yes
+[root@server0 ~]# nmcli connection up team0   #####激活
+Connection successfully activated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/7)
 
-
-
-
-
-
-
-
-
+[root@server0 ~]# teamdctl team0 state  ##查看链路聚合信息
 
 
 
