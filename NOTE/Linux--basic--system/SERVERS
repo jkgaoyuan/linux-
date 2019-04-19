@@ -1,0 +1,208 @@
+新教学环境的搭建
+clone- vm7
+调用 脚本进行虚拟机的创建
+ROOT
+password 123456
+真机管理虚拟机
+1.直接管理 无需ip 显示开机过程
+             虚拟机的名字
+virsh console  A
+
+
+作用:只用来配置IP
+
+退出 : ctrl + ]
+2.配置 ip
+虚拟机 A
+ 192.168.4.7/24
+ 主机名 svr7.tedu.cn
+
+虚拟机 B
+ 192.168.4.207/24
+ 主机名 pc207.tedu.cn
+
+添加别名只对 student 生效
+[student@student ~]$ vim /home/student/.bashrc
+    alias goa='ssh -X root@192.168.4.7'
+
+    alias gob='ssh -X root@192.168.4.207'
+
+查看虚拟机文件内容
+[root@pc207 ~]# cat /etc/motd
+为虚拟机搭建yum
+服务端 :构建 web / ftp服务 共享仓库内容
+在真机上安装 vsftpd
+    [student@room9pc01 ~]$ rpm -q vsftpd
+    vsftpd-3.0.2-22.el7.x86_64
+    1. 查看服务状态
+        [student@room9pc01 ~]$ systemctl status vsftpd
+        ● vsftpd.service - Vsftpd ftp daemon
+    2.  创建 /var/ftp/centos-1804
+        /var/ftp/ 默认共享位置
+        开机自动挂载
+        mount -a 检测
+        vim /etc/fstab
+                                                                          光盘文件系统
+        /var/lib/libvirt/images/iso/CentOS7-1804.iso  /var/ftp/centos-1804 iso9660 defaults 0 0
+
+        检测
+        [student@room9pc01 ~]$ firefox ftp://192.168.4.254
+        A B 都要执行上面操作
+常见的一级目录以及用法
+        /boot  系统引导必须项目
+        /bin /sbin  命令程序文件
+        /etc   系统配置文件
+        /dev  物理设备
+        /root  /home
+        /var  经常变化文件  日志文件
+        /proc 存放内存中的映射数据,不占用磁盘空间
+        /tmp  零时文件   ~]$ ls -ld /tmp/
+                            drwxrwxrwt. 29 root root 4096 4月  19 11:32 /tmp/
+权限数值的表示
+        r = 4
+        w = 2
+        x = 1
+        SUID = 4
+        SGID = 2
+        Sticky Bite = 1
+        注意这里数字 是数字 不能和 字母连用 是能数字与数字 字母与字母
+
+        [student@room9pc01 ~]$ chmod o+7 /etc/
+        chmod: 无效模式："o+7"
+        设置特殊权限
+        第一个数字是附加权限的求和
+        [root@svr7 ~]# chmod 7751 /public/ (大规模修改用,精确修改还的用字母)
+        [root@svr7 ~]# ls -ld /public/
+        drwsr-s--t 2 root root 6 4月  19 11:40 /public/
+        [root@svr7 ~]#
+        history -c 清空历史命令
+        vim /etc/profile
+        默认1k行
+        !str  (常用)
+        !xxx
+        执行历史命令中最近以str开头的命令
+          vim /etc/profile
+          [root@svr7 ~]# systemctl restart httpd
+          [root@svr7 ~]# !sys
+          systemctl restart httpd
+统计文件或者目录信息
+         du
+
+        [root@svr7 ~]# du -sh /root/
+        13M	/root/
+date查看/调整系统 时间  #####常常充当变量用
+        date %F  显示Y- M -D
+        date +%Y  只显示年
+        date +%m 只显示月
+        date +%d  只显示日
+        date +%H  只显示小时
+        date +%M  只显示分钟
+        date +%S  只显示秒
+软硬链接  ------制作快捷方式
+    1.软连接(最多)
+        ln -s /路径/软文件  /路径/快捷方式 (青色)
+                  当你不起名字时候默认和源文件名相同
+                  原始文件被干掉后软链接不可用
+                  可以夸分区
+        [root@svr7 ~]# mkdir /public/
+        [root@svr7 ~]# ln -s /public/ /root/zz
+        [root@svr7 ~]# ls
+        Desktop  zz
+
+    2.硬连接  (限制比较大)
+
+        ln  /路径/软文件  /路径/快捷方式 (原始文件被干掉后硬链接依然可用)
+        并且不可已跨分区使用,不能用在目录上
+获取帮助
+    1.利用help
+        xxx --help
+    2.权威帮助信息
+        man  xxx
+        mna 5 passwd ###5 表示文字帮助信息
+        man 默认查看命令帮助信息
+ZIP 归档工具,具有夸平台压缩归档格式
+        zip [-r] 备份文件.zip  被归档文件    -r 递归  目录必须加
+
+   释放zip
+        unzip 备份文件.zip [-d] 目标文件夹   -d 指定目录,目录不从在会自动创建
+将 ftp 上rhce测试脚本
+        desktop0.sh  rht-labcheck  server0.sh
+下载到/home/student/bin
+        运行 rht-labcheck 进行检查
+
+自定义yum 仓库
+      1.将ftp中 tools.tar.gz下载到真机桌面
+      2.将真机的tools.tar.gz上传到虚拟机A的root下
+         scp依赖于ssh
+         scp /本地路经/源文件  root@对方ip:/对方路径
+      3.生产仓库数据文件
+         yum -y install createrepo
+         createrepo /tools/other/
+      4.修改yum配置文件
+         vim /etc/yum.repos.d/local.repo
+         [A-repo]
+         name=other
+         baseurl=file:///tools/other
+         enabled=1
+         gpgcheck=0
+      5. 显示安装路径
+         rpm -ql XXX
+         rpm -ql cmatrix
+
+
+      在命令后面加上 & 将 程序放入后台
+
+vim 编辑技巧
+    vi :linux基本的文本编辑器
+    依然和vim一样有三个模式
+    命令模式
+    12G 跳转到第12行
+    GG 末尾
+    gg开头
+    yy复制
+    p复制
+    dd删除当前行
+    d$ 或者 D 从光标处删除到行尾
+    C 从光标处删除到行尾,进入插入模式
+    d^ 从光标处删除到行首
+    u 撤销
+    U 撤销当前行所有操作
+    ctrl + r 取消前一次撤销操作 (反撤销)
+    shift + ZZ   保存且退出(命令模式)
+    / 查询
+   末行 模式
+   :w
+   :q!
+   :W /root/newfile
+   :set nu 显示行号
+   :r /xxx/xxx  在当前行插入文件
+   字符串的替换
+   :%s/old/new/g  替换文件所有的 old
+   :s /old/new/g  替换光标当前行所有old
+   :s /old/new/   替换光标所在行的第一个 old
+   :1,10 s/old/new/g   替换第1-10行所在行所有old
+   开关参数的控制
+   :set nu或nonu
+   :set ai或noai 自动缩进
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
