@@ -1,0 +1,341 @@
+RHCSA 7 答题参考（上午） 
+ 
+
+重置练习环境：
+rht-vmctl  reset  classroom
+rht-vmctl  reset  server
+rht-vmctl  reset  desktop
+
+################################################################################ 
+ 
+开考准备： 为了能够继续考试，您必须首先完成下述任务。
+一 破解虚拟机server的root密码
+  1.将系统的 root 账号密码设置为 redhat 。 
+  2.配置您的虚拟机系统使用下述静态网络配置：
+   	Hostname：server0.example.com 
+	IP address：172.25.0.11 
+	Netmask：255.255.255.0 
+	Gateway：172.25.0.254 
+	Name server：172.25.254.254 
+   您必须完成对网络的修改，这样才能访问其余的考题，
+ 
+ 
+00a、重设 root 密码 
+1）重启虚拟机 server，出现 GRUB 启动菜单时按 e 键进入编辑状态 
+2）找到 linux16 所在行，末尾添加 rd.break console=tty0，按 Ctrl+x 键进恢复模式 
+3）以可写方式挂载硬盘中的根目录，并重设 root 密码： 
+switch_root:/# mount  -o  remount,rw  /sysroot    #以可读写方式重新挂载根系统 
+switch_root:/# chroot  /sysroot/                  #切换到根系统 
+sh-4.2# echo  redhat  |  passwd  --stdin  root    #设置考试指定的密码 
+sh-4.2# touch  /.autorelabel                      #标记下一次启动重做 SELinux 标签 
+sh-4.2# exit switch_root:/# reboot 
+ 
+00b、利用nmtui进行配置主机名、IP 地址/掩码/默认网关/DNS 地址并且激活
+    
+ 
+################################################################################ 
+ 
+1. 为您的系统指定一个默认的软件仓库 
+试题概述： YUM 的软件库源为http://rhgls.domainX.example.com/pub/x86_64/Server将此配置为 您的系统的默认软件仓库。 
+解题参考： 
+[root@serverX ~]# vim  /etc/yum.repos.d/rhel7.repo 
+ [rhel7]             #仓库标识
+ name=RHEL7.0        #仓库描述信息
+ baseurl=http://classroom.example.com/content/rhel7.0/x86_64/dvd/          #指定服务端位置
+ enabled=1           #启用本文件
+ gpgcheck=0          #不检测红帽签名
+
+[root@serverX ~]# yum  repolist          //确认配置结果 
+[root@serverX ~]# yum  -y install httpd  //测试安装软件包
+ 
+2. 调整逻辑卷的大小 
+ 试题概述： 将逻辑卷 vo 和其文件系统大小调整到 300 MiB。要确保文件系统中的内容保持完整。
+ 请 注意：分区大小很少能够完全符合要求的大小，所以大小在 270 MiB 和 330 MiB 之间都是 可以接受的。 
+ 解题参考： [练习环境：参考文末的步骤先处理 /dev/vdb ] 
+ [ 注：此题建议与第 12 、 15 题综合考虑；如果逻辑卷 vo 所在卷组有足够空间，只要执行最后两步 ] 
+   
+ 
+[root@serverX ~]# fdisk  /dev/vdb 
+   p 查看分区表
+   n 创建主分区----->回车----->回车---->回车----->在last结束时 +150M
+   n 创建主分区----->回车----->回车---->回车----->在last结束时 +100M
+   n 创建主分区----->回车----->回车---->回车----->在last结束时 +100M
+      ......
+   n 创建扩展分区 
+               ----->回车---->起始回车----->结束回车  将所有空间给扩展分区
+   p 查看分区表
+   n 创建逻辑分区----->起始回车------>结束+100M
+   n 创建逻辑分区----->起始回车------>结束+1G
+   p 查看分区表
+   w 保存并退出
+[root@server0 ~]# lsblk
+[root@serverX ~]# partprobe  /dev/vdb        //刷新分区表 
+ 
+[root@serverX ~]# vgcreate  systemvg  /dev/vdb1  /dev/vdb2    //创建卷组  
+[root@serverX ~]# vgs    //查看卷组信息
+ 
+[root@serverX ~]# lvcreate  -n  vo  -L  180M  systemvg   //创建逻辑卷  
+[root@serverX ~]# lvs    //查看逻辑卷信息       
+[root@serverX ~]# mkfs.ext3 /dev/systemvg/vo     //格式化 
+ 
+[root@serverX ~]# vgextend  systemvg  /dev/vdb3      //扩展卷组 
+[root@serverX ~]# lvextend  -L  300M  /dev/systemvg/vo    //扩展逻辑卷 
+[root@serverX ~]# lvs    //查看逻辑卷信息 
+[root@serverX ~]# resize2fs  /dev/systemvg/vo        //更新逻辑卷大小 
+[root@serverX ~]# df -h    //确认文件系统大小
+
+ 
+3. 创建用户帐户 
+试题概述： 创建下列用户、组以及和组的成员关系： 
+	一个名为 adminuser 的组
+	一个名为 natasha 的用户，其属于 adminuser，这个组是该用户的从属组 
+	一个名为 harry 的用户，属于 adminuser，这个组是该用户的从属组
+	一个名为 sarah 的用户，其在系统中没有可交互的 shell，并且不是 adminuser 组的 成员用户
+	natasha、harry、和 sarah 的密码都要设置为 flectrag 
+解题参考： 
+[root@serverX ~]# groupadd  adminuser        
+ 
+[root@serverX ~]# useradd  -G  adminuser  natasha 
+[root@serverX ~]# useradd  -G  adminuser  harry 
+[root@serverX ~]# useradd  -s  /sbin/nologin  sarah 
+ 
+[root@serverX ~]# echo  flectrag  |  passwd  --stdin  natasha 
+[root@serverX ~]# echo  flectrag  |  passwd  --stdin  harry 
+[root@serverX ~]# echo  flectrag  |  passwd  --stdin  sarah 
+
+ 
+
+4. 配置文件 /var/tmp/fstab 的权限 
+试题概述： 拷贝文件/etc/fstab 到/var/tmp/fstab，配置文件/var/tmp/fstab 的权限： 
+	文件/var/tmp/fstab 的拥有者是 root 用户 
+	文件/var/tmp/fstab 属于 root 组
+	文件/var/tmp/fstab 对任何人都不可执行
+	用户 natasha 能够对文件/var/tmp/fstab 执行读和写操作
+	用户 harry 对文件/var/tmp/fstab 既不能读，也不能写
+	所有其他用户（当前的和将来的）能够对文件/var/tmp/fstab 进行读操作 
+解题参考： 
+[root@serverX ~]# cp  /etc/fstab  /var/tmp/fstab 
+[root@serverX ~]# setfacl  -m  u:natasha:rw  /var/tmp/fstab 
+[root@serverX ~]# getfacl  /var/tmp/fstab
+
+[root@serverX ~]# setfacl  -m  u:harry:---  /var/tmp/fstab 
+[root@serverX ~]# getfacl  /var/tmp/fstab
+ 
+5. 配置一个 cron 任务 
+试题概述： 为用户 natasha 配置一个定时任务，每天在本地时间 14:23 时执行以下命令： /bin/echo hiya 
+解题参考： 
+[root@serverX ~]# systemctl  restart  crond 
+[root@serverX ~]# systemctl  enable  crond 
+ 
+[root@serverX ~]# crontab  -e  -u  natasha 
+23  14  *  *  *   /bin/echo  hiya 
+ 
+ 
+6. 创建一个共享目录 
+试题概述： 创建一个共享目录/home/admins ，特性如下：
+	/home/admins 目录的组所有权是 adminuser
+	adminuser 组的成员对目录有读写和执行的权限。除此之外的其他所有用户没有任何权限
+       （root 用户能够访问系统中的所有文件和目录）	
+	在/home/admins 目录中创建的文件，其组所有权会自动设置为属于 adminuser 组 
+        [ 注 ] 此处所谓的共享目录并不是指网络共享，只是某个组成员共用 
+解题参考： 
+[root@serverX ~]# mkdir  /home/admins 
+[root@serverX ~]# chown  :adminuser /home/admins 
+[root@serverX ~]# ls -ld /home/admins 
+
+[root@serverX ~]# chmod  g+w /home/admins 
+[root@serverX ~]# ls -ld /home/admins 
+
+[root@serverX ~]# chmod  o=--- /home/admins
+[root@serverX ~]# ls -ld /home/admins 
+
+[root@serverX ~]# chmod  g+s /home/admins
+[root@serverX ~]# ls -ld /home/admins 
+
+[root@serverX ~]# mkdir /home/admins/test
+[root@serverX ~]# ls -ld /home/admins/test   #测试
+      
+ 
+ 
+7. 安装内核的升级 
+试题概述： 
+-新版本内核文件可以从http://classroom.example.com/content/rhel7.0/x86_64/errata/Packages/kernel3.10.0-123.1.2.el7.x86_64.rpm获取。 
+-升级你的系统的内核版本，同时要满足下列要求： 
+-当系统重新启动之后升级的内核要作为默认的内核
+-原来的内核要被保留，并且仍然可以正常启动 
+
+解题参考： 
+[root@serverX ~]# firefox  http://classroom.example.com/content/rhel7.0/x86_64/errata/Packages/  //根据所给地址找到内核文件，复制其下载地址 
+
+[root@serverX ~]# wget  http://classroom.example.com/content/rhel7.0/x86_64/errata/Packages/kernel3.10.0-123.1.2.el7.x86_64.rpm 
+ 
+[root@serverX ~]# rpm  -ivh  kernel3.10.0-123.1.2.el7.x86_64.rpm  
+ 
+[root@serverX ~]# reboot            //重启以使新内核生效 .. .. 
+[root@serverX ~]# uname  -r  3.10.0-123.1.2.el7.x86_64           //确认新内核版本 
+ 
+ 
+8. 绑定到外部验证服务 
+试题概述： 
+	系统 classroom.example.com 提供了一个 LDAP 验证服务。
+        您的系统需要按照以下 要求绑定到这个服务上：
+	验证服务器的基本 DN 是：dc=domainX,dc=example,dc=com
+	帐户信息和验证信息都是由 LDAP 提供的
+	连接要使用证书进行加密，
+        证书可以在下面的链接中下载 :http://classroom.example.com/pub/example-ca.crt
+        当正确完成配置后，用户 ldapuserX 应该能够登录到您的系统中，但是没有主目录。 
+        当您完成 autofs 的题目之后，才能生成主目录
+解题参考： 
+[root@serverX ~]# yum  -y  install  sssd 
+[root@serverX ~]# authconfig-tui         //使用简易配置工具 
+根据提示完成用户和认证方式设置 （按空格选中，有*代表选中）
+
+[*] 使用 LDAP (考试时是英文： Use LDAP ）
+[*] 使用 LDAP 认证 (考试时是英文：Use LDAP Authentication） ---》选择 下一步
+
+           
+[*] 使用 TLS  (考试时是英文： Use TLS ）                                 
+服务器： classroom.example.com (考试时是英文： Server：classroom.example.com ）            
+基础 DN： dc=example,dc=com(考试时是英文：Base DN：dc=example,dc=com  ）---》选择 确定
+
+提示下载证书到 /etc/openldap/cacerts 目录时，另开一终端执行：
+ 
+[root@serverX ~]# cd  /etc/openldap/cacerts/ 
+[root@serverX ~]# wget  http://classroom.example.com/pub/example-ca.crt  
+.. .. 
+然后回到 authconfig-tui 工具确认，稍等片刻即可。 
+
+
+[root@serverX ~]# systemctl  restart  sssd  #重启客户端访问LDAP服务器的服务
+[root@serverX ~]# systemctl  enable  sssd   #设置开机自启动
+ 
+[root@serverX ~]# id  ldapuser0         //验证 LDAP 用户
+ 
+9. autofs 的配置 
+试题概述： 
+	按照下述要求配置 autofs 用来自动挂载 LDAP 
+	用户的主目录：classroom.example.com 通过 NFS v3 版本输出 /home/guests 目录到您的系统
+	这个文件系统包含了用户 ldapuser0 的主目录，并且已经预先配置好 
+        ldapuser0 用户的主目录是 classroom.example.com:/home/guests/ldapuser0
+	ldapuser0 的主目录应该挂载到本地的/home/guests/ldapuser0 目录下
+	用户对其主目录必须是可写的
+解题参考： 
+[root@serverX ~]# yum  -y  install autofs 
+[root@serverX ~]# mkdir  /home/guests 
+ 
+[root@serverX ~]# vim  /etc/auto.master       //指定监控点 
+/home/guests  /etc/guests.rule  
+ 
+[root@serverX ~]# vim /etc/guests.rule        //配置挂载策略 
+ldapuser0   -rw,v3   classroom.example.com:/home/guests/ldapuser0     //若有版本 3 要求，则添加 v3 参数 
+ 
+[root@serverX ~]# systemctl  restart  autofs 
+[root@serverX ~]# systemctl  enable  autofs 
+ 
+[root@serverX ~]# su  -  ldapuser0        //验证结果,家目录正常 
+
+ 
+ 
+10. 配置 NTP 网络时间客户端 
+试题概述： 配置您的系统，让其作为一个 classroom.example.com 的 NTP 客户端 
+解题参考： 
+[root@serverX ~]# yum  -y  install  chrony 
+[root@serverX ~]# vim  /etc/chrony.conf 
+#server 0.rhel.pool.ntp.org iburst      //注释掉默认的 server 配置， 
+#server 1.rhel.pool.ntp.org iburst      //注释掉默认的 server 配置
+#server 2.rhel.pool.ntp.org iburst      //注释掉默认的 server 配置
+#server 3.rhel.pool.ntp.org iburst      //注释掉默认的 server 配置
+server  classroom.example.com  iburst     //添加新的配置 
+
+[root@serverX ~]# systemctl  restart  chronyd 
+[root@serverX ~]# systemctl  enable  chronyd 
+ 
+验证:                                                       
+[root@server0 ~]# date
+[root@server0 ~]# date -s '2000-10-1'     
+
+[root@server0 ~]# date
+[root@server0 ~]# systemctl restart chronyd
+[root@server0 ~]# date
+[root@server0 ~]# date
+[root@server0 ~]# date   #查看时间是否恢复正常
+ 
+ 
+11. 配置一个用户帐户 
+试题概述： 创建一个名为 alex 的用户，用户 ID 是 3456。密码是 flectrag 
+解题参考： 
+[root@serverX ~]# useradd  -u  3456  alex 
+[root@serverX ~]# echo  flectrag  |  passwd  --stdin  alex 
+ 
+ 
+12. 添加一个 swap 分区 
+试题概述： 
+  在您的系统中添加一个大小为 512 MiB 的 swap 分区：
+  当您的系统启动时，swap 分区应该可以自动挂载 
+  不要移除或者修改其他已经存在于您的系统中的 swap 分区 
+解题参考： 
+[root@serverX ~]# fdisk  /dev/vdb 
+
+   p 查看分区表
+   n 创建逻辑分区----->起始回车------>结束+512M
+   p 查看分区表
+   w 保存并退出
+[root@serverX ~]# partprobe
+[root@serverX ~]# lsblk
+[root@serverX ~]# mkswap  /dev/vdb7 
+[root@server0 ~]# blkid   /dev/vdb7       
+[root@serverX ~]# vim  /etc/fstab  
+/dev/vdb7    swap    swap    defaults    0  0 
+[root@serverX ~]# swapon  -a            //检测/etc/fstab交换分区，书写正确会进行启用
+[root@serverX ~]# swapon  -s            //查看交换分区启用情况 
+ 
+ 
+13. 查找文件 
+试题概述： 找出所有用户 student 拥有的文件，并且把它们拷贝到/root/findfiles 目录中 
+    cp   -p选项:保持源数据属性不变(所有者不会发生变化)
+
+解题参考： 
+[root@serverX ~]# mkdir  /root/findfiles 
+[root@serverX ~]# find  /  -user  student  -type f  -exec  cp  -p  {}  /root/findfiles/  \; 
+[root@serverX ~]# ls -A /root/findfiles
+   
+ 
+14. 查找一个字符串 
+试题概述： 
+	在文件/usr/share/dict/words 中查找到所有包含字符串 seismic 的行：
+	将找出的行按照原文的先后顺序拷贝到/root/wordlist 文件中 
+	/root/wordlist 文 件 不 要 包 含 空 行
+	并 且 其 中 的 所 有 行 的 内 容 都 必 须 是 /usr/share/dict/words 文件中原始行的准确副本 
+解题参考： 
+[root@serverX ~]# grep  'seismic'  /usr/share/dict/words  >  /root/wordlist 
+[root@serverX ~]# cat  /root/wordlist 
+ 
+15. 创建一个逻辑卷 
+试题概述： 根据下面的要求创建一个新的逻辑卷：
+	 逻辑卷命名为 database，属于 datastore 卷组，并且逻辑卷的大小为 50 个物理扩展 单元 (physical extent)
+	 在 datastore 卷组中的逻辑卷，物理扩展单元 (physical extent) 大小应为 16 MiB 
+	 使用 ext3 文件系统对新的逻辑卷进行格式化，此逻辑卷应该在系统启动的时候自动 挂载在 /mnt/database 目录下 
+解题参考： 
+[root@serverX ~]# vgcreate  -s  1M  datastore  /dev/vdb6    
+[root@serverX ~]# lvcreate  -l  50  -n  database  datastore 
+[root@serverX ~]# mkfs.ext3 /dev/datastore/database 
+ 
+[root@serverX ~]# mkdir  /mnt/database 
+[root@serverX ~]# vim  /etc/fstab 
+/dev/datastore/database  /mnt/database  ext3  defaults 0 0 
+ 
+[root@serverX ~]# mount -a 
+[root@serverX ~]# df -h
+ 
+16. 创建一个归档 
+试题概述： 创建一个名为 /root/backup.tar.bz2 的归档文件，其中包含 /usr/local 目录中的内 容，tar 归档必须使用 bzip2 进行压缩 
+解题参考： 
+[root@serverX ~]# tar  -jcf  /root/backup.tar.bz2  /usr/local/ 
+[root@serverX ~]# ls /root
+
+ 
+################################################################################ 
+ 
+
+ 
+
