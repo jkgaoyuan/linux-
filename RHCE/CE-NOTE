@@ -1,0 +1,129 @@
+CE  练习 2.5 小时 22道题目
+CSA 练习 1.5 小时
+################################3
+CE
+第一题
+配置SELINUX
+
+注意开了 就别关闭 ,也不能关闭se ,做完了题目后在开启.
+[root@server0 ~]# getenforce
+Enforcing
+[root@server0 ~]# vim /etc/selinux/config
+[root@server0 ~]# setenforce 1[root@server0 ~]# getenforce
+Enforcing
+
+
+2.ssh 访问
+[root@server0 ~]# vim /etc/ssh/sshd_config
+             所有用户    域名          IP
+
+    DenyUsers  *@*    .my133t.org   *@172.34.0.*  ####注意书写的格式 . 的位置
+[root@server0 ~]# systemctl restart sshd ####重启服务 必须做
+[root@server0 ~]# systemctl enable sshd  ###开机自启 必须做  不然开机后服务没启动 相当于没做 本题 失败
+
+
+3.防火墙 & 端口转发
+      # 可以使用图形化 :firewall -config
+[root@server0 ~]# firewall-cmd --permanent --add-source=172.34.0.0/24 --zone=block
+success
+####注意--permanent 永久生效 必须添加 除了 设置默认区域外其他 设置防火墙 永久配置必须 天剑 --permanent
+[root@desktop0 ~]# firewall-cmd --set-default-zone=trusted
+success
+######设置默认防火墙
+
+#############查看防火墙设置
+[root@server0 ~]# firewall-cmd --list-all
+trusted (default, active)
+  interfaces: eth0
+  sources:
+  services:
+  ports:
+  masquerade: no
+  forward-ports:
+  icmp-blocks:
+  rich rules:
+###############################
+设置端口转发
+
+[root@server0 ~]# firewall-cmd --permanent --zone=trusted --add-forward-port=port=5423:proto=tcp:toport=80
+success
+######重新加载 防火墙
+[root@server0 ~]# firewall-cmd --reload
+success
+###查看防火墙
+[root@server0 ~]# firewall-cmd --list-all
+trusted (default, active)
+  interfaces: eth0
+  sources:
+  services:
+  ports:
+  masquerade: no
+  forward-ports: port=5423:proto=tcp:toport=80:toaddr=
+  icmp-blocks:
+  rich rules:
+########
+在desktop 中
+安装elinks # 不受 浏览器缓存影响
+elinks --dump address:port
+
+
+4. 别名
+[root@server0 ~]# vim /etc/bashrc  ###全局生效
+alias qstat = 'xxxxxx'  ##注意格式 alisa = ' '
+[root@server0 ~]# vim /home/student/.bashrc ###只对单个用户 student 生效
+####重新读取文件    注意这里的空格  . 后面
+[root@server0 ~]# . /etc/bashrc   ####
+
+5.链路聚合
+
+nmtui
+edit a connection
+ add
+ team
+ profile name team0
+ device team0
+
+ json configration
+ {"runner":{"name":"activebackup"}}
+
+ slaves
+ add
+ Ethernet
+ profile name team0-p1
+ device eth1
+ add
+ Ethernet
+ profile name team0-p2
+ device eth2
+ ipv4 address
+ xxxxxxxxxxx/xx
+ ####激活聚合链接
+]# ~  nmcli connection up team0
+
+
+
+7.配置本地邮件服务器
+####难度比较大
+system1 sys  tem2 (真实发送机器)               server0
+server1.groupX.example.com (代理)           desktop0
+groupX.example.com              desktopx.example.com
+smtpx.example.com    =
+
+本题实际上是 使用server0来假冒desktop0发送假冒 邮件
+hostnamectl set-hostname desktop0.example.com
+[root@server0 ~]# vim /etc/postfix/main.cf
+relayhost = [smtpx.example.com]
+inet_interfaces = loopback=only
+myorigin = desktopx.example.com
+mynetworks = 127.0.0.0/8 [::1]/128
+mydestination =
+
+
+
+
+
+
+
+
+
+

@@ -1236,7 +1236,7 @@ nmcli connection show #查看网卡信息
 v4 v6 都可以 使用这条命令
 nmcli connection modify
    配置                                 #网卡名称 上面查看              #手动                                                    #开机自动链接
-[root@server0 ~]# nmcli connection modify 'System eth0' ipv6.method manual ipv6.addresses '2003:ac18::305/64' connection.autoconnect yes
+[root@server0 ~]# nmcli connection modify 'System eth0' ipv6.method  manual ipv6.addresses '2003:ac18::305/64' connection.autoconnect yes
   激活链接
 [root@server0 ~]# nmcli connection up 'System eth0'
 [root@server0 ~]# ifconfig |head -5
