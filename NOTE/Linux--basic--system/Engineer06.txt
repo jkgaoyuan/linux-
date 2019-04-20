@@ -196,7 +196,7 @@ System eth0
 
 ]# ifconfig eth2 up          #将eth2网卡启用
 
-
+###########################
 
 
 
