@@ -187,22 +187,126 @@ vim 编辑技巧
 ###################################################
 
 
+Linux 安装  nfs-3g
 
+mount.nfs-3g  /dev/xxxx  /挂载点/
+##################################
 
+kvm 虚拟化
 
+概述 :
+virtualization 资源管理
 
+kvm构建以及管理
 
+虚拟化软件
+vmware
+virtualpc Hyper-v(MICROSOFT)
+KVM RHEV (REDHAT)
+XEN  (CITRIX)
+ORACLe VM VIRTUAALBOX (ORACLE)
 
+安装 kvm 所需要的软件包
 
+– qemu-kvm	:为 kvm 提供底层仿真支持
+– libvirt-daemon	:libvirtd 守护进程,管理虚拟机
+– libvirt-client	:用户端软件,提供客户端管理命令
+– libvirt-daemon-driver-qemu	:libvirtd 连接 qemu 的驱动
+– virt-manager	:图形管理工具
 
+ systemctl restart libvirted
+ systemctl enable libvirtd
 
+ LANG=en virt-manager  ##启动服务
 
+需要cpu支出虚拟化功能
+在bios中开启 虚拟化功能
 
+如何管理kvm
 
+virt-manager
 
+virsh 控制工具
+  virsh console  虚拟机名字 ###真机直接管理虚拟机 不需要IP
+  virsh nodeinfo          ####查看kvm节点信息
+  virsh list(--all)              ####列出虚拟机
+  virsh net-list(--all)   ##列出虚拟网络
+  virsh dominfo   虚拟机名字        ###查看指定虚拟机的信息
+  virsh autostart  虚拟机名字  ###将虚拟机设置为开机自启
+  virsh autostart --disable  虚拟机名字 ###将虚拟机开机自启取消
+  virsh start|reboot|shutdown  虚拟机名字 ###
+  virsh destroy   虚拟机名字 ###强制关闭
+一台虚拟机的构成
+    xml 配置文件 (虚拟机配置文件) :定义虚拟机的名称 UUID CPU 内存
+ 磁盘 网卡 等 参数信息
+    磁盘镜像文件 :保存 虚拟机的操作系统以及文档信息   路径取决于 xml文件定义
+    存放 xml文件  /etc/libvirt/qemu
+    在本机中 文件默认存放于 /var/lib/libvirt/images/
+    导出xml配置文件
+       查看 vrish dumpxml  虚拟机名称
+       备份 virsh dumpxml  虚拟机名 > 虚拟机名.xml
+       虚拟机名称 ,UUID  虚拟机磁盘文件路径 网卡MAC 地址
+ ###########################################
+  新建一个虚拟机
+  nsd01 2g 内存 网络 private 1  9g disk  网络类型 private 1  最小化安装 自动分区 root 密码 1
+ #############################################
+  利用虚拟机nsd01作为模板,复制一份手动生产全新虚拟机 nsd2
+  1.将虚拟机磁盘文件复制一份修改磁盘文件名称
+  /var/lib/libvirt/images/
+  [root@room9pc01 images]# cp nsd01.qcow2 nsd02.qcow2
+   df -h 查看文件大小
+  2.将nsd01的xml文件复制,修改 磁盘文件的位置
+    [root@room9pc01 qemu]# virsh dumpxml nsd01  > /xmlfire/nsd02.xml
+    [root@room9pc01 qemu]# vim /xmlfire/nsd02.xml
+    生成uuid ,将原本的UUID替换
+    uuidgen
+    修改磁盘文件 位置
+    <source file='/var/lib/libvirt/images/nsd02.qcow2'/>
+    修改mac地址 ,删除 ,删除后\kvm会自己生成
+    <mac address='56:54:00:98:05:e6'/>
+  3.导入虚拟机信息
+    [root@room9pc01 qemu]# virsh define /xmlfire/nsd02.xml
+    定义域 nsd02（从 /xmlfire/nsd02
+    启动管理软件
+    [root@room9pc01 qemu]# virt-manager
+  4.删除命令
+    vrish undefine nsd02  ###只是删除 /etc/libvirt/qemu 下的 xml删除了 ,
+    [root@room9pc01 qemu]# ls /etc/libvirt/qemu
+    1.txt      B.xml          desktop.xml  nsd01.xml
+    autostart  classroom.xml  D.xml        server.xml
+    A.xml      C.xml          networks     win2008.xml
 
+  使用 virsh edit xxx  可以达到  修改 复制xml 导入 这三条命令  除了复制磁盘文件 (命令行常用,但是脚本中用不到)
 
+cow(写时复制)技术(快速克隆虚拟机关键技术) (也是docker技术的关键)
+ copy on write
+ 特点:
+     直接映射原始盘的数据内容
+     当原始盘的旧数据有修改时,在修改之前自动将旧数据存入前端盘
+     对前端盘的修改写不到原始盘
+     前端盘在生成的时候 其实是一对快捷方式 (可能是软连接 ?)
+快速创建qcow文件
+     qemu-img 通过 -b 选项复用指定原始盘  -f 指定文件类型(qcow2 / rar )
+     qemu-img create 磁盘文件 #快速产生一个任意大小的磁盘文件,内容为空
+     qemu-img info 磁盘文件  ##查看磁盘文件信息
+     qemu-img  create -f qcow2 -d /var/lib/libvirt/images/nsd01.qcow2 /var/lib/libvirt/images/nsd06.qcow2  10G
+     qemu-img create  -f  文件类型 -d 原始盘 前端盘 前端盘大小
+###############################
+    1.以nsd01通过写实复制技术产生虚拟机前端盘
+      images]# qemu-img create -f qcow2 -b /var/lib/libvirt/images/nsd01.qcow2 /var/lib/libvirt/images/nsd06.qcow2 10G
+    2.产生并修改xml文件
+     virsh edit xxx.xml
+    3.开机
+     virsh start xxx
+配置虚拟机系统
+    离线访问虚拟机磁盘文件内容
+    guestmount -a 虚拟机磁盘路径 -i /挂载节点
 
-
+##########################
+教学环境(在虚拟机上用 )  扩展空间当虚拟机磁盘不够用时
+LANG=en growpart /dev/vda 1  ##扩展/dev/vda 的第一个分区空间
+lsblk
+blkid /dev/vda1  ###扩展/dev/vda1 文件系统
+df -h
 
 

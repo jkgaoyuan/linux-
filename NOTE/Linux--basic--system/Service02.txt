@@ -1,0 +1,363 @@
+新教学环境的搭建
+
+一 构建两台虚拟机
+真机上运行:
+                                           
+     虚拟机A
+        1.为eth0配置IP地址:192.168.4.7/24
+        2.配置主机名:svr7.tedu.cn
+     虚拟机B
+        1.为eth0配置IP地址:192.168.4.207/24
+        2.配置主机名:pc207.tedu.cn
+
+##########################################################
+真机:
+   root密码:  teacher.com
+
+##########################################################
+U盘读取:
+    文件系统:FAT   一般可以直接识别
+   
+       扩展FAT文件系统
+
+    文件系统:NTFS
+ 
+  [root@room9pc01 ~]# lsblk 
+  NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+  sda      8:0    0 465.8G  0 disk 
+   ├─sda1   8:1    0 297.7G  0 part /var/lib/libvirt/ima
+   └─sda2   8:2    0   100G  0 part /
+  sdb      8:16   0 931.5G  0 disk 
+   └─sdb1   8:17   0 931.5G  0 part 
+  loop0    7:0    0   8.8G  0 loop /var/ftp/centos-1804
+  [root@room9pc01 ~]# 
+
+  [root@room9pc01 ~]# mount.ntfs-3g  /dev/sdb1     挂载点
+
+########################################################
+真机远程管理虚拟机A
+
+KVM构建及管理
+
+虚拟化概述
+• virtualization 资源管理
+– x个物理资源 --> y个逻辑资源
+– 实现程度:完全、部分、硬件辅助(CPU)
+
+
+• 虚拟化主要厂商及产品
+
+	VMware 		VMware Workstation、vSphere
+	Microsoft 	VirtualPC、Hyper-V
+	RedHat 		KVM、RHEV
+	Citrix 		Xen
+	Oracle 		Oracle VM VirtualBox
+
+安装虚拟化服务器平台
+                                                                   
+在虚拟机A:
+• 主要软件包
+– qemu-kvm	:为 kvm 提供底层仿真支持
+– libvirt-daemon	:libvirtd 守护进程,管理虚拟机
+– libvirt-client	:用户端软件,提供客户端管理命令
+– libvirt-daemon-driver-qemu	:libvirtd 连接 qemu 的驱动
+– virt-manager	:图形管理工具
+
+#######################################################
+虚拟化服务:libvirtd
+[root@svr7 ~]# systemctl restart libvirtd
+[root@svr7 ~]# systemctl enable libvirtd
+[root@svr7 ~]# virt-manager   #运行图形管理虚拟化工具
+[root@svr7 ~]# LANG=en  virt-manager   #以英文开启该工具
+
+########################################################
+使用虚拟化功能,需要CPU支持虚拟化功能
+
+CPU支持虚拟化功能,有可能关闭
+ 开启----->BIOS中进行开启
+
+########################################################
+连接本地KVM
+• 使用 virt-manager 客户端工具
+– 应用程序 --> 系统工具 --> 虚拟系统管理器
+– 默认连本机的 libvirtd 服务
+
+真机上操作:
+[student@room9pc01 ~]$ virt-manager 
+
+virsh控制工具:
+]$ virsh  console  虚拟机名字      #真机直接管理相应虚拟机
+]$ virsh 
+欢迎使用 virsh，虚拟化的交互式终端。
+
+输入：'help' 来获得命令的帮助信息
+       'quit' 退出
+
+virsh # console  A
+
+
+virsh nodeinfo  :查看KVM节点(服务器)信息
+
+virsh list [--all]  :列出虚拟机
+
+virsh net-list [--all]  :列出虚拟网络
+
+virsh dominfo 虚拟机名称   :查看指定虚拟机的信息
+
+]$ virsh dominfo win2008
+]$ virsh autostart win2008    #将虚拟机设置为开机自启
+域 win2008标记为自动开始
+
+]$ virsh dominfo win2008 
+]$ virsh autostart --disable win2008   #将虚拟机设置为开机不自启
+域 win2008取消标记为自动开始
+
+]$ virsh dominfo win2008
+
+• 运行|重启|关闭指定的虚拟机
+– virsh start|reboot|shutdown 虚拟机名称
+• 强制关闭指定的虚拟机
+– virsh destroy 虚拟机名称
+
+[student@room9pc01 ~]$ virsh list --all
+[student@room9pc01 ~]$ virsh start B
+[student@room9pc01 ~]$ virsh list --all
+
+[student@room9pc01 ~]$ virsh  shutdown B
+域 B 被关闭
+[student@room9pc01 ~]$ virsh list --all
+[student@room9pc01 ~]$ virsh start B
+[student@room9pc01 ~]$ virsh list
+[student@room9pc01 ~]$ virsh destroy B
+域 B 被删除
+[student@room9pc01 ~]$ virsh list --all
+
+##########################################################
+
+• 一台KVM虚拟机的组成
+– xml配置文件(虚拟机配置文件):定义虚拟机的名称、UUID、CPU、内
+存、虚拟磁盘、网卡等各种参数设置
+[student@room9pc01 ~]$ ls /etc/libvirt/qemu/
+
+
+– 磁盘镜像文件:保存虚拟机的操作系统及文档数据,
+镜像路径取决于xml配置文件中的定义
+[student@room9pc01 ~]$ ls /var/lib/libvirt/images/
+
+
+导出xml配置文件
+– 查看:virsh dumpxml 虚拟机名
+– 备份:virsh dumpxml 虚拟机名  > 虚拟机名.xml
+
+   虚拟机的名称、UUID、虚拟磁盘文件路径、网卡唯一编号(MAC地址)   
+
+#########################################################
+一  新建一台全新的虚拟机,虚拟机名字nsd01
+   
+   虚拟机 :
+       内存为  2048M  硬盘 9G  虚拟机名字nsd01  网络类型:private1
+
+       软件包选择: 最小化安装     分区选择:自动分区   root密码设置为:1
+
+二 利用,虚拟机nsd01作为模板,手动快速生成一台全新的虚拟机nsd02
+  1.将虚拟机nsd01的磁盘文件复制一份,修改磁盘文件的名称
+  [student@room9pc01 /]$ su - root
+   密码： teacher.com
+  [root@room9pc01 ~]# 
+
+  ]# virsh destroy  nsd01           #强制关闭虚拟机nsd01
+  ]# virsh  list  --all 
+  ]# cd  /var/lib/libvirt/images/
+
+  ]# du  -sh  nsd01.qcow2           #计算磁盘文件大小
+  ]# cd  /var/lib/libvirt/images/
+
+  ]# cp  nsd01.qcow2  nsd02.qcow2    #复制磁盘文件
+  ]# du  -sh nsd02.qcow2 
+
+  2.将虚拟机nsd01的xml文件复制一份,修改内容
+  ]# mkdir /xmlfile
+  ]# virsh dumpxml nsd01 > /xmlfile/haha.xml  #导出虚拟机xml文件
+  ]# ls /xmlfile/
+  haha.xml
+  ]# vim  /xmlfile/haha.xml 
+
+     修改虚拟机的名称: <name>nsd02</name>
+   UUID:   <uuid></uuid>    #删除整行内容,按u撤销
+     虚拟磁盘文件路径:  file='/var/lib/libvirt/images/nsd02.qcow2'
+     网卡唯一编号(MAC地址)  :
+       <mac address='52:54:00:32:a3:aa'/> #删除整行内容,按u撤销
+
+   3.导入虚拟机信息
+  ]# virsh define /xmlfile/haha.xml    #导入虚拟机信息
+    定义域 nsd02（从 /xmlfile/haha.xml）
+
+  ]# virsh list --all
+  ]# virt-manager
+   
+   4.删除的命令
+  ]# virsh list --all
+  ]# virsh destroy  nsd02   #关机
+
+  ]# virsh undefine  nsd02  #删除虚拟机nsd02,仅会删除/etc下xml文件
+  ]# virsh list --all
+
+  ]# ls /etc/libvirt/qemu   #被删除
+  ]# ls /xmlfile/           #存在
+  ]# ls /var/lib/libvirt/images/nsd02.qcow2  #默认保留磁盘文件
+
+###########################################################
+以nsd01虚拟机为模板,制作虚拟机nsd03
+1.复制nsd01虚拟机的磁盘文件
+[root@room9pc01 /]# cd /var/lib/libvirt/images/
+[root@room9pc01 images]# cp nsd01.qcow2 nsd03.qcow2
+[root@room9pc01 images]# ls
+
+2.修改nsd01的xml文件
+[root@room9pc01 /]# virsh dumpxml nsd01 > /xmlfile/nsd03.xml
+[root@room9pc01 /]# ls /xmlfile/
+[root@room9pc01 /]# vim  /xmlfile/nsd03.xml
+
+     修改虚拟机的名称: <name>nsd03</name>
+   UUID:   <uuid></uuid>    #删除整行内容,按u撤销
+     虚拟磁盘文件路径:  file='/var/lib/libvirt/images/nsd03.qcow2'
+     网卡唯一编号(MAC地址)  :
+       <mac address='52:54:00:32:a3:aa'/> #删除整行内容,按u撤销
+
+[root@room9pc01 /]# virsh define /xmlfile/nsd03.xml
+[root@room9pc01 /]# virsh list --all
+########################################################
+
+编辑虚拟机设置
+• 对虚拟机的配置进行调整
+– 编辑:virsh  edit  虚拟机名
+
+以nsd01虚拟机为模板,制作虚拟机nsd04                  
+1.复制nsd01虚拟机的磁盘文件
+[root@room9pc01 /]# cd /var/lib/libvirt/images/
+[root@room9pc01 images]# cp nsd01.qcow2 nsd04.qcow2
+[root@room9pc01 images]# ls
+
+[root@room9pc01 /]# virsh list --all
+[root@room9pc01 /]# virsh edit nsd01
+     修改虚拟机的名称: <name>nsd04</name>
+   UUID:   <uuid></uuid>    #删除整行内容,按u撤销
+     虚拟磁盘文件路径:  file='/var/lib/libvirt/images/nsd04.qcow2'
+     网卡唯一编号(MAC地址)  :
+       <mac address='52:54:00:32:a3:aa'/> #删除整行内容,按u撤销
+
+[root@room9pc01 /]# virsh list --all
+##########################################################
+COW技术原理
+• Copy On Write,写时复制
+– 前端盘直接映射原始盘的数据内容
+– 当前端盘的旧数据有修改时,在修改之前自动将旧数据存入前端盘
+– 对前端盘的修改不回写到原始
+
+
+• qemu-img 通过 -b 选项复用指定后端盘
+– qemu-img create -f qcow2 -b 后端盘 前端盘
+
+– qemu-img info   磁盘文件    #查看磁盘文件的信息
+– qemu-img create  磁盘文件   #快速产生一个任意大小的磁盘文件,内容为空
+
+
+1.查看nsd01.qcow2磁盘文件的信息
+
+]# qemu-img  info  /var/lib/libvirt/images/nsd01.qcow2 
+
+
+#######################################################
+通过写时复制技术,生成虚拟机abc01
+– qemu-img create -f qcow2 -b 原始盘   前端盘    前端盘大小
+
+1.以nsd01虚拟机磁盘文件为原始盘,产生abc01虚拟机的前端盘    
+
+]# qemu-img create -f qcow2 -b /var/lib/libvirt/images/nsd01.qcow2   /var/lib/libvirt/images/abc01.qcow2  10G
+
+]# qemu-img info /var/lib/libvirt/images/abc01.qcow2 
+
+ 前端盘大小最好大于原始盘
+ 一旦基于原始盘制作出前端盘,原始盘不能做任何改变
+
+2.以前端盘abc01.qcow2产生虚拟机abc01
+[root@room9pc01 /]# virsh edit nsd01
+     修改虚拟机的名称: <name>abc01</name>
+   UUID:   <uuid></uuid>    #删除整行内容,按u撤销
+     虚拟磁盘文件路径:  file='/var/lib/libvirt/images/abc01.qcow2'
+     网卡唯一编号(MAC地址)  :
+       <mac address='52:54:00:32:a3:aa'/> #删除整行内容,按u撤销
+
+[root@room9pc01 /]# 
+
+#########################################################
+1.以nsd01虚拟机磁盘文件为原始盘,产生nb虚拟机的前端盘    
+]# qemu-img create -f qcow2 -b /var/lib/libvirt/images/nsd01.qcow2   /opt/nb.qcow2  10G
+
+]# qemu-img info /opt/nb.qcow2 
+
+2.以前端盘nb.qcow2产生虚拟机nb
+[root@room9pc01 /]# virsh dumpxml nsd01 > /xmlfile/nb.xml
+[root@room9pc01 /]# ls /xmlfile/
+[root@room9pc01 /]# vim  /xmlfile/nb.xml
+     修改虚拟机的名称: <name>nb</name>
+   UUID:   <uuid></uuid>     #删除整行内容,  删错可以按u撤销
+     虚拟磁盘文件路径:  file='/opt/nb.qcow2'
+     网卡唯一编号(MAC地址)  :
+       <mac address='52:54:00:32:a3:aa'/>  #删除整行内容
+[root@room9pc01 /]# virsh define /xmlfile/nb.xml
+[root@room9pc01 /]# virsh list --all
+#########################################################
+
+离线访问虚拟机的磁盘文件内容
+• 基本用法
+ guestmount  -a  虚拟机磁盘路径   -i  /挂载点
+
+[root@room9pc01 /]# virsh destroy nb
+
+[root@room9pc01 /]# mkdir /mnt/disk
+[root@room9pc01 /]# ls /mnt/disk/
+[root@room9pc01 /]# guestmount -a /opt/nb.qcow2 -i /mnt/disk/
+[root@room9pc01 /]# ls /mnt/disk/
+
+###########################################################
+教学环境
+
+虚拟机A:
+]# LANG=en growpart /dev/vda  1  #扩展/dev/vda磁盘的第一个分区空间
+]# lsblk 
+]# blkid /dev/vda1 
+
+]# xfs_growfs /dev/vda1       #扩展/dev/vda1文件系统
+]# df -h
+
+#########################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
