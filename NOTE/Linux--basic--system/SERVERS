@@ -452,10 +452,68 @@ DNS 解析的作用  端口 53
         客户端解析域名优先级
         1./etc/hosts         ## 直接提供解析结果 ,若这个文件解析不了才会找dns 解析,且只能在本机有效
         2./etc/resolv.conf   ##DNS 服务器地址
-
+################################################################
         子域授权
         虚拟机A 负责 qq.com
         虚拟机B 负责 bj.qq.com
+ ###################################################
+
+         DNS子域授权
+
+             父域:www.qq.com
+             子域:www.bj.qq.com
+
+          虚拟机A负责解析qq.com域名
+          虚拟机B负责解析bj.qq.com域名
+
+        虚拟机B:搭建为DNS服务器,负责解析的域名为bj.qq.com
+        [root@pc207 ~]# yum -y install bind bind-chroot
+        [root@pc207 ~]# cp /etc/named.conf /etc/named.bak
+        [root@pc207 ~]# vim /etc/named.conf
+         options {
+                directory       "/var/named";
+          };
+         zone "bj.qq.com" IN {
+                type master;
+                file "bj.qq.com.zone";
+          };
+        [root@pc207 ~]# cd /var/named/
+        [root@pc207 named]# cp -p named.localhost bj.qq.com.zone
+        [root@pc207 named]# vim bj.qq.com.zone
+        bj.qq.com.      NS      pc207
+        pc207           A       192.168.4.207
+        www             A       50.60.70.80
+        [root@pc207 /]# systemctl restart named
+        [root@pc207 /]# nslookup  www.bj.qq.com  192.168.4.207
+
+
+
+
+        子域授权
+
+            虚拟机A负责解析qq.com域名
+            虚拟机B负责解析bj.qq.com域名
+
+            解析子域的域名,请求虚拟机A,可以解析
+        虚拟机A:
+        [root@svr7 ~]# vim /var/named/qq.com.zone
+         qq.com.       NS  svr7
+         bj.qq.com.    NS  pc207
+         svr7           A  192.168.4.7
+         pc207          A  192.168.4.207
+         www            A  192.168.4.10
+         ftp            A  2.2.2.2
+        [root@svr7 ~]# systemctl restart named
+        [root@pc207 /]# nslookup www.bj.qq.com 192.168.4.7
+        Server:		192.168.4.7
+        Address:	192.168.4.7#53
+
+        Non-authoritative answer:   #非权威解答
+        Name:	www.bj.qq.com
+        Address: 50.60.70.80
+        [root@pc207 /]#
+
+
 ##########################################
         递归查询:接受客户端请求,本机与其他dns服务器交流并将 解析结果带回来
         根域名 是不支持的
@@ -478,7 +536,7 @@ DNS 解析的作用  端口 53
                 Non-authoritative answer:
                 Name:	ftp.tedu.cn
                 Address: 192.168.4.250
-
+#################################################
 
 
 
