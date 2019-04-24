@@ -1,0 +1,181 @@
+要求见 NOTE>>>>IMG&XMIND
+
+1.要求在虚拟机A上搭建DNS服务器实现 分离解析
+2.在虚拟机C上搭建web服务器,配置基于域名的虚拟web主机,提供www.qq.com和 www.163.com 两个站点
+3.在虚拟机D上搭建web服务器,配置基于域名的虚拟web主机,提供www.qq.com和 www.163.com 两个站点
+
+最终实现 :
+在虚拟机A访问 www.qq.com 与 www.163.com网页由虚拟机C提供
+在虚拟机B访问 www.qq.com 与 www.163.com网页由虚拟机D提供
+
+准备:
+    A B C D 四台虚拟机
+
+  虚拟机A的工作:
+              [root@svr7 named]# yum -y install bind #####安装 域名解析服务(dns)
+
+
+              [root@svr7 named]# vim /etc/named.conf  #####配置dns解析服务
+
+
+                options {
+                        directory       "/var/named";
+
+                 };
+
+                view "to-c" {
+                match-clients { 192.168.4.7; };             ########由A 访问 qq 和 163
+                  zone "qq.com" IN {
+                        type master;
+                        file "qq.com.zone";
+                            };
+                   zone "163.com" IN {
+                        type master;
+                        file "163.com.zone";
+
+                       };
+
+                };
+
+
+                view "207-any" {
+                match-clients { 192.168.4.207; };   ##########  由B访问  qq和 163
+                zone "qq.com" IN {
+                        type master;
+                        file "qq.com.other";
+                            };
+                zone "163.com" IN {
+                        type master;
+                        file "163.com.other";
+                        };
+
+                };
+
+
+###########################配置地址库文件
+              [root@svr7 named]# vim /var/named/163.com.zone     ######配置由A访问 163 的 地址库文件
+                                $TTL 1D
+                @       IN SOA  @ rname.invalid. (
+                                                        0       ; serial
+                                                        1D      ; refresh
+                                                        1H      ; retry
+                                                        1W      ; expire
+                                                        3H )    ; minimum
+
+                163.com.  NS      svr7
+                svr7     A      192.168.4.7
+                www      A      192.168.4.10
+
+
+
+              [root@svr7 named]# vim /var/named/qq.com.zone   ######配置由A访问 qq  地址库文件
+                              $TTL 1D
+                @       IN SOA  @ rname.invalid. (
+                                                        0       ; serial
+                                                        1D      ; refresh
+                                                        1H      ; retry
+                                                        1W      ; expire
+                                                        3H )    ; minimum
+
+                qq.com.  NS      svr7
+                svr7     A      192.168.4.7
+                www      A      192.168.4.10
+
+
+              [root@svr7 named]# vim /var/named/163.com.other    ######配置由B 访问163 的 地址库文件
+                              $TTL 1D
+                @       IN SOA  @ rname.invalid. (
+                                                        0       ; serial
+                                                        1D      ; refresh
+                                                        1H      ; retry
+                                                        1W      ; expire
+                                                        3H )    ; minimum
+
+                163.com.  NS      svr7
+                svr7     A      192.168.4.7
+                www      A      192.168.4.20
+
+
+              [root@svr7 named]# vim /var/named/qq.com.other   ##########配置由B访问 qq 地址库文件
+                              $TTL 1D
+                @       IN SOA  @ rname.invalid. (
+                                                        0       ; serial
+                                                        1D      ; refresh
+                                                        1H      ; retry
+                                                        1W      ; expire
+                                                        3H )    ; minimum
+
+                qq.com.  NS      svr7
+                svr7     A      192.168.4.7
+                www      A      192.168.4.20
+
+
+            ###########  重启dns服务 并 测试 解析服务
+            [root@svr7 named]#  systemctl restart named
+            [root@svr7 named]# nslookup www.qq.com
+                Server:		192.168.4.7
+                Address:	192.168.4.7#53
+
+                Name:	www.qq.com
+                Address: 192.168.4.10
+
+虚拟机B的工作:
+            配置ip和DNS服务器
+            后测试 dns 解析服务
+            192.168.4.207
+            dns 配置为  192.168.4.7
+            [root@pc207 ~]# nslookup www.qq.com
+                Server:		192.168.4.7
+                Address:	192.168.4.7#53
+
+                Name:	www.qq.com
+                Address: 192.168.4.20
+虚拟机C的工作:
+            配置ip  192.168.4.10
+            安装 httpd 构建 web服务  并重启服务
+            [root@C ~]# yum -y install httpd            #####安装 web服务所需软件
+            [root@C www]# mkdir qq                      ####创建web服务所需文件夹
+            [root@C www]# mkdir 163
+            [root@C 163]# echo '<h1><marquee> I AM 163' > index.html    ##创建 web 163 页面
+            [root@C 163]# cat index.html
+            <h1><marquee> I AM 163
+            [root@C qq]# echo '<h1><marquee> I AM qq' > index.html      ##创建 web qq 页面
+            [root@C qq]# cat index.html
+            <h1><marquee> I AM qq
+            [root@C 163]# vim /etc/httpd/conf.d/html.conf   ####配置 httpd 辅助配置文件
+            <virtualhost *:80>
+            documentroot /var/www/qq                        #####注意这里 虚拟主机的写法
+            servername www.qq.com
+            </virtualhost>
+            <virtualhost *:80>
+            documentroot /var/www/163
+            servername www.163.com
+            </virtualhost>
+            systemctl restart httpd
+
+
+虚拟机D的工作:
+            配置ip  192.168.4.20
+            安装 httpd 构建 web服务 并重启服务
+            [root@C ~]# yum -y install httpd                #####安装 web服务所需软件
+            [root@D www]# mkdir qq              ####创建web服务所需文件夹
+            [root@D www]# mkdir 163
+            [root@D 163]# echo '<h1><marquee> I AM 163' > index.html   ##创建 web 163 页面
+            [root@D 163]# cat index.html
+            <h1><marquee> I AM 163
+            [root@D qq]# echo '<h1><marquee> I AM qq' > index.html   ##创建 web qq 页面
+            [root@D qq]# cat index.html
+            <h1><marquee> I AM qq
+            [root@D 163]# vim /etc/httpd/conf.d/html.conf   ####配置 httpd 辅助配置文件
+            <virtualhost *:80>
+            documentroot /var/www/qq                #####注意这里 虚拟主机的写法
+            servername www.qq.com
+            </virtualhost>
+            <virtualhost *:80>
+            documentroot /var/www/163
+            servername www.163.com
+            </virtualhost>
+            systemctl restart httpd
+
+
+在 A 和 B 上用Firefox 分别访问 www.qq.com 和 www.163.com 进行测试
