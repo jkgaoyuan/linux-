@@ -537,30 +537,320 @@ DNS 解析的作用  端口 53
                 Name:	ftp.tedu.cn
                 Address: 192.168.4.250
 #################################################
+Split 分离解析
+        什么是: 当收到客户端 的dns查询请求的时候
+                能够区分客户机的来源地址
+                为客户端提供最近的服务器
+                为不同类别的客户提供不同的解析结果(IP地址)
+
+
+        配置:
+        1.匹配即停止
+        2.分类要合理,每一个客户端都要找到自己分类
+        viem "name0"{
+        match-clients { 来源地址;....; };    #匹配客户机来源
+        zone "12306.cn" IN { ...地址库1; };
+        };
+        viem "name1"{
+        match-clients{ 来源地址;...; };        #匹配来源
+        zone "12306.cn" IN { ...地址库; };
+        };
+        viem "name3"{
+        match-clients{ any; };             #匹配来源 ,上面都不符合的话他将是最后一个 负责解析
+        zone "12306.cn" IN { ...地址库; };
+        };
+    eg:A 纪录分离解析  -----以 www.tedu.cn 为例子
+    客户机解析结果
+            192.168.4.207---------->  192.168.4.100
+            其他地址---------------->  1.2.3.4
+
+
+
+            [root@svr7 named]# vim /etc/named.con
+                        options {
+                    directory       "/var/named";
+
+             };
+
+            view "nsd" {
+            match-clients { 192.168.4.207; };
+              zone "tedu.cn" IN {
+                    type master;
+                    file "tedu.cn.zone";
+                        };
+            };
+
+            view "other" {
+            match-clients { any; };
+            zone "tedu.cn" IN {
+                    type master;
+                    file "tedu.cn.other";
+                        };
+            };
+
+            [root@svr7 named]# vim tedu.cn.other
+            tedu.cn.  NS      svr7
+            svr7      A      192.168.4.7
+            www      A      1.2.3.4
+            [root@svr7 named]# vim tedu.cn.zone
+            tedu.cn.  NS      svr7
+            svr7     A      192.168.4.7
+            www      A      192.168.4.100
+
+            [root@svr7 named]# !sys
+            [root@pc207 ~]# nslookup www.tedu.cn
+            Server:		192.168.4.7
+            Address:	192.168.4.7#53
+
+            Name:	www.tedu.cn
+            Address: 192.168.4.100
 
 
 
 
+###########################################
+
+192.168.4.207---------->tedu.cn------------> 解析地址 Address: 192.168.4.100
+other IP访问------------>tedu.com-----------> 解析地址Address: 1.2.3.4
+
+192.168.4.207---------->sina.com------------> 解析地址 Address: 192.168.4.200
+other IP访问------------>tedu.com-----------> 解析地址Address: 10.20.30.40
+
+
+    [root@svr7 named]# vim /etc/named.conf   #####修改主配置文件
+
+        options {
+                directory       "/var/named";
+
+         };
+            ####正确写法 ###### 一个match-clients 只能用一次
+        view "nsd-yedu" {
+        match-clients { 192.168.4.207; };
+          zone "tedu.cn" IN {
+                type master;
+                file "tedu.cn.zone";
+                    };
+           zone "sina.com" IN {
+                type master;
+                file "sina.com.zone";
+
+               };
+
+        };
+        ########## 错误写法  虽然 服务重启成功 但是无法解析
+         #view "nsd-sina"
+        #{match-clients { 192.168.4.207; };
+        #zone "sina.com" IN {
+        #       type master;
+        #       file "sina.com.zone";
+
+         #      };
+        #};
 
 
 
 
+        view "other-tedu" {
+        match-clients { any; };
+        zone "tedu.cn" IN {
+                type master;
+                file "tedu.cn.other";
+                    };
+    [root@svr7 named]# vim /var/named/sina.com.zone  ##### 添加地址库文件
+        sina.com.  NS      svr7
+        svr7     A      192.168.4.7
+        www      A      192.168.4.200
+    [root@svr7 named]# vim /var/named/sina.com.other  ##### 添加地址库文件
+        sina.com.  NS      svr7
+        svr7     A      192.168.4.7
+        www      A      10.20.30.40
+
+    [root@pc207 ~]# nslookup www.sina.com   #####测试访问
+    [root@pc207 ~]# nslookup www.sina.com
+        Server:		192.168.4.7
+        Address:	192.168.4.7#53
+
+        Name:	www.sina.com
+        Address: 192.168.4.200
 
 
 
+    [root@pc207 ~]# nslookup www.tedu.cn #####测试访问
+        Server:		192.168.4.7
+        Address:	192.168.4.7#53
+
+        Name:	www.tedu.cn
+        Address: 192.168.4.100
+
+#############################
+    acl test={ 192.168.4.7; 192.168.4.8; 192.168.4.9;  };  ##类似于变量的功能方便之后调用
+
+       match-clients { test; }; ##调用
+
+#############################################
+
+    RAID 磁盘阵列
+            廉价冗余磁盘阵列
+            Redundant Arrays of Inexpensive Disk
+          什么是:
+             通过软件/硬件技术,将多个较小的/低速的磁盘整合称为一个大磁盘
+              阵列的价值:提高I/O效率,硬件级别的数据冗余
+              不同RAID级别的功能,特性不同
+          作用:提高磁盘的高可用
+          分类:
+              RAID0  , 条带模式
+                    同一个文档分散存放在不同磁盘
+                    并行写入以提高效率
+                    至少两块磁盘
+              RAID1  , 镜像模式
+                    一个文档复制多份,分别写入不同的磁盘
+                    多份拷贝提高可靠性,效率无提升
+                    至少两块磁盘
+              RAID0+1 ,RAID1+0(绝迹江湖)
+                    整合RAID0,RAID1的优势
+                    并行存储提高效率,镜像写入提高可靠性
+                    至少四块磁盘
+
+                   0+1
+                      分别将两组磁盘做成RAID0,将两个RAID0再作成RAID1
+                   1+0
+                      分别将两组磁盘做成RAID1,将两个RAID1再作成RAID0
+
+              RAID5
+                    至少需要三块磁盘
+                    需要至少一块用来存放校验数据
+                    相当于RADI0 和 RADI1 的折中方案
+              RAID6 高可用(银行)
+                    相当于扩展的RAID5阵列,提供两份独立的校验方案
+                    至少需要两块磁盘存放校验数据
+                    至少需要四块磁盘组成
+############################################################
+   进程管理
+           程序:静态的代码  占用磁盘空间
+           进程:动态代码   占用CPU MEMORY
+
+           进程整体也是树型结构
+           父进程与子进程
+           特殊进程:僵尸进程(程序假死)  孤儿进程(程序执行过程中,父进程的突然终止只剩子进程)
+           唯一编号 PID
+           当父进程kill之后,其子进程也会被kill
+           systemd:所有进程的父进程,也负责管理孤儿进程,
+   查看进程树
+            pstree
+            pstree lisi 显示某用户开启的进程
+   显示进程的详细信息
+            ps
+                 选项:
+                 aux  列出正在运行的所有进程
+                 -elf  ppid 父进程id  列出正在运行的所有进程
+
+   统计命令
+            wc
+
+                        eg:
+            统计正在运行的进程又少个?
+            ps aux | wc -l
+            ps -elf | wc -l
+            统计当前有多少用户?
+            wc -l /etc/passwd
+            wc -l /etc/shadow
+            统计 /etc/下 所有以 conf结尾的文档?
+            [root@server0 ~]# find /etc/   -name '*.conf' | wc -l
+            395
+
+   进程动态排名
+            top [-d刷新秒数] [-u用户名]
+
+             CPU 工作负载  1MIN  5MIN  15MIN
+            load average: 0.00, 0.01, 0.05
+
+   pgrep [-l 进程名]  [-x 进程名] [-U 用户名]
+           -l 输出进程名 而不仅是pid
+           -x 精确匹配完整进程名
+           -U 检索指定用户的进程
+   控制进程
+          进程的前后台调度
+          正在运行
+          ctrl + z  将正在运行的程序暂停并放入后台
+          jobs -l ()查看后台
+          bg 将后台任务继续运行
+          fg 将后台程序恢复到前台继续运行
+          $ 后台运行
+#######################################
+    杀死进程
+          #############[-9] 强制执行 能不用就不用
+          ctrl + c 结束当前正在运行的程序
+          kill [-9] PID  kill [-9] %PID
+          killall  [-9] 进程名
+          pkill 查找条件 (包含条件的都要杀)
+###########################################
+            杀死一个用户开启的所有进程(强制踢出一个用户)
+            [root@server0 ~]# killall -9 -u lisi
+#######################################
+日志管理
+              什么是日志:纪录系统,程序运行中发生的各种时间
+              作用:通过查看日志,;了解以及排除故障
+              信息安全控制依据
+              记录内核消息,各种服务的公共消息
+                /var/log/message
+              记录系统启动过程中的相关信息
+                /var/log/dmesg
+              记录与cron计划任务相关的消息
+                /var/log/cron
+              记录邮件收发相关
+                /var/log/maillog
+              记录与访问限制相关安全消息
+                /var/log/sucure
+        追踪日志消息
+            tailf  文件名
+        专用分析工具
+            Webmin 系统管理套件
+            ....
+        用户登录分析
+            users , who ,w 命令
+            查看已登录的用户 详细程度依次递增
+            last ,lastb 命令
+            查看最近登录成功/失败的用户消息
+        日志级别
+            数值越小代表越优先
+            0-7
+        3   ERR  运行出现错误
+        4   WARNING 可能会影响系统功能的事件
+journalctl 工具
+        journalctl(rht7 以上才有)
+        提取systemd-journal 服务搜集日志
+        journalctl -u
 
 
+#####################################
+systemd
+        一个高效的系统&服务管理器
+        开机服务并启动,各系统服务间的精确依赖
+        配置路径:  /etc/systemd/system/
+        服务目录:  /lib/systemd/system/
+        主要管理工具  systemctl
+        systemctl restart 重启服务
+        systemctl start   开启服务
+        systemctl status  查看服务当前状态
+        systemctl stop    停止服务
+        systemctl enable  设置开机自启
+        systemctl disable 关闭卡机自启
 
+运行级别的切换(rhel6/5)
+        init 5  切换到图形界面
+        init 0  关机
+        init 3  多用户字符界面(支持网络) 服务器默认运行级别
+        init 2  多用户字符界面(不支持支持网络)
+        init 5  重启
+        init 1  单用户破解密码
+rhel7 运行模式
+        切换到字符界面
+              systemctl isolate multi-user.target
+        切换到图形
+              systemctl isolate graphical.target
 
-
-
-
-
-
-
-
-
-
-
-
-
+        设定默认的运行模式
+              systemctl set-default multi-user.target ##字符界面
+              systemctl set-default graphical.target  ##图形界面
+        查看默认的运行模式
+              systemctl get-default

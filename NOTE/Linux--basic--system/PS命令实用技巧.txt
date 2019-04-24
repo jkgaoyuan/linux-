@@ -1,0 +1,60 @@
+
+查看有多少个CPU
+
+1：top 命令之后，按数字1 键，会显示CPU信息
+
+2：grep -c ^processor /proc/cpuinfo
+
+3：lscpu
+
+PS命令是linux下最基本的命令，它用来查看系统中正在运行的进程。它提供了当前的线程以及相关的详细信息，例如用户id，cpu占用，内存占用，启动的命令等。它和top或者htop不一样的地方在于它不是实时的。但它的输出简单，所以它是每一个运维人员需要掌握的命令
+Ps命令又两种语法格式，分别是BSD风格和UNIX风格，新用户常常感觉到困扰。所以这里我们简单说一下基本的知识然后继续
+ps aux 和ps -aux 并不相同，举例来说 -u 是显示进程的拥有着，但是u 表示显示详细信息
+BSD： 就是后边没有-，直接跟选项
+
+1.显示所有进程
+$ ps ax
+$ ps -ef
+使用u 或者-f 来显示详细信息
+$ ps aux
+$ ps -ef -f
+2.显示某用户的所有进程 -u “username”，可以输入多个用户名，通过”，”分割
+$ ps  -f  -u root
+3.显示指定名称的进程（或者进程id），
+1）通过-C 来查找具体名称的进程
+$ ps -C apache
+2）通过-p 选项来显示具体id的进程信息，也可以通过“，”来一次传入多个
+$ ps -f  -p 3150,7298,6544
+-C 选项要求我们要输入完全匹配的进程名称，所以我们更倾向于使用grep来进行筛选
+$ ps -ef | grep apache
+4.按照cpu或者内存进行排序
+多个参数的时候我们可以使用 –sort来进行排序，通过“，”来输入，我们可以在排序的参数前边家“-”或者“+”，表示正序或者倒序进行排序，更多的选项可以通过man手册来查找
+$ ps aux --sort=-pcpu,+pmem
+例：显示占用cpu最高的5个进程
+$ ps aux --sort=-pcpu | head -5
+
+5.通过进程树的形式来显示进程  –forest 
+6.显示子进程：
+查找所有apache的子进程：
+$ ps -o pid,uname,comm -C apache
+
+7.指定要显示的选项,具体的可以参考man 手册
+ ps -e -o pid,uname,pcpu,pmem,comm
+8.显示进程的运行时间
+进程的运行时间是默认不显示的，如果想查看，必须使用-o选项
+ $ps -e -o pid,comm,etime
+9.将ps转换成实时显示的进程监控器
+使用watch命令来让我们的ps信息实时显示:	
+$ watch -n 1 'ps -e -o pid,uname,cmd,pmem,pcpu --sort=-pmem,-pcpu | head -15'
+
+
+
+
+
+
+
+
+
+
+
+
