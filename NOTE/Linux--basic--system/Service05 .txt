@@ -1,0 +1,257 @@
+
+
+
+
+部署DHCP服务器
+
+DHCP概述及原理
+• Dynamic Host Configuration Protocol
+– 动态主机配置协议,由 IETF(Internet 网络工程师任
+务小组)组织制定,用来简化主机地址分配管理
+
+• 主要分配以下入网参数
+– IP地址/子网掩码/广播地址
+– 默认网关地址、DNS服务器地址
+
+DHCP原理：　广播进行，先到先得，一个网络里只能有一个DHCP服务器
+
+• DHCP地址分配的四次会话
+– DISCOVERY --> OFFER --> REQUEST -->ACK
+
+
+
+开机启动项:匹配即停止
+ 1.本机硬盘    2.光驱设备    3.U盘    4.网络
+
+虚拟机Ａ：
+1.装软件包 dhcp
+[root@svr7 /]# yum -y install dhcp
+2.配置文件 /etc/dhcp/dhcpd.conf
+vim末行模式  :r  /usr/share/doc/dhcp*/dhcpd.conf.example
+
+subnet 192.168.4.0 netmask 255.255.255.0 {  #分配的网段
+  range 192.168.4.100  192.168.4.200;      #分配的IP范围
+  option domain-name-servers  192.168.4.7; #分配DNS服务器
+  option routers 192.168.4.254;            #分配网关地址
+  default-lease-time 600;
+  max-lease-time 7200;
+} 
+
+[root@svr7 /]# systemctl restart dhcpd
+
+####################################################
+网络装机概述
+
+• 规模化:同时装配多台主机
+• 自动化:装系统、配置各种服务
+• 远程实现:不需要光盘、U盘等物理安装介质
+
+什么是PXE网络
+• PXE,Pre-boot eXecution Environment
+– 预启动执行环境,在操作系统之前运行
+– 可用于远程安装
+
+
+PXE组件及过程分析
+• 需要哪些服务组件
+– DHCP服务,分配IP地址、定位引导程序
+– TFTP服务,提供引导程序下载
+– HTTP服务,提供yum安装源
+
+• 客户机应具备的条件
+– 网卡芯片必须支持PXE协议
+– 主板支持从网卡启动
+
+##################################################
+一  部署DHCP服务,指定下一个服务器地址
+
+[root@svr7 /]# vim /etc/dhcp/dhcpd.conf 
+ ......
+
+  next-server  192.168.4.7;   #指定下一个服务器地址
+  filename  "pxelinux.0";     #指定引导文件名称
+} 
+
+[root@svr7 /]# systemctl restart dhcpd
+
+ pxelinux.0:网卡引导文件(安装说明书) 二进制文件
+                      安装一个软件,默认产生的网卡引导文件名为pxelinux.0
+
+##################################################
+二 搭建tftp服务
+    tftp:简单的文件传输协议  默认端口为69
+       默认共享位置:/var/lib/tftpboot
+
+1.安装软件包tftp-server
+[root@svr7 /]# yum -y install tftp-server
+
+2.重启tftp服务
+[root@svr7 /]# systemctl  restart  tftp
+
+3.部署pxelinux.0文件
+]# yum  provides  */pxelinux.0     #查询那个包产生,该文件
+]# yum -y install syslinux         
+]# rpm -ql syslinux | grep pxelinux.0  #查询软件包安装清单
+
+]# cp /usr/share/syslinux/pxelinux.0   /var/lib/tftpboot/
+]# ls /var/lib/tftpboot/
+
+pxelinux.0文件--->/var/lib/tftpboot/pxelinux.cfg/default
+
+4.部署菜单文件
+[root@svr7 /]# poweroff 
+Connection to 192.168.4.7 closed by remote host.
+Connection to 192.168.4.7 closed.
+[student@room9pc01 ~]$ 
+图形为虚拟机A,添加一个光驱设备,放入光盘内容
+[student@room9pc01 ~]$ goa
+Last login: Thu Apr 25 08:55:41 2019 from 192.168.4.254
+[root@svr7 ~]# mount /dev/cdrom  /mnt/
+mount: /dev/sr0 写保护，将以只读方式挂载
+[root@svr7 ~]# ls /mnt/
+
+[root@svr7 ~]# mkdir /var/lib/tftpboot/pxelinux.cfg
+
+[root@svr7 ~]# cp /mnt/isolinux/isolinux.cfg /var/lib/tftpboot/pxelinux.cfg/default
+
+[root@svr7 ~]# ls /var/lib/tftpboot/pxelinux.cfg/
+
+[root@svr7 ~]# ls -l /var/lib/tftpboot/pxelinux.cfg/
+
+
+5.部署 图形模块(vesamenu.c32) 与  背景图片(splash.png)
+
+[root@svr7 ~]# cp /mnt/isolinux/vesamenu.c32 /mnt/isolinux/splash.png  /var/lib/tftpboot/
+
+[root@svr7 ~]# ls /var/lib/tftpboot/
+
+6.部署 启动内核(vmlinuz)   与  驱动程序(initrd.img)
+
+[root@svr7 ~]# cp /mnt/isolinux/vmlinuz /mnt/isolinux/initrd.img /var/lib/tftpboot/
+
+[root@svr7 ~]# ls /var/lib/tftpboot/
+initrd.img  pxelinux.cfg  vesamenu.c32
+pxelinux.0  splash.png    vmlinuz
+
+7.修改菜单文件内容
+# vim /var/lib/tftpboot/pxelinux.cfg/default 
+
+  1 default vesamenu.c32   #默认加载图形模块
+  2 timeout 600            #读秒时间60秒    1/10秒
+
+ 10 menu background splash.png     #指定背景图片
+ 11 menu title NSD1903 PXE Server  #修改标题 
+
+ 61 label linux
+ 62   menu label ^Install CentOS 7  #屏幕显示
+ 63   menu default                  #读秒结束默认选择
+ 64   kernel vmlinuz                #调用内核
+ 65   append initrd=initrd.img      #解压驱动程序
+
+##################################################
+ 8.检查服务启动
+[root@svr7 ~]# systemctl restart dhcpd
+[root@svr7 ~]# systemctl enable dhcpd
+
+[root@svr7 ~]# systemctl restart tftp
+[root@svr7 ~]# systemctl enable tftp
+
+#################################################
+总结:
+  1.DHCP服务-->IP地址   next-server  filename
+  2.tftp服务-->pxelinux.0
+  3.pxelinux.0-->读取默认菜单文件
+  4.default-->图形模块  背景图片  启动内核  驱动程序
+
+验证:
+   新建一台虚拟机,安装方式选择 "网络引导安装(PXE)"
+   网络类型选择"private1"
+
+####################################################
+三  构建Web服务,共享光盘所有内容
+1.安装软件包httpd
+[root@svr7 ~]# yum -y install httpd
+
+2.重启httpd服务
+[root@svr7 ~]# systemctl restart httpd
+[root@svr7 ~]# systemctl enable httpd
+
+3.共享光盘所有内容
+[root@svr7 ~]# mkdir /var/www/html/centos
+[root@svr7 ~]# ls /var/www/html/centos
+
+[root@svr7 ~]# mount /dev/cdrom  /var/www/html/centos
+mount: /dev/sr0 写保护，将以只读方式挂载
+[root@svr7 ~]# ls /var/www/html/centos
+
+[root@svr7 ~]# firefox 192.168.4.7/centos
+
+#####################################################
+四  部署无人值守安装,生成应答文件
+
+1.安装图形的system-config-kickstart工具,生成应答文件
+[root@svr7 ~]# yum -y install system-config-kickstart 
+
+2.运行system-config-kickstart工具,进行配置
+[root@svr7 ~]# LANG=en  system-config-kickstart 
+首先查看软件包选择(Package Select),是否可以使用
+需要Yum仓库的支持,必须要求Yum光盘仓库标识为 [development]
+
+[root@svr7 ~]# vim /etc/yum.repos.d/local.repo 
+[development]
+ ........
+
+[root@svr7 ~]# LANG=en  system-config-kickstart 
+
+[root@svr7 ~]# ls /root/
+[root@svr7 ~]# vim /root/ks.cfg 
+
+3.利用Web服务,将应答文件ks.cfg,共享给客户端
+[root@svr7 ~]# cp /root/ks.cfg  /var/www/html/
+[root@svr7 ~]# ls /var/www/html/
+
+4.修改菜单文件,指定应答文件ks.cfg
+]# vim /var/lib/tftpboot/pxelinux.cfg/default
+.........
+label linux
+  menu label ^Install CentOS 7
+  menu default
+  kernel vmlinuz
+  append initrd=initrd.img  ks=http://192.168.4.7/ks.cfg
+
+#####################################################
+总结:
+  1.DHCP服务-->IP地址   next-server  filename
+  2.tftp服务-->pxelinux.0
+  3.pxelinux.0-->读取默认菜单文件
+  4.default-->图形模块  背景图片  启动内核  驱动程序  应答文件
+  5.ks.cfg应答文件--> 分区 语言  键盘类型   装包
+    # Use network installation
+    url --url="http://192.168.4.7/centos"
+
+验证:
+   新建一台虚拟机,安装方式选择 "网络引导安装(PXE)"
+   网络类型选择"private1"
+   内存必须2G以上
+##################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

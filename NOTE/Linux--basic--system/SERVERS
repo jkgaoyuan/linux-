@@ -172,8 +172,8 @@ vim 编辑技巧
     shift + ZZ   保存且退出(命令模式)
     / 查询
    末行 模式
-   :w
-   :q!
+   :w  保存
+   :q! 强制退出
    :W /root/newfile
    :set nu 显示行号
    :r /xxx/xxx  在当前行插入文件
@@ -185,6 +185,8 @@ vim 编辑技巧
    开关参数的控制
    :set nu或nonu
    :set ai或noai 自动缩进
+   将文件直接导入本文件
+   :r  文件路径   #############注意光标的位置,会直接将文件放在光标之后
 ###################################################
 
 
@@ -699,6 +701,7 @@ other IP访问------------>tedu.com-----------> 解析地址Address: 10.20.30.40
           作用:提高磁盘的高可用
           分类:
               RAID0  , 条带模式
+
                     同一个文档分散存放在不同磁盘
                     并行写入以提高效率
                     至少两块磁盘
@@ -854,3 +857,187 @@ rhel7 运行模式
               systemctl set-default graphical.target  ##图形界面
         查看默认的运行模式
               systemctl get-default
+
+###########################################################################################
+开机启动项目:(默认) 1.本机硬盘 2.光驱设备 3.u盘 4.网络  (顺序可以修改)
+
+
+DHCP 原理 : 广播进行,先到先得,一个网络只能有一个dhcp服务器 #####工作时请先询问 网络工程师
+
+        DHCP 地址分配的四次会话
+            DISCOVERY    --->    OFFER        --->      REQUEST       --->         ACK
+           寻找 DHCP服务器       dhcp服务器回应         提供dhcp服务分配ip       确认网络中没有 ip地址冲突
+
+        虚拟机 A :
+                安装软件  dhcp
+                配置文件  /etc/dhcp/dhcpd.conf
+                其服务    dhcpd
+        安装 dhcp 服务
+        [root@svr7 etc]# yum -y install dhcp
+        修改配置文件
+        (将 /usr/share/doc/dhcp*/dhcpd.conf.example 中的配置文件导入 dhcp.conf 中 修改到如下;使用 :r /usr/share/doc/dhcp*/dhcpd.conf.example
+ 导入)
+        vim /etc/dhcp/dhcpd.conf
+
+                  subnet 192.168.4.0 netmask 255.255.255.0 {  ###分配的网段
+                  range 192.168.4.100  192.168.4.200;         ##分配的ip范围
+                  option domain-name-servers 192.168.4.7;     ##分配dns地址
+                #  option domain-name "internal.example.org"; ###### 域名
+                  option routers 192.168.4.254;               ##指定网关地址,一般为路由地址
+                #  option broadcast-address 10.5.5.31;        ##广播地址
+                  default-lease-time 600;                     ###地址租约时间
+                  max-lease-time 7200;
+                }
+####################################################################################################
+网络装机的概述 (云平台的基础) (必须会 面试必考)
+
+        优势:
+            规模化   同时装配多台主机
+            自动化   装系统 配置 各种服务
+            远程实现 不需要光盘
+
+什么是PXE网络
+        PXE  pre-boot execution  environment
+            预启动执行环境,在操作系统之前运行
+            可远程安装
+        pxe 装机: 服务提供的顺序是, hdcp提供ip ,TFTP提供 引导 驱动,HTTP提供RPM软件包
+        服务端(PXE装机服务器)
+        DHCP服务  分配ip 定位引导程序
+        TFTP服务  提供引导程序下载
+        HTTP服务  (或FTP/NFS)提供yum 安装源
+        客户机要求:
+                网卡支持PXE 协议
+                主板支持从网卡启动
+
+
+##############################################################################
+PXE 的安装  #####面试必考
+
+        1.搭建DHCP服务
+            由于已经安装好,我们需要修改配置文件
+            [root@svr7 etc]# vim /etc/dhcp/dhcpd.conf
+            在{}中添加如下两行
+            next-server 192.168.4.7; ###指定下一个服务地址
+            filename "pxelinux.0";  ####指定引导文件名称 注意这里的双引号不能用单引号
+            "pxelinux.0" 网卡引导文件(安装说明书) 二进制文件
+            重启服务
+            systemctl restart dhcpd
+        2.搭建TFTP服务
+            安装
+                 yum -y install tftp-server ####注意安装包的名
+            默认共享位置
+                 /var/lib/tftpboot/
+            启动服务
+                 systemctl restart tftp
+            部署pxelinux.0
+                1)查询 该文件是由那个服务产生
+                    yum provides 路径
+                    yum provides */pxelinux.0  ###查询那个包产生 pxelinux.0 这个文件
+                    已加载插件：fastestmirror
+                    Loading mirror speeds from cached hostfile
+                    syslinux-4.05-13.el7.x86_64
+                2)安装 syslinux
+                    查询pxelinux.0 文件产生的位置
+                    rpm -ql syslinux | grep pxelinux.0
+                3)将文件复制到(tftp)默认共享的位置 /var/lib/tftpboot/
+                    cp /usr/share/syslinux/pxelinux.0 /var/lib/tftpboot/
+                4)产生pxe菜单
+                    isolinux.cfg
+                    菜单文件 默认位置 ( isolinux/isolinux.cfg)
+                    从光盘中获取菜单文件
+                    由于虚拟机没有光驱,所以关机添加光驱
+                    wget 或者 mount 直接挂载iso文件
+                    挂载 iso
+                        mount /dev/cdrom /mnt/
+                    创建文件夹
+                        mkdir /var/lib/tftpboot/pxelinux.cfg
+                    拷贝到文件夹并将名称修改为default /var/lib/tftpboot/pxelinux.cfg/
+                        cp /mnt/isolinux/isolinux.cfg /var/lib/tftpboot/pxelinux.cfg/default
+
+                5)图形模块vesamenu.c32 和背景图片 splash.png
+                    cp /mnt/isolinux/vesamenu.c32 /mnt/isolinux/splash.png /var/lib/tftpboot
+                    ls /var/lib/tftpboot/  ##查看文件
+                    pxelinux.0  pxelinux.cfg  splash.png  vesamenu.c32
+
+                6)启动内核  vmlinuz 和驱动程序 initrd.img
+                    将内核和驱动程序复制到  TFTP的 默认共享位置 /var/lib/tftpboot
+                    cp /mnt/isolinux/vmlinuz /mnt/isolinux/initrd.img /var/lib/tftpboot/
+
+                7)修改菜单文件
+                     vim /var/lib/tftpboot/pxelinux.cfg/default
+                     修改文件
+                     1 gg 跳转到第一行
+                       1 default vesamenu.c32 ###图形模块
+                       2 timeout 600         ###延时 60s 单位 ms
+                       4 display boot.msg
+                       10 menu background splash.png   ###指定背景图片
+                       11 menu title CentOS 7          ###启动标题
+                       61 label linux
+                       62   menu label ^Install CentOS 7 ###启动项标题 ^I 表示 该选项的快捷键是 I
+                       63   menu default                ###设置读秒结束后默认启动项目
+                       64   kernel vmlinuz
+                       65   append initrd=initrd.img
+                       ##同理
+                       66 label check
+                       67   menu label Test this ^media & install CentOS 7 ###启动项标题 ^m 表示 该选项的快捷键是 m
+
+                8)设置服务的开机自启
+                     [root@svr7 ~]# systemctl restart dhcpd
+                     [root@svr7 ~]# systemctl enable dhcpd
+                     [root@svr7 ~]# systemctl restart tftp
+                     [root@svr7 ~]# systemctl enable tftp
+        3.构建web服务,共享iso 内容
+            1)安装httpd 重启服务
+                yum -y install httpd
+                [root@svr7 ~]# systemctl restart httpd.service
+                [root@svr7 ~]# systemctl enable httpd.service
+            2)共享光盘内容
+                [root@svr7 ~]# mkdir /var/www/html/centos/
+                [root@svr7 ~]# mount /dev/cdrom /var/www/html/centos/
+                mount: /dev/sr0 写保护，将以只读方式挂载
+                [root@svr7 ~]# firefox 192.168.4.7/centos  ##访问测试
+           4) 部署无人值守安装,生成应答文件
+                [root@svr7 ~]# yum -y install system-config-kickstart
+                LANG=en system-config-kickstart
+                首先查看软件包选择是否可用(redhate7 会显示disable)
+                package select
+                需要yum仓库的支持,必须要求 yum光盘表示[development]
+                重启软件
+                system-config-kickstart
+                basic configuration : 时区 上海  安装完成重启
+                installation method : profrom new installation
+                                      installation source   httpd
+                                      httpserver 192.168.4.7  ###http主机ip
+                                      http directory centos   ###和http配置中创建的 centos 对应
+                partition information : master boot record clear master record
+                                        partition  remove all existing partitions
+                                        disk label initialize the disk label
+                                        layout  add  / xfs  full disk
+                network configuration   add network driver etho dhcp
+                authentication 跳过
+                Firewall       disable
+                selinux        disable
+                display configuration 跳过
+                package select system --> base
+                posinstallation script   user a interpret    /bin/bash
+                                        useradd lisi
+                                        echo 123 | psswd --stdin lisi
+                保存 至 root下
+        4.利用web服务,将应答文件 ks.cfg ,共享给客户端
+                [root@svr7 ~]#  cp /root/ks.cfg /var/www/html/
+        5.修改pxe配置文件 修改 应答文件位置
+
+                 [root@svr7 ~]# vim /var/lib/tftpboot/pxelinux.cfg/default
+            65   append initrd=initrd.img ks=http://192.168.4.7/ks.cfg  ####注意这里的IP地址应和 DHCP 的配置文件中 DNS 的地址相同
+
+
+验证:
+                    新建虚拟机  安装选择 PXE   网络private1   内存 2G  其他随机
+                    由于目前 PXE 安装文件并没有 完成 所以 看到 安装的 界面就算完成
+思路:                DHCP服务->  IP 地址  -> next-server  filename
+                    tftp服务 -> pxelinux.0
+                    pxelinux.0 -> 读取默认菜单文件
+                    default ->图形模块  背景图片 启动内核 驱动程序  应答文件
+                    ks.cfg 应答文件 ->分区 语言  键盘类型  装包
+                    url --url='http://192.168.4.7/centos'
+
