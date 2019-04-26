@@ -65,6 +65,7 @@ shell 交互 信息
 	3.讲用户在键盘的输入复制给一个变量储存
 eg:设定用户名和密码创建用户
 	[root@server0 ~]# vim /root/user.sh
+	[root@server0 ~]# vim /root/user.sh
 	#!/bin/bash
 	# echo 请输入USERNAME
 	read -p ':请输入USERNAME' a
@@ -87,7 +88,7 @@ eg:设定用户名和密码创建用户
 	#!/bin/bash
 	echo $1
 	echo $2
-	echo $#
+	echo $# ###统计输入参数的数量
 	1
 	2
 	6
@@ -156,9 +157,9 @@ fi
    大于 大于等于 等于 不等  小于  小于等于
 字符串的比较
   == :两个字符串一样为真
-echo $?  0为真
+echo $?  0为真  ###$?程序退出后状态显示
  != 不等于为真
-echo $?  0 为真 
+echo $?  0 为真 ###$?程序退出后状态显示  使用 echo $?
 ################################
 if 选择结构
 双分支
@@ -189,7 +190,7 @@ eg:检测用户是否存在 ,不存在则创建
 # echo 请输入USERNAME
        read -p '输入用户:' a
        id $a &> /dev/null
-       if [ $? -eq 0 ];then
+       if [ $? -eq 0 ];then  ####$?程序退出后状态显示  使用 echo $?  查询
             echo 用户存在
             id $a
        else
@@ -235,7 +236,7 @@ enforcing (默认)强制    permissive  宽松    disable  彻底禁用
       SELINU=permissive  ##########宽松模式
 vim 中命令模式下按 C 光标之后被删除
 ###############################
-配置用户环境
+配置用户环境  (设置永久别名)
  开启新终端后生效
   影响指定用户的bash 解释器
   ~ /.bashrc,每次开启bash 终端生效 ####注意这是一个隐藏文件 
@@ -247,12 +248,14 @@ vim 中命令模式下按 C 光标之后被删除
 
   影响所有用户的 bash 解释器
   [root@server0 ~]# vim /etc/bashrc
+  source ~/.bashrc ###重新加载bash 配置文件
+
 ###################################
 防火墙策略的管理(基础阶段)
   在之后的服务学习中注意 selinux 状态 处于 permissive 或者 disable 
 一 搭建基本的web服务 (不涉及优化) 
    web 服务 :提供页面内容服务
-  1. yum 安装  httpd 
+   1. yum 安装  httpd
    2. 重启 httpd 服务
 [root@server0 ~]# systemctl restart httpd 
    3. 本机测试 访问 172.25.0.11
@@ -312,6 +315,7 @@ vim 中命令模式下按 C 光标之后被删除
 　　　　　ｐｏｐ３：邮件协议　（收）                  110
 	　ＳＭＴＰ：邮件协议　（发）                   25
 　　　　　ＳＮＭＰ：　简单的网络管理协议　            161
+        Mariadb数据库 mysql                     3306
 ｅｇ：　给ｓｅｒｖｅｒ0　的ｆｉｒｅｗａｌｌ的ｐｕｂｌｉｃ添加　ｈｔｔｐ　和ｆｔｐ协议
 查看ｆｉｒｅｗａｌｌ的ｐｕｂｌｉｃ域的规则
 [root@server0 ~]# firewall-cmd --zone=public --list -all　＃＃＃查看区域规则
@@ -880,7 +884,7 @@ eg :请大家用Apache 搭一个web环境
 若使用了虚拟主机,所有的页面必须使用虚拟web主机来访问
 ###################################
 补充: Samba 共享服务(Windows与Linux 跨平台共享服务)  我选择 nfs
-	协议:SMB(沟通严重身份)   CIFS(储存或传输数据)
+	协议:SMB(沟通验证身份)   CIFS(储存或传输数据)
 默认情况必须通过用户验证,才能访问.
 专门用于Samba共享服务,验证的用户:Samba共享账号
 特点: 

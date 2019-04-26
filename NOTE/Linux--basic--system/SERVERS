@@ -176,9 +176,9 @@ vim 编辑技巧
    :q! 强制退出
    :W /root/newfile
    :set nu 显示行号
-   :r /xxx/xxx  在当前行插入文件
+   :r /xxx/xxx  在当前行插入文件 ###常用
    字符串的替换
-   :%s/old/new/g  替换文件所有的 old
+   :%s /old/new/g  替换文件所有的 old
    :s /old/new/g  替换光标当前行所有old
    :s /old/new/   替换光标所在行的第一个 old
    :1,10 s/old/new/g   替换第1-10行所在行所有old
@@ -257,7 +257,7 @@ virsh 控制工具
   1.将虚拟机磁盘文件复制一份修改磁盘文件名称
   /var/lib/libvirt/images/
   [root@room9pc01 images]# cp nsd01.qcow2 nsd02.qcow2
-   df -h 查看文件大小
+   df -h 查看文件大小 /xmlq
   2.将nsd01的xml文件复制,修改 磁盘文件的位置
     [root@room9pc01 qemu]# virsh dumpxml nsd01  > /xmlfire/nsd02.xml
     [root@room9pc01 qemu]# vim /xmlfire/nsd02.xml
@@ -306,7 +306,7 @@ cow(写时复制)技术(快速克隆虚拟机关键技术) (也是docker技术�
     guestmount -a 虚拟机磁盘路径 -i /挂载节点
 
 ##########################
-教学环境(在虚拟机上用 )  扩展空间当虚拟机磁盘不够用时
+教学环境(在虚拟机上用 )  扩展磁盘空间当虚拟机磁盘不够用时
 LANG=en growpart /dev/vda 1  ##扩展/dev/vda 的第一个分区空间
 lsblk
 blkid /dev/vda1  ###扩展/dev/vda1 文件系统
@@ -915,7 +915,7 @@ PXE 的安装  #####面试必考
 
         1.搭建DHCP服务
             由于已经安装好,我们需要修改配置文件
-            [root@svr7 etc]# vim /etc/dhcp/dhcpd.conf
+            [root@svr7 etc]# vim /etc/dhcp/dhcpd.conf  ####dhcp配置文件
             在{}中添加如下两行
             next-server 192.168.4.7; ###指定下一个服务地址
             filename "pxelinux.0";  ####指定引导文件名称 注意这里的双引号不能用单引号
@@ -1039,5 +1039,194 @@ PXE 的安装  #####面试必考
                     pxelinux.0 -> 读取默认菜单文件
                     default ->图形模块  背景图片 启动内核 驱动程序  应答文件
                     ks.cfg 应答文件 ->分区 语言  键盘类型  装包
-                    url --url='http://192.168.4.7/centos'
+                    url --url='http://192.168.4.7/centos' #当 next-server 地址变化 这里也要变化
+#############################################################
+cobbler 装机平台 (pxe)  ( 新技术越来越多)
+        主要适用于centos 系统, 适合多平台的的安装
+        集中管理所需服务,如DHCP,DNS TFTP,WEB
+        内建 一个镜像版本仓库
+        内建ks应答文件
+        提供yum 管理 web  api 借口 电源管理
+
+        优点就是自动化程度高
+        缺点修改ks.cfg 有点儿难
+        1)将cobbler.zip 安装包 scp到虚拟机
+            [student@room9pc01 ~]$ scp /home/student/桌面/cobbler.zip root@192.168.4.7:/root/
+        2)解压
+            [root@svr7 ~]# unzip cobbler.zip -d /
+            将文件解压到/opt/     下
+            [root@svr7 cobbler]# unzip cobbler_rpm.zip -d /opt/
+        3)安装 并 检测
+            [root@svr7 cobbler]# yum -y install /opt/cobbler/*.rpm mod_ssl dhcp httpd
+            [root@svr7 cobbler]# rpm -q cobbler
+            cobbler-2.8.2-1.el7.x86_64
+            一下是需要查看是否安装完成的程序列表
+            cobbler
+            cobbler-web
+        4)配置 cobbler
+            只要修改四行 对于格式有着严格要求
+            [root@svr7 cobbler]# vim /etc/cobbler/settings
+            next_server: 192.168.4.7
+            server: 192.168.4.7
+            manage_dhcp: 1
+            pxe_just_once: 1
+        5)配置cobbler 的dhcp
+            [root@svr7 cobbler]# vim /etc/cobbler/dhcp.template
+            [root@svr7 cobbler]# vim /etc/cobbler/dhcp.template
+             :%s /192.168.1/192.168.4/g
+        6)绝对路径解压释放 cobbler_boot.tar.gz
+            [root@svr7 cobbler]# tar -xPf cobbler_boot.tar.gz
+            ####在解压过程中 依照压缩前的 路径 将 文件释放到 源位置
+        7)启动服务
+            #######一次启动多个服务  推荐使用
+            [root@svr7 cobbler]# for i in cobblerd httpd tftp rsyncd
+            > do
+            > systemctl restart $i
+            > systemctl enable  $i
+            > done
+        8)测试
+            [root@svr7 cobbler]# cobbler sync
+            *** TASK COMPLETE ***
+            测试完成
+        9)导入安装镜像文件
+            mount /dev/cdrom /dvd
+            df -h
+            cobbler import --path=/dvd --name=dc
+            扩展虚拟机磁盘  309 查询行
+
+ ####################################################################
+rsync 同步操作
+       同步与复制的差异:
+            复制完全拷贝
+            同步只有第一次是复制,之后时只修改 改变的部分
+       什么是:
+       用法: rsync [选项] 源目录 目标目录   ####将整个源目录中同步到目标文件夹
+            rsync [选项] /源目录/ /目标目录/ ####将源目录中的 文件/文件夹 同步到 目标文件夹
+            ##########################################
+            eg:1
+            [root@F /]# rsync -av /nsd01/ /nsd03/
+            ./
+            11
+            aa
+            bb
+            #################################
+            eg:2
+            [root@F /]# touch /nsd03/aaaa
+            [root@F /]# touch /nsd03/aa000
+            [root@F /]# touch /nsd03/aa000
+            [root@F /]# rsync -av --delete /nsd01/ nsd03/
+            sending incremental file list
+            deleting aaaa
+            deleting aa000
+            ./
+
+
+            选项:  -r 递归 包括目录/子目录及其所有文件
+                  -n 测试同步过程,不做实际修改
+                  -l 保留符号链接文件
+                  -a 归档模式 相当于 -rlptgoD
+                  -v 显示详细的操作信息
+                  -z 传输过程中启用压缩/解压缩  (5G以上) ####常用
+                  -p -t 保留文件的权限 时间标记
+                  -o -g 保留文件的属主 / 属组标记
+                  -D 保留设备文件及其其他特殊文件
+                  --delete 删除 目标目录中多余的部分
+                  -av ####常用
+                  -av --delete 同步过程中参考源文件地址且删除 目标目录中多余的部分  ####常用
+#####################################################
+远程同步(rsync + ssh )
+       虚拟机A目录/nsd1903 与虚拟机B 目录/opt
+       rsync + ssh = rsync + scp
+       远程的ssh目录保存同步
+       下行:rsync [] user@host 远程目录 本地目录
+       上行:rsync [] 本地目录 user@host:远程目录
+       [root@F /]# rsync -av --delete /nsd01/ root@192.168.4.7:/opt/nsd/
+################################################
+实时同步
+        虚拟机 A 目录 /nsd1903/  与 虚拟机 B 目录/nsd/ 实时同步
+        rsync + scp
+        scp 是需要密码的(需要验证)
+            两种办法认证:
+                密码
+                公私钥
+                公钥 : 锁子 私钥 : 钥匙
+                拥有私钥的人可以访问拥有公钥的人 ##重要
+            1)生成公私钥  ssh-keygen ###一路回车
+                       /root/.ssh ###存放地点
+                        id_rsa     ##私钥
+                        id_rsa.pub ##公钥  公钥给比人 私钥 自己保留
+                        know_host 曾经远程管理的每个机器的纪录
+            2) 将公钥传递给虚拟机B
+                [root@svr7 .ssh]# ssh-copy-id root@192.168.4.207
+                会要求输入密码 可能会将原本的
+            3)authorized_keys 当公钥传递过来的时候会保存为 这个文件
+            4)监控目录内容变化  使用  intoifywait 工具
+                intoifywait [选项] 目标文件夹
+                -r 递归监控 包含子目录和文件
+                -m 持续监控 (捕获一个事件后不退出)
+                -q 减少屏幕输出信息  qq 关闭输出信息
+                -e 指定监视的 modify move create delete attribu 的事件
+            5)编辑shell脚本 实现同步操作
+                循环解决重复性操作
+                for i in []
+                do
+                    命令
+                done
+                死循环:无限次的循环
+                while [条件]
+                do
+                    重复执行的操作
+                done
+
+                [root@svr7 nsd1903]# vim /root/rsync.sh
+                #!/bin/bash
+                while inotifwait -rqq /nsd1903
+                do
+                 rsync -a --delete /nsd1903/ root@192.168.4.207:/opt/nsd
+                done
+                [root@svr7 nsd1903]#  /root/rsync.sh
+                [root@svr7 nsd1903]# touch 1233
+                [root@svr7 nsd1903]# touch 12
+                [root@svr7 nsd1903]# touch 1000
+                [root@svr7 nsd1903]# ls
+                [root@B ~]# ls /opt/nsd/
+                1000  12  1233
+
+##################################################
+源码的编译与安装 ###重要
+        今天学校安装 封装 之后在学
+            rpm包 rpm -ivh 或者 yum install
+            源码包 gcc  make 开发工具 ---->可以执行的程序---->运行安装
+        源码编译安装的优势:
+
+        源码编译安装的过程:
+            0.下载源码包
+            0.1安装 gcc  make 开发工具
+            1.tar解包,释放源代码到指定目录
+            2../configure 配置,指定安装目录/功能模块
+            3.make 编译,生成可以执行的二级制文件
+            4.make install 安装,将编译好的文件复制到安装目录
+###########################################################
+        安装软件包  intoify-tools 工具 (这是个源码包需要编译)
+        0.安装 gcc 和 make 开发工具(安装依赖关系的软件)
+        1.在物理机上上传 intoify-tools tar 包 到虚拟机A/root中
+            scp /intoify-tools.tar.gz root@192.168.4.7:/root
+        2.在虚拟机上解压
+            cp tools.tar.gz /opt/
+            tar -xf tools.tar.gz
+        3. ./configure 配置,指定安装目录,功能模块选择
+            --prefix=指定安装位置   eg:--prefix=/opt/myapp
+            eg:./configure --prefix=/opt/myapp
+            ##检测系统是否安装gcc,检测系统是否可以支持编译安装
+            [root@svr7 inotify-tools-3.13]# ./configure
+
+        4.make 编译 生成可执行的二进制文件
+            [root@svr7 inotify-tools-3.13]# make
+        5.make install 安装,将编译好的文件复制到安装目录
+            [root@svr7 inotify-tools-3.13]# make install
+            [root@svr7 inotify-tools-3.13]# ls /usr/local/bin/inotifywait
+            /usr/local/bin/inotifywait
+
+
+
 
