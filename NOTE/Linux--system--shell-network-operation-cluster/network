@@ -1,0 +1,220 @@
+王凯
+network 5 天
+shell   6 天
+##########################################
+下面学习的全部都是华为设备
+    iso 国际标准化组织
+    ieee电气和电子工程师协会
+    计算机网络
+            网络与 docker Mariadb openstack  hadoop 都有关
+            网络的发展
+                    60年代    分组交换  :提高数据传输效率,减少服务器负担  例子(断点续传)
+                    70-80年代 TCP/IP   :统一网络
+                     90年代   wbe技术
+            wan与lan
+                    wan :广域网
+                                范围:10-100000km
+                                Internet
+                    lan :局域网
+                                范围:1km作用
+                                短距离
+                                企业网,校园网
+            网络设备及拓扑
+                    厂商 华为 思科
+                    线缆链接计算机和网络设备布局
+                    点对点  wan
+                    网状  lan (推荐)
+                       优点:一个节点与其他多个节点相连接 提高冗余和容错性
+                       缺点:成本高
+
+                    星型及扩展星型(适用于小型机构)lan
+                        优点:易于实现 易于扩展 易于故障排除
+                        缺点:中心节点压力大 组网成本高
+            网络功能:
+                    信息传递
+                    资源共享
+                    提高可靠性
+                    增加系统处理能力(集群)
+
+
+    网络通信参考模型
+            OSI参考模型--iso规定 (理论框架)
+                 *  应用层 网络服务和用户的一个借口
+                    表示层 数据表示 安全 压缩
+                    会话层 建立管理终止 回话
+                 *  传输层 定义数据传输的协议端口 已经流程控和差错校验
+                 *  网络层 进行逻辑地址寻址 实现不同网络之间的路径选择
+                 *  数据链路层  建立逻辑链接 进行硬件地址寻址 差错校验
+                    物理层 建立 维护 断开物理链接
+                 * 代表运维 应该关注的地方
+            TCP/IP五层模型   (实际应用)
+
+                    应用层              HTTP FTP TFTP SMTP SNMP DNS   服务           上层数据
+                    传输层 ------|      TCP  UDP                      数据传输质量     TCP 头部   上层数据                 数据段
+                    网络层 ------|--核心 ICMP IGMP IP ARP                            ip头部 tcp头部 上层数据              数据包
+                    数据链路层----|      VLAN TRANK MSTP                             mac地址 ip头部 tcp头部 上层数据       数据帧
+                    物理层                                                            bit                              数据流
+            8比特=1字节
+
+    交换机命令行
+
+
+    交换机命令配置
+
+            172.40.50.115
+            获取kvm.sh文件后
+            1,   关闭所有虚拟机
+            2,   以管理员身份运行
+            3, chmod +x kvm.sh
+            4, ./kvm.sh
+            看到ok则成功
+
+            密码: tedu
+
+            用户视图
+            系统视图   system-view
+            接口视图   interface Ethernet0/0/1
+            协议视图
+
+            熟悉网络设备视图:
+            system-view             //进入系统视图
+            interface Ethernet0/0/1    //进入接口视图
+            quit    //返回上一视图
+            interface Ethernet0/0/1    //再次进入接口视图
+            return     //返回用户视图
+
+            return命令和快捷键ctrl+z效果一样
+
+            <Huawei>system-view
+            [Huawei]sysname SW1			//修改设备名称
+
+            [Huawei]display version    //查看设备系统版本与硬件型号
+
+            [Huawei]display current-configuration   //查看设备当前配置
+
+            aaa   三a模式, 账户,认证,统计
+            使用账户和密码登录终端
+            <Huawei>system-view
+            [Huawei]aaa                    //进入aaa认证
+            [Huawei-aaa]local-user admin01 password cipher 123    //创建账户叫admin01,密码123
+            [Huawei-aaa]quit
+            [Huawei]user-interface console 0  // 打开当前控制台0
+            [Huawei-ui-console0]authentication-mode aaa     //激活配置
+
+            密码配置完毕后,退出系统,测试效果    或者 使用 display current-configuration  查看配置
+            配错重置---不能修改
+
+            快捷键   ctrl+]   退出账户
+
+            <Huawei>save     //保存配置,如果保存时有被问到是否覆盖,则也回答Y
+            <Huawei>reboot	 //重启设备
+            <Huawei>reset saved-configuration     //删除配置文件(恢复出厂设置)
+            注意:删除配置文件之后,如果重启,系统会先询问是否保存,回答N,然后在回答Y重启
+
+            VRP(通用路由平台)  华为路由器交换机的操作系统的称呼
+
+    数据链路层解析
+
+
+            总结
+                数据发送封装  接收数据解封
+                学习  广播 转发  更新
+                广播域 : 同一网段  统一范围
+                广播域太大会造成 干扰 网络速率下降
+                交换机是组建局域网的重要设备,交换机可以根据mac地址智能的转发数据帧 ,且工作在数据链路层
+
+            display this ###显示当前配置 超级常用 几乎万能
+            shutdown e0/0/1关闭 e0/0/1接口
+            undo shutdown e0/0/1 开启 接口
+
+    vlan(虚拟局域网)
+            作用:  广播控制
+                  增加安全性
+                  调高带宽利用率
+                  降低延迟
+            什么是:
+                vlan 4096个  0-4095
+                vlan 1 不需创建 默认存在  ;  从vlan 2 开始创建
+            思路:
+                创建vlan
+                把端口加入到vlan
+                验证
+            进入系统视图
+                system-view
+            创建vlan
+                vlan1
+            添加端口(先进入端口)
+                in e0/0/1               ####进入端口
+                port link-type access   ###将网卡设置为access模式
+                port default vlan 2     ###添加网卡
+
+                当然也可以添加网卡组后 ,一起添加到vlan
+                [Huawei]port-group 1    ###添加网卡组
+                [Huawei-port-group-1]group-member Ethernet0/0/3 Ethernet0/0/4  ###添加网卡组成员
+                [Huawei-port-group-1]port link-type access ###设置端口接入模式 / trunk
+                [Huawei-port-group-1]port default vlan 2              ####将port-group-1 设置为 vlan2
+            vlan中继线路使用    trunk
+                [Huawei-port-group-1]port link-type trunk
+                [Huawei-Ethernet0/0/1]port trunk allow-pass vlan all  ####允许所有vlan
+
+            查看vlan
+                display vlan
+                display this            ###显示当前,配置
+                提示 端口以及绑定请删除端口配置
+
+                [Huawei]clear configuration interface e0/0/1  ###清除端口配置
+
+                若添加错误请在添加命令前加入 undo 在敲一回
+                access 接入链路,承载一个vlan
+                trunk  中继链路,可以承载多个vlan
+    链路聚合(也叫以太通道,网卡绑定)
+            配置链路聚合需要在两个台switch 中都配置.配置一段是无效的
+            eth-trunk
+            作用:多条路线路负载均衡 带宽提高
+                容错,当一条线路失效时,不会造成全网中断
+            思路:先先创建 eth-trunk(链路聚合接口)
+                在进入 端口中将端口添加到eth-trunk(链路聚合接口)
+                接着在eth-trunk(链路聚合接口) 中配置需要的东西
+            怎么配置:
+                方法一
+                [Huawei]interface eth-trunk 1       #### 创建 聚合链路端口
+                [Huawei]interface Ethernet0/0/1     #### 进入 端口
+                [Huawei-Ethernet0/0/1]eth-trunk 1   #### 将端口添加到 链路聚合
+                [Huawei]interface Ethernet0/0/2     #### 进入 端口
+                [Huawei-Ethernet0/0/2]eth-trunk 1   #### 将端口添加到 链路聚合
+                [Huawei-eth-trunk 1] port link-type trunk  ####将聚合链路设置为 trunk
+                [Huawei-eth-trunk 1] port trunk allow-pass vlan all ####允许所有vlan
+
+                方法二
+                [Huawei]interface eth-turnk 1                       #### 创建 聚合链路端口
+                [Huawei-eth-trunk 1]trunkport Ethernet0/0/1 0/0/2   #### 将端口添加到 链路聚合
+                [Huawei-eth-trunk 1] port link-type trunk           ####将聚合链路设置为 trunk
+                [Huawei-eth-trunk 1] port trunk allow-pass vlan all ####允许所有vlan
+
+    路由器
+            作用: 1.能够链接不同的广播域(网段)的设备,并隔离广播
+                 2.使用前配置ip
+
+            若接口中 IP配置错误 可以使用  undo IP address 删除 或者重新配置 ip 会覆盖 旧 ip (但是某些情况不能覆盖)
+            若接口中ip 配反了  只能全部删除重新配置
+            思路: 1.配置网关 ip
+                 2.配置终端设备 ip
+                 3.配置路由表(静态路由表 / 动态路由表)
+            //查看路由表,只需关注24位掩码的网段即可
+            [Huawei]display ip routing-table
+            静态路由 配置 :
+                    <Huawei>system-view
+                    [Huawei]interface GigabitEthernet 0/0/0
+                    [Huawei-GigabitEthernet0/0/1]ip address 192.168.1.254 24
+                    [Huawei-GigabitEthernet0/0/1]quit
+                    [Huawei]interface GigabitEthernet 0/0/1
+                    [Huawei-GigabitEthernet0/0/1]ip address 192.168.2.1 24
+                    [Huawei]ip route-static 192.168.3.0 24 192.168.2.2  ####配置静态路由表  目标地址 下一跳地址
+                    [Huawei]ip route-static 192.168.4.0 24 192.168.2.2
+
+                    static ----手动
+                    direct ----直链接
+
+
+
+

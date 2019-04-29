@@ -1,0 +1,113 @@
+网络功能:
+信息传递
+资源共享    
+提高可靠性  
+增加系统处理能力    集群
+
+60年代
+分组交换 : 提高数据传输效率,减少服务器负担
+70~80年代
+TCP/ip : 统一网络环境   
+90年代
+web
+
+华为
+路由器   交换机
+点对点    WAN
+星形       LAN
+优点:易于实现,易于扩展,易于故障排查
+网状	      LAN
+优点:高可靠,高可用
+
+osi七层参考模型   (理论框架)
+tcp/ip五层参考模型   (实际应用)
+物理层,数据链路层,网络层,传输层,应用层
+
+bit   比特      标识网络速度,设备接口时使用
+byte  字节      标识存储单位时使用
+8比特 = 1字节 
+
+172.40.50.115
+获取kvm.sh文件后
+1,   关闭所有虚拟机
+2,   以管理员身份运行
+3, chmod +x kvm.sh
+4, ./kvm.sh
+看到ok则成功
+
+密码: tedu
+
+熟悉网络设备视图:
+system-view             //进入系统视图
+interface Ethernet0/0/1    //进入接口视图
+quit    //返回上一视图
+interface Ethernet0/0/1    //再次进入接口视图
+return     //返回用户视图
+
+return命令和快捷键ctrl+z效果一样
+
+<Huawei>system-view 
+[Huawei]sysname SW1			//修改设备名称
+ 
+[Huawei]display version    //查看设备系统版本与硬件型号
+
+[Huawei]display current-configuration   //查看设备当前配置
+
+aaa   三a模式, 账户,认证,统计
+使用账户和密码登录终端
+<Huawei>system-view 
+[Huawei]aaa                    //进入aaa认证
+[Huawei-aaa]local-user admin01 password cipher 123    //创建账户叫admin01,密码123       
+[Huawei-aaa]quit
+[Huawei]user-interface console 0        
+[Huawei-ui-console0]authentication-mode aaa     //激活配置
+
+密码配置完毕后,退出系统,测试效果    或者 使用 display current-configuration  查看配置
+
+快捷键   ctrl+]   退出账户
+
+<Huawei>save     //保存配置,如果保存时有被问到是否覆盖,则也回答Y
+<Huawei>reboot	 //重启设备
+<Huawei>reset saved-configuration     //删除配置文件(恢复出厂设置)
+注意:删除配置文件之后,如果重启,系统会先询问是否保存,回答N,然后在回答Y重启
+
+VRP(通用路由平台)  华为路由器交换机的操作系统的称呼
+
+
+二进制       0  1  
+十进制       0123456789   10
+
+十六进制   0123456789ABCEDF
+
+mac地址长度48位(bit)  6字节
+全球唯一
+前24位供应商标识 ,后24位,供应商给设备的唯一编号
+单播  1对1
+组播  1对多
+广播  1对所有
+
+mtu 最大传输单元
+
+交换机工作原理
+1,学习源MAC地址
+2,广播,除了数据来源的接口之外的接口发送广播寻找目的主机
+3,转发数据
+4,更新   超过300秒没有任何数据通讯,或者关机拔网线
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

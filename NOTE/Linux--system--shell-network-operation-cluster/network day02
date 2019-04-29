@@ -1,0 +1,107 @@
+信息传递,资源共享,提高可靠性,提高系统处理能力
+TCP/IP
+WAN   LAN
+点对点   
+星形
+网状  高可靠
+osi七层参考模型   iso颁布
+tcp/ip五层参考模型
+    数据链路层,网络层,传输层
+
+数据段
+数据包
+数据帧
+比特流
+
+计算机
+防火墙
+路由器
+交换机
+网卡
+
+数据的发送是打封装的过程
+数据的接收时拆(解)封装的过程
+
+用户视图
+系统视图
+接口视图
+协议视图
+
+交换机是组建局域网的重要设备之一,交换可以智能的根据目标MAC地址转发数据帧,交换机工作在数据链路层
+
+学习,广播,转发,更新
+
+广播域  可以理解是同一范围,或者同一网段
+干扰,降低网速,
+vlan   最大 4096个    范围  0~4095
+通常可以划分1000+
+vlan 1,不需创建,默认存在
+
+创建vlan,将接口加入vlan,进行广播域隔离
+<Huawei>system-view
+[Huawei]vlan batch 2 3            //创建VLAN2、3
+[Huawei]port-group 1         //创建1号接口组
+[Huawei-port-group-1]group-member Ethernet0/0/3 Ethernet0/0/4     //将3口4口加入1号组
+[Huawei-port-group-1]port link-type access    //将1号组里所有的接口设置为access,表示将此接口定义为即将为某一个vlan服务
+[Huawei-port-group-1]port default vlan 2   //定义此接口为vlan 2 服务
+
+
+S1配置
+[Huawei]interface Ethernet0/0/7
+[Huawei-Ethernet0/0/7] port link-type access
+[Huawei-Ethernet0/0/7] port default vlan 3
+
+S2配置
+[Huawei]vlan 3            //创建VLAN3
+[Huawei]port-group 1
+[Huawei-port-group-1]group-member Ethernet0/0/5 to Ethernet0/0/7      //将5,6,7口加入接口组
+[Huawei-port-group-1]port link-type access 
+[Huawei-port-group-1]port default vlan 3    
+
+access 接入链路  ,可以承载1个vlan的数据
+trunk  中继链路 ,可以承载多个vlan的数据
+
+一个接口如果被修改配置,再配置中继链路时会要求恢复默认配置
+[Huawei]clear configurations interface e0/0/1    //恢复1接口默认配置
+
+[Huawei-Ethernet0/0/7]port link-type trunk    //将7口设置为中继链路
+[Huawei-Ethernet0/0/1]port trunk allow-pass vlan all    //允许此接口传递任意vlan的数据
+
+配置链路聚合,增加网络带宽与可靠     
+关闭接口  shutdown    打开接口 undo shutdown
+方法一:
+[Huawei]interface eth-trunk 1     //开启链路聚合接口1
+[Huawei-eth-trunk 1]port link-type trunk
+[Huawei-eth-trunk 1]port trunk allow-pass vlan all
+[Huawei-eth-trunk 1]quit
+[Huawei]interface Ethernet0/0/1		//进入接口1
+[Huawei-Ethernet0/0/1]eth-trunk 1   //将接口1加入链路聚合接口1
+[Huawei]interface Ethernet0/0/2
+[Huawei-Ethernet0/0/2]eth-trunk 1    //将接口2加入链路聚合接口1
+方法二:
+[Huawei]interface eth-trunk 1     //开启链路聚合接口1
+[Huawei-eth-trunk 1]trunkport Ethernet 	0/0/1 0/0/2
+[Huawei-eth-trunk 1]port link-type trunk
+[Huawei-eth-trunk 1]port trunk allow-pass vlan all
+
+在配置中继链路和链路聚合时,接口要保持默认状态,如果有配置需要清除
+
+路由器
+1,使用前需要配置ip地址
+2,能够连接不同广播域(网段)的设备,并隔离广播
+
+C  192.168.0.1 /24
+静态路由  通过管理员手工配置目的网段来使网络互通的一种方式
+直连路由   路由器接口配置ip后自动生成,结果需要是up状态
+
+[Huawei]ip route-static 192.168.3.0 24 192.168.2.2   //配置静态路由,目标网段192.168.3.0,掩码24位,下一跳192.168.2.2
+[Huawei]display ip routing-table     //查看路由表,只需关注24位掩码的网段即可
+
+
+
+
+
+
+
+
+
