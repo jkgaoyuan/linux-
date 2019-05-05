@@ -1,0 +1,128 @@
+vlan
+广播控制
+增加安全
+带宽利用提高
+降低数据传递延迟
+
+
+vlan  网段     部门   广播域
+
+配置三层交换机的SVI(交换机虚拟接口)地址
+[Huawei]vlan batch 2 3     //创建vlan2和3
+[Huawei]interface Vlanif 1		//进入vlan1的虚拟接口
+[Huawei-Vlanif1]ip address 192.168.1.254 24    //为虚拟接口配置ip,此ip可以作为终端设备的网关
+[Huawei]interface Vlanif 2
+[Huawei-Vlanif1]ip address 192.168.2.254 24
+[Huawei]interface Vlanif 3
+[Huawei-Vlanif1]ip address 192.168.3.254 24
+
+ICMP  Internet 控制报文协议,检测和反馈网络状态信息
+ping -t 持续检测网络
+ping -l 100  修改ping包大小为100字节
+
+拓扑组建思路
+
+三层交换机配置:
+创建vlan2 vlan3  g0/0/1口配置trunk   配置SVI的ip地址
+二层交换机配置:
+创建vlan2 vlan3   e0/0/2加入vlan2  e0/0/3加入vlan3
+e0/0/4配置trunk
+
+三层交换机g0/0/2口配置ip思路:
+首先创建vlan4,然后进入vlanif4口配置ip 192.168.4.1 24
+最后将g0/0/2加入vlan4
+
+静态路由  手工
+动态路由  可以自动学习路由条目,通过某种动态路由协议实现
+
+OSPF  开放式最短路径优先协议
+
+宣告
+骨干区域  area 0
+
+255.255.255.0
+11111111.11111111.11111111.00000000
+反掩码
+0.0.0.255
+
+
+ospf配置过程
+1,开启进程   ospf 1
+2,进入骨干区域  area 0   
+3,对本设备所在网段进行宣告, 并使用反掩码
+
+直连路由
+静态路由
+动态路由
+默认路由  是特殊的静态路由,可以匹配任意网段,当路由表中找不到明细路由时使用,一般用在企业出口网关
+
+ospf配置
+三层交换机
+宣告  192.168.1.0  192.168.2.0  192.168.3.0  192.168.4.0 
+路由器
+宣告  192.168.4.0 
+
+三层交换机需要添加默认路由
+ip route-static 0.0.0.0 0.0.0.0 192.168.4.2
+
+
+0~65535        65536个
+0保留
+1~1023之间  知名端口号
+使用1024之后的
+
+syn 打算与对方主机进行连接
+ack 确认对方信息
+fin 打算与对方主机断开连接
+
+TCP
+三次握手
+syn----ack,syn----ack
+
+四次断开
+fin----ack----fin----ack
+
+访问控制列表:
+ACL,过滤网络数据,可以对源ip,目标ip,端口,协议进行限制,达到更加合理的使用网络的目的
+
+0 严格匹配
+1 不做匹配
+
+192.168.2.10
+
+192.168.1.0   0.0.0.255
+
+192.168.2.1  0.0.0.0
+
+deny   拒绝
+permit 允许
+
+[Huawei]acl 2000     //使用基本acl,号码是2000
+[Huawei-acl-basic-2000]rule deny source 192.168.2.1 0  //拒绝源地址是192.168.2.1的主机
+[Huawei]interface GigabitEthernet 0/0/1    //进入0/0/1接口中
+[Huawei-GigabitEthernet0/0/1]traffic-filter inbound acl 2000     //使用刚刚创建的acl规则过滤进入这个接口的数据
+
+练习2:  只允许192.168.2.1通过,拒绝其他所有人
+[Huawei]acl 2001     //创建新的acl规则列表
+[Huawei-acl-basic-2001]rule permit source 192.168.2.1 0   //允许192.168.2.1通过
+[Huawei-acl-basic-2001]rule deny source any    //拒绝所有人通过
+[Huawei]interface GigabitEthernet 0/0/1
+[Huawei-GigabitEthernet0/0/1]undo traffic-filter inbound   //删除原有规则
+[Huawei-GigabitEthernet0/0/1] traffic-filter inbound acl 2001   //附加新规则
+
+高级acl配置:
+[Huawei]acl 3000
+[Huawei-acl-adv-3000]rule deny tcp source 192.168.2.1 0 destination 192.168.1.1 0 destination-port eq 21    //创建规则,拒绝192.168.2.1访问192.168.1.1的21号端口(ftp服务)
+[Huawei-acl-adv-3000]rule deny tcp source 192.168.2.2 0 destination 192.168.1.1 0 destination-port eq 80    //创建规则,拒绝192.168.2.2访问192.168.1.1的80号端口(www服务)
+[Huawei]interface g0/0/1
+[Huawei-GigabitEthernet0/0/1]traffic-filter inbound acl 3000      //在接口附加规则
+
+
+
+
+
+
+
+
+
+

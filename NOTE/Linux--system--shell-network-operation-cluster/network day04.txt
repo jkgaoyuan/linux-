@@ -1,0 +1,129 @@
+
+A 1~127
+B 128~191
+C 192~223
+
+127  本机回环
+169.254   内部保留地址
+
+内部私有地址
+A 10.0.0.0~10.255.255.255   /8   255.0.0.0
+B 172.16.0.0~172.31.255.255   /16   255.255.0.0
+C 192.168.0.0~192.168.255.255   /24   255.255.255.0
+
+
+NAT  网络地址转换, 可以将内部私有ip地址转换为公网ip地址,从而实现全球互联
+
+ipv4  32位 
+ipv6  128位
+
+静态nat,1对1转换,通常配置在服务器环境
+
+进入g0/0/0接口,注意此接口是外网口
+[Huawei-GigabitEthernet0/0/0]nat static global 100.0.0.2 inside 192.168.2.1    //使用静态nat将公网地址100.0.0.2与内部192.168.2.1进行转换
+[Huawei-GigabitEthernet0/0/0]nat static global 100.0.0.3 inside 192.168.2.2
+[Huawei-GigabitEthernet0/0/0]display this   //查看当前视图配置
+
+easy ip ,多对1转换,通常在仅需访问公网的环境使用
+[Huawei]acl 2000    //使用acl确定范围
+[Huawei-acl-basic-2000]rule permit source any     //使用acl定义允许任何内部地址
+[Huawei]interface g0/0/0    //进入外网接口
+[Huawei-GigabitEthernet0/0/0]nat outbound 2000    //让所有人可以利用g0/0/0的ip访问外网
+
+广播风暴   由于环形网络引起的广播泛滥现象,会导致网络崩溃
+STP  生成树协议,可以在环形网络中临时断开一个接口,避免广播风暴,在网络不通时,又可以打开这个接口,起到备份链路的作用
+
+display  stp  brief   //查看生成树摘要信息
+forwarding  转发状态
+discarding  阻塞状态(临时断开的接口)
+
+undo stp enable    //关闭生成树(通常不能这样做)
+
+VRRP  虚拟路由冗余协议 , 可以对多网关设备的网络提供备份网关的效果,从而避免单一网关失效影响全网通讯的问题
+
+为三层交换机配置vlan地址
+[Huawei]interface Vlanif 1      //进入vlan1接口
+[Huawei-Vlanif1]ip address 192.168.1.252 24    //配置ip
+[Huawei]vlan 2    //创建vlan2
+[Huawei]interface Vlanif 2      //进入vlan2接口
+[Huawei-Vlanif2]ip address 192.168.2.2 24    //配置ip
+[Huawei-Vlanif2]quit
+[Huawei]interface GigabitEthernet 0/0/2   //进入g0/0/2接口
+[Huawei-GigabitEthernet0/0/2]port link-type access    //将g0/0/2配置为接入链路,即将只为vlan2传递数据
+[Huawei-GigabitEthernet0/0/2]port default vlan 2  //将接口加入vlan2
+
+ospf
+宣告,对外告知自身连接了哪些网段
+配置动态路由,实现网络互通
+第1台S5700
+[Huawei]ospf 1   //开启ospf进程,进程号1
+[Huawei-ospf-1]area 0    //进入区域0,ospf的首个区域
+[Huawei-ospf-1-area-0.0.0.0]network 192.168.1.0 0.0.0.255   //宣告自身所在网段
+[Huawei-ospf-1-area-0.0.0.0]network 192.168.2.0 0.0.0.255
+第2台S5700
+[Huawei]ospf 1
+[Huawei-ospf-1]area 0
+[Huawei-ospf-1-area-0.0.0.0]network 192.168.1.0 0.0.0.255
+[Huawei-ospf-1-area-0.0.0.0]network 192.168.3.0 0.0.0.255
+路由器
+[Huawei]ospf 1
+[Huawei-ospf-1]area 0
+[Huawei-ospf-1-area-0.0.0.0]network 192.168.2.0 0.0.0.255
+[Huawei-ospf-1-area-0.0.0.0]network 192.168.3.0 0.0.0.255
+[Huawei-ospf-1-area-0.0.0.0]network 192.168.4.0 0.0.0.255
+
+排错:
+1,查接口的ip,终端设备的网关
+2,查ospf宣告的网段  
+
+查看设备ip
+display ip interface brief
+
+两台网关设备(S5700)配置:
+[Huawei]interface Vlanif 1     //进入vlan接口
+[Huawei-Vlanif1]vrrp vrid 1 virtual-ip 192.168.1.254   //开启vrrp功能,相同vlan内组号要一致,此处用1,虚拟路由器的ip是192.168.1.254
+
+在多vlan中配置vrrp实现负载均衡
+
+
+sw1  
+1,创建vlan2
+2,与其他交换机所连接的接口配置为trunk
+sw2
+1,创建vlan2
+2,与其他交换机所连接的接口配置为trunk
+3,连接pc的接口加入vlan2
+ms1
+1,创建vlan2
+2,与其他交换机所连接的接口配置为trunk
+3,给vlan1配置ip  192.168.1.252
+   给vlan2配置ip  192.168.2.252
+4,进入vlan1,开启vrrp,虚拟ip是192.168.1.254
+ vlan1的vrrp优先级设置为110
+5,进入vlan2,开启vrrp,虚拟ip是192.168.2.254
+ms2
+1,创建vlan2
+2,与其他交换机所连接的接口配置为trunk
+3,给vlan1配置ip  192.168.1.253
+   给vlan2配置ip  192.168.2.253
+4,进入vlan1,开启vrrp,虚拟ip是192.168.1.254
+5,进入vlan2,开启vrrp,虚拟ip是192.168.2.254
+  vlan2的vrrp优先级设置为110
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
