@@ -929,7 +929,7 @@ Enforcing
 samba_export_all_ro --> off
 samba_export_all_rw --> off
 
-[root@server0 ~]# setsebool samba_export_all_ro on ##开启Samba export服务
+[root@server0 ~]# setsebool samba_export_all_ro=on ##开启Samba export服务
 
 
 3.开机自动挂载

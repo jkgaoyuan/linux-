@@ -55,7 +55,22 @@ shell   6 天
                     数据链路层----|      VLAN TRANK MSTP                             mac地址 ip头部 tcp头部 上层数据       数据帧
                     物理层                                                            bit                              数据流
             8比特=1字节
+    网络层
+            作用: 网络层提供点到点的链接
 
+    传输层
+            作用: 提供端口到端口的链接  端口 0-65535 1-1023 知名端口号 ; 一般我们使用>=1024
+            传输层协议:
+                    tcp 可靠 面向链接 效率低 传输控制协议    网页
+                        syn 打算与对方主机进行链接
+                        ack 确认对方信息
+                        fin 打算与对方主机断开链接
+                        三次握手
+                        syn----ack,syn---ack
+                        四次断开
+                        fin---ack---fin---ack
+                    udp 不可靠 无连接 效率高 用户数据包协议 缺乏可靠机制需要上层协议支持差错控制 游戏
+                        TFTP NTP DNS是两个都用
     交换机命令行
 
 
@@ -143,6 +158,7 @@ shell   6 天
                 system-view
             创建vlan
                 vlan1
+                vlan batch  2 3 #####同时创建 vlan 2 vlan3
             添加端口(先进入端口)
                 in e0/0/1               ####进入端口
                 port link-type access   ###将网卡设置为access模式
@@ -168,7 +184,7 @@ shell   6 天
                 access 接入链路,承载一个vlan
                 trunk  中继链路,可以承载多个vlan
     链路聚合(也叫以太通道,网卡绑定)
-            配置链路聚合需要在两个台switch 中都配置.配置一段是无效的
+            配置链路聚合需要在两个台switch 中都配置.配置一端是无效的
             eth-trunk
             作用:多条路线路负载均衡 带宽提高
                 容错,当一条线路失效时,不会造成全网中断
@@ -211,10 +227,217 @@ shell   6 天
                     [Huawei-GigabitEthernet0/0/1]ip address 192.168.2.1 24
                     [Huawei]ip route-static 192.168.3.0 24 192.168.2.2  ####配置静态路由表  目标地址 下一跳地址
                     [Huawei]ip route-static 192.168.4.0 24 192.168.2.2
-
+            ip route-static 目标地址 掩码 下一跳地址
                     static ----手动
                     direct ----直链接
 
 
+            动态路由配置:
+                    可以自动学习路由条目,通过某种动态路由协议实现.
+                    协议: ospf 开放式最短路径优先协议 ; 适应大中型网络,兼容 网络中大部分设备
+                    特点:减少管理任务,占用网络带宽(传递路由条目)
+                    思路:1.开启ospf协议
+                        2.进入area 0
+                        3.宣告网络
+                        4.默认路由 的设置: 是特殊的静态路由,当路由表中找不到明细路由时使用,匹配任意网段,一般用在企业出口网关.
+                    [Huawei]ospf 1          ####开启ospf协议
+                    [Huawei-ospf-1]area 0   ####进入area 0
+                                                                    #反掩码;讲掩码的10互换
+                    [Huawei-ospf-1-area-0.0.0.0]network 192.168.1.0 0.0.0.255 ####宣告网络,对外告知自身链接了那些网段
+                    [Huawei]ip route-static 0.0.0.0 0.0.0.0 192.168.4.2       ####添加默认路由
+
+
+
+
+    三层交换机
+            什么是三层交换机
+
+
+            思路:当你需要给 三层交换机的端口配置ip时需要 你在三层交换机的vlan虚拟接口(svi)上配置ip
+                有几个vlan 就有几个接口
+            配置:
+                [Huawei]vlan batch 2 3
+                [Huawei]interface Vlanif 1                  ####进入vlan1的虚拟接口
+                [Huawei-Vlanif1]ip address 192.168.1.254 24 ####添加ip地址
+                [Huawei]interface Vlanif 2
+                [Huawei-Vlanif1]ip address 192.168.2.254 24
+                [Huawei]interface Vlanif 3
+                [Huawei-Vlanif1]ip address 192.168.3.254 24
+                [Huawei]interface Ethernet0/0/2
+                [Huawei-Ethernet0/0/7] port link-type access
+                [Huawei-Ethernet0/0/7] port default vlan 2
+                [Huawei]interface Ethernet0/0/3
+                [Huawei-Ethernet0/0/7] port link-type access
+                [Huawei-Ethernet0/0/7] port default vlan 3
+
+
+            icmp  Internet  控制报文协议 检测和反馈网络状态信息
+            ping 命令 就使用了 icmp 协议
+            ping -t [时间] -l [字节] 目标ip/主机地址
+
+    访问控制列表 ACL
+            作用:过滤网络数据可以对源ip,目标ip端口,协议进行限制,达到更加合理的使用网络的目的.
+
+            acl 分类
+                acl 2000-2999 匹配 源ip
+                acl 3000-3999 匹配源ip 目标ip 端口 协议
+                0 严格匹配
+                1 不做匹配
+                192.168.1.0 0.0.0.255 匹配192.168.1 x 整个 网段 (以c类为例子)
+                192.168.1.0 0.0.255.255 匹配 192.168.x.x
+                192.168.1.0 0           匹配 192.168.1.1  这台服务器
+                [Huawei]acl 2000    ####选择分类
+                [Huawei-acl-basic-2000]rule deny source 192.168.2.1 0  #####拒绝192.168.2.1 主机
+                                       rule permit source              ####允许
+                [Huawei-GigabitEthernet0/0/1]traffic-filter inbound acl 2000  ####在端口中设置acl条目,过滤流量
+
+                ###########################################
+
+                高级acl
+                [Huawei]acl 3000
+                ###配置2.1 拒绝访问 1.1 的ftp
+                [Huawei-acl-adv-3000]rule deny tcp source 192.168.2.1 0 destination 192.168.1.1 0 destination-port eq 21
+                #配置2.2 拒绝访问 1.1 的web
+                [Huawei-acl-adv-3000]rule deny tcp source 192.168.2.2 0 destination 192.168.1.1 0 destination-port eq 80
+                [Huawei]interface g0/0/1
+                [Huawei-GigabitEthernet0/0/1]traffic-filter inbound acl 3000
+
+            內部私有地址:
+                A:10.0.0.0~10.255.255.255         /8
+                B:172.16.0.0~172.31.255.255       /16
+                C:192.168.0.0~192.168.255.255     /24
+                一下这两个地址不可用
+                127 本機回环地址
+                169.254 内部保留地址(无法与外网通信)
+    NAT 网络地址转换 ,可以将内部私有地址转换成公网ip从而实现全球互联
+            优点:节省公有合法ip
+                处理地址重叠
+                安全性
+            缺点:延迟大
+                配置和维护复杂
+            实现方式:
+                静态转换(一对一,从外网访问内网)
+                Easy IP(一对多,从内网访问外网,不能从外网访问内网)
+                这两个方式可以同时存在,且优先选择 静态转换
+
+            配置:
+                静态nat
+                ##### 进入外网口 (一定要在外网口配置,在内网口无效)
+                [Huawei]interface GigabitEthernet 0/0/0
+                ##### 配置端口ip
+                [Huawei-GigabitEthernet0/0/0] ip address  100.0.0.1 8
+                ##### 配置静态 nat ;  nat static global 外网 ip  inside 内网 ip
+                [Huawei-GigabitEthernet0/0/0]nat static global 100.0.0.2 inside 192.168.2.1  一个外网 ip 只能对应一个 内网 ip
+                [Huawei-GigabitEthernet0/0/0]nat static global 100.0.0.3 inside 192.168.2.2
+
+                Easy IP
+                #### 先删除 之前配置的 静态nat
+                [Huawei-GigabitEthernet0/0/0]undo nat static global 100.0.0.2 inside 192.168.2.1
+                [Huawei-GigabitEthernet0/0/0]undo nat static global 100.0.0.3 inside 192.168.2.2
+                #### 使用  acl 限定范围
+                [Huawei]acl 2000  ###参照 278 行
+                [Huawei-acl-basic-2000]rule permit source any     //使用acl定义任何内部地址
+                #### 配置easy  IP
+                [Huawei]interface g0/0/0
+                [Huawei-GigabitEthernet0/0/0]nat outbound 2000    //可以利用g0/0/0的ip访问外网
+
+    生成树协议(STP) 默认开启 了解内容
+            作用:在环形网络中 临时断开一个接口,防范广播风暴; 在网络不同时,打开这个接口,起到备份链路作用
+            #### 查看stp 状态信息
+            display stp brief
+                forwarding 转发
+                1discarding 阻塞状态(临时断开)
+
+    vrrp 技术
+            作用: 在不改变组网的情况下,将多台路由器虚拟成为一个虚拟路由器通过虚拟路由器的 IP 地址为默认网关,实现网关备份.
+            三层交换机和路由器都可以使用.
+            成员:
+            主路由器(干活的) 备份路由器(当主路由器挂了,自动切换为主路由器) 虚拟路由器
+            实验参考 : 三层交换配置VRRP
+                <Huawei>system-view
+                [Huawei]interface GigabitEthernet 0/0/0
+                [Huawei-GigabitEthernet0/0/0]ip address 192.168.2.1 24
+                [Huawei]interface GigabitEthernet 0/0/1
+                [Huawei-GigabitEthernet0/0/1]ip address 192.168.3.1 24
+                [Huawei]interface GigabitEthernet 0/0/2
+                [Huawei-GigabitEthernet0/0/2]ip address 192.168.4.254 24
+                [Huawei]ospf
+                [Huawei-ospf-1]area 0
+                [Huawei-ospf-1-area-0.0.0.0]network 192.168.2.0 0.0.0.255
+                [Huawei-ospf-1-area-0.0.0.0]network 192.168.3.0 0.0.0.255
+                [Huawei-ospf-1-area-0.0.0.0]network 192.168.4.0 0.0.0.255
+                MS1
+                <Huawei>system-view
+                [Huawei]interface Vlanif 1
+                [Huawei-Vlanif1]ip add 192.168.1.252 24
+                [Huawei]vlan 2
+                [Huawei-vlan2]quit
+                [Huawei]interface Vlanif 2
+                [Huawei-Vlanif2]ip address 192.168.2.2 24
+                [Huawei-Vlanif2]quit
+                [Huawei]interface GigabitEthernet 0/0/2
+                [Huawei-GigabitEthernet0/0/2]port link-type access
+                [Huawei-GigabitEthernet0/0/2]port default vlan 2
+                [Huawei]ospf
+                [Huawei-ospf-1]area 0
+                [Huawei-ospf-1-area-0.0.0.0]network 192.168.1.0 0.0.0.255
+                [Huawei-ospf-1-area-0.0.0.0]network 192.168.2.0 0.0.0.255
+                ######进入vlan1
+                [Huawei]interface Vlanif 1
+                ###### 配置vrrp        vrrp 编号
+                [Huawei-Vlanif1]vrrp vrid 1 virtual-ip 192.168.1.254
+                MS2
+                <Huawei>system-view
+                [Huawei]interface Vlanif 1
+                [Huawei-Vlanif1]ip add 192.168.1.253 24
+                [Huawei]vlan 3
+                [Huawei-vlan3]quit
+                [Huawei]interface Vlanif 3
+                [Huawei-Vlanif3]ip address 192.168.3.2 24
+                [Huawei-Vlanif3]quit
+                [Huawei]interface GigabitEthernet 0/0/2
+                [Huawei-GigabitEthernet0/0/2]port link-type access
+                [Huawei-GigabitEthernet0/0/2]port default vlan 3
+                [Huawei]ospf
+                [Huawei-ospf-1]area 0
+                [Huawei-ospf-1-area-0.0.0.0]network 192.168.1.0 0.0.0.255
+                [Huawei-ospf-1-area-0.0.0.0]network 192.168.3.0 0.0.0.255
+                ######进入vlan1
+                [Huawei]interface Vlanif 1
+                ###### 配置vrrp        vrrp 编号
+                [Huawei-Vlanif1]vrrp vrid 1 virtual-ip 192.168.1.254
+
+            排错:
+                 1.查看 借口 IP
+                 2.查看 ospf (声明) 配置 是否正确
+                 3.终端设备的网关
+
+            在多vlan中配置vrrp 实现负载均衡 的配置 思路 :
+                 ms1 (三层交换机)
+                    1.创建vlan2
+                    2.与其他交换机所有链接的接口配置为trunk
+                    3.给vlan1 配置 192.168.1.252
+                    4.给vlan2 配置 192.168.2.252
+                    5.進入vlan1,开启vrrp,虚拟ip 192.168.1.254
+                    vlan1 vrrp 优先级设置为110
+                    6.進入vlan2,开启vrrp,虚拟ip 192.168.2.254
+
+                 ms2
+                    1.创建vlan2
+                    2.与其他交换机所有链接的接口配置为trunk
+                    3.给vlan1 配置 192.168.1.253
+                    4.给vlan2 配置 192.168.2.253
+                    5.進入vlan1,开启vrrp,虚拟ip 192.168.1.254
+                    6.進入vlan2,开启vrrp,虚拟ip 192.168.2.254
+                    vlan2 vrrp 优先级设置为110
+
+                 sw1 (交换机)
+                    1.创建vlan2
+                    2.与其他交换机链接的接口配置为trunk
+
+                 sw2
+                    1.创建vlan2
+                    2.与其他交换机链接的接口配置为trunk
+                    3.链接pc的端口添加为vlan2
 
 
