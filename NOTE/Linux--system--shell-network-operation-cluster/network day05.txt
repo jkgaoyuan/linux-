@@ -1,0 +1,142 @@
+综合拓扑 :搭建企业网络
+1,规划ip,vlan
+2,链接终端设备线缆到接入层交换机(S3700)
+3,在所有接入层交换机创建vlan10,vlan20,vlan30,vlan40
+   vlan  batch  10 20 30 40
+4,将接入终端设备所在的接口加入相应vlan
+	in e0/0/5
+	port link-type access
+	port default vlan 10		//注意第一台加vlan10,第二台加vlan20,以此类推,最后使用 display vlan检查
+5,在vlan40的接入层交换机中配置链路聚合
+	interface eth-trunk 1
+	trunkport ethernet 0/0/1 0/0/2
+	interface eth-trunk 2
+	trunkport ethernet 0/0/3 0/0/4
+	然后使用查询所有配置检查结果 dis current-configuration
+6,添加S5700两台,作为网关设备,并将链接vlan40的设备接口进行链路聚合的配置
+	第一台S5700
+	interface eth-trunk 1
+	trunkport gigabitethernet 0/0/4 0/0/5
+	第二台S5700
+	interface eth-trunk 2
+	trunkport gigabitethernet 0/0/4 0/0/5
+7,在两台S5700上分别创建vlan10,vlan20,vlan30,vlan40
+8,将两台S5700用线缆链接
+9,将所有交换机之间的链路都配置为trunk
+	注意:链路聚合的接口要进入聚合口中配置
+	interface eth-trunk 1
+	port link-type trunk
+	port trunk allow-pass vlan all
+	普通接口配置:
+	interface ethernet 0/0/1      //注意,百兆口和千兆口区分
+	port link-type trunk
+	port trunk allow-pass vlan all
+	当接口数量较多时可以用接口组
+	S5700交换机:	
+	port-group 1
+	group-member g0/0/1 to g0/0/3 g0/0/6
+	port link-type trunk
+	port trunk allow-pass vlan all
+10,给第一台S5700配置ip
+	vlan10  192.168.10.252
+	vlan20  192.168.20.252
+	vlan30  192.168.30.252
+	vlan40  192.168.40.252
+     给第二台S5700配置ip
+	vlan10  192.168.10.253
+	vlan20  192.168.20.253
+	vlan30  192.168.30.253
+	vlan40  192.168.40.253
+然后使用每个vlan的pc主机测试与本vlan网关的链接状况
+比如用192.168.10.1  去 ping  192.168.10.252 和 192.168.10.253
+
+11,配置网关设备开启vrrp,实现虚拟网关功能,并达到负载均衡
+	第一台S5700负责担任vlan10,vlan20的主
+		            负责担任vlan30,vlan40的备份
+	interface vlanif10
+	vrrp vrid 10 virtual-ip 192.168.10.254
+	vrrp vrid 10 priority 110
+	interface vlanif20
+	vrrp vrid 20 virtual-ip 192.168.20.254
+	vrrp vrid 20 priority 110
+	interface vlanif30
+	vrrp vrid 30 virtual-ip 192.168.30.254
+	interface vlanif40
+	vrrp vrid 40 virtual-ip 192.168.40.254
+	然后使用 dis vrrp brief检查
+	第二台S5700负责担任vlan10,vlan20的备份
+		            负责担任vlan30,vlan40的主
+	interface vlanif10
+	vrrp vrid 10 virtual-ip 192.168.10.254
+	interface vlanif20
+	vrrp vrid 20 virtual-ip 192.168.20.254
+	interface vlanif30
+	vrrp vrid 30 virtual-ip 192.168.30.254
+	vrrp vrid 30 priority 110
+	interface vlanif40
+	vrrp vrid 40 virtual-ip 192.168.40.254
+	vrrp vrid 40 priority 110
+12,添加两台连接公网的路由器,并配置ip地址,另外两台S5700也配置连接路由器的地址
+13,在路由器与S5700配置动态路由
+	路由器1
+	ospf 1
+	area 0
+	network 192.168.50.0 0.0.0.255
+	network 192.168.70.0 0.0.0.255
+	路由器2
+	ospf 1
+	area 0
+	network 192.168.60.0 0.0.0.255
+	network 192.168.80.0 0.0.0.255
+	第一台S5700
+	ospf 1
+	area 0
+	network 192.168.10.0 0.0.0.255
+	network 192.168.20.0 0.0.0.255
+	network 192.168.30.0 0.0.0.255
+	network 192.168.40.0 0.0.0.255
+	network 192.168.50.0 0.0.0.255
+	network 192.168.60.0 0.0.0.255
+	第二台S5700
+	ospf 1
+	area 0
+	network 192.168.10.0 0.0.0.255
+	network 192.168.20.0 0.0.0.255
+	network 192.168.30.0 0.0.0.255
+	network 192.168.40.0 0.0.0.255
+	network 192.168.70.0 0.0.0.255
+	network 192.168.80.0 0.0.0.255
+14,配置外网ip
+100.0.0.10 /8
+100.0.0.1 / 8 
+100.0.0.2 /8  
+15,在所有路由器配置默认路由,在ospf中宣告默认路由
+[Huawei]ip route-static 0.0.0.0 0.0.0.0 100.0.0.10
+[Huawei]ospf
+[Huawei-ospf-1]default-route-advertise always    //宣告默认路由
+16,在所有路由器中配置nat使内外网互联
+	使用acl定义范围
+	acl 2000
+	rule permit source any
+	再使用easy ip连接外网
+	interface g0/0/2
+	nat outbound 2000
+最终使用任何pc主机可以ping通外网的100.0.0.10则成功
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
