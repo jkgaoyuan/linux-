@@ -135,9 +135,9 @@ eg: 创一个以当前日期为名的目录
 条件测试
  [ 测试表达式 ] 注意空格 
 常用的测试选项
- -e 文档存在为真
- -d 文档存在,且必须为目录为真
- -f 文档存在,且必须文件为真
+ -e 文档存在为真 (查询 文件和 目录 是否存在 )
+ -d 文档存在,且必须为目录为真(只能查询 目录 是否存在)
+ -f 文档存在,且必须文件为真(只能用来筛选文件是否存在)
  eg: 
 这是一个 文件测试的脚本 
 #!/bin/bash
@@ -829,7 +829,7 @@ eg :请大家用Apache 搭一个web环境
 	 server0.example.com	
 	 www0.example.cpom
 	 webapp0.example.com
-
+注意server的防火墙 是否关闭 (为trusted)
 测试域名能否解析  nslookup  域名
 [root@server0 ~]# nslookup webapp0.exsample.com
 

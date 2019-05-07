@@ -270,7 +270,7 @@ path = /common       #设置实际共享的目录
 4.重启smb服务
 [root@server0 ~]# systemctl restart smb
 5.修改SELinux策略,布尔值策略(功能的开关)
- samba_export_all_ro : Samba服务只读共享功能
+ setsebool samba_export_all_ro on ## Samba服务只读共享功能
 
 ]# getenforce   #查看SELinux状态
 ]# getsebool -a | grep samba   #查看SELinux所有布尔值
