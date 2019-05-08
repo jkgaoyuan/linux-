@@ -1,0 +1,177 @@
+shell
+复杂的操作变得简单化,自动化
+在编写脚本时需要考虑,使用费交互式命令
+    eg: sleep 5 &
+    将sleep 放入后台执行
+    安装ksh
+        yum repolist
+        yum -y install ksh ###安装 ksh 解释器,没有bash 好用
+        [root@server0 ~]# ksh
+        #
+    bash的快捷键
+        ctr + a 回到行首
+        ctr + e 回到行尾
+        ctr + d 结束当前输入
+        ctr + z 暂停挂起
+        ctr + m 回车
+        ctr + u 删除光标至行首的所有内容
+        ctr + k 删除光标至行尾的所有内容
+        ctr + w 删除光标 前面的一个单词
+        ctr + s 冻结终端
+        ctr + q 恢复终端
+    修改命令的历史纪录
+        [root@server0 ~]# vim /etc/profile
+        HISTSIZE=1000
+        [root@server0 ~]# ls -A
+        .bash_history           ####该文件保存了最近的命令;历史记录
+    重定向
+         覆盖   追加
+           >    >>  收集正确信息
+           2>   2>> 收集错误信息
+           &>   &>> 收集所有信息
+           < 输入重定向
+
+    bash 优点
+         支持 tab 快捷键  历史命令  别名  重定向  管道 等等
+         选项 -x
+        pstree 进程树
+    脚本编写步骤
+        1.声明解释器
+        2.书写脚本功能描述,变量含义, 使用位置, 作者(生产环境必写)
+        3.编写执行指令
+            1)添加x权限
+            chmod +x test1.sh
+            2)执行命令 时记得 在命令前 添加 ./ 指定当前目录下
+            ./test1.sh
+            3)或者使用解释器直接执行(可以不用添加权限,使用) ,新开启解释器
+            bash test1.sh           //脚本执行完毕后退出新开启的解释器
+            4)使用source 直接执行 脚本, 使用当前解释器执行
+            source test1.sh    //执行完成后退出当前解释器, source 和 bash 使用时 在脚本中没有exit 时效果时一样的,
+                               //但当脚本有了 exit 就会 不同,
+                               //表现在 source 会在执行后关闭当前解释器,
+                               ///bash则会关闭新开启的(其实脚本执行完毕后退出新开启的解释器,
+                               //所以在结尾添加 exit 对于bash 来说区别不大).
+    编写一个搭建yum仓库的脚本
+            #!/bin/bash
+            rm -rf /etc/yum.repos.d/*.repo
+            echo '[nsd]
+            name = nsd
+            baseurl=ftp://172.25.254.250/centos-1804/
+            enabled = 1
+            gpgcheck = 0
+            ' > /etc/yum.repos.d/abc.repo
+            yum repolist
+
+            bash -x test.sh 在执行脚本过程中 显示错误信息
+
+    编写一个自动安装 vsftpd的 脚本 并检测服务  是否 启动
+            #!/bin/bash
+            yum -y install vsftpd &> /dev/null  ###安装 过程不显示
+            systemctl restart vsftpd
+            systemctl enable vsftpd
+            systemctl status vsftpd   ###检测服务是否启动
+
+    变量
+        使用固定的名称表示变化的量
+        自定义变量
+            定义变量 : 变量名称= 变量值
+            查看变量 : echo$变量名称
+            取消变量 : unset 变量名称
+        系统变量
+            环境变量
+                 一级提示符
+                    PS1
+                二级提示符
+                    PS2
+            预定义变量
+                $0 显示脚本名
+                $$ 显示脚本进程号
+                $? 显示上条指令是否成功  非0表示执行失败
+                $# 统计变量个数
+                $* 显示所有位置变量的内容
+            位置变量
+                $1 脚本名后第一个参数
+                $2 脚本名后第二个参数
+                $3 脚本名后第三个参数
+                env 查看所有环境变量(了解)
+                set 查看所有的变量(了解)
+                '' 界定范围 取消字符的特殊定义, 比如$(屏蔽$的作用)
+                "" 界定范围
+                `` 反撇号 $() 获取指令的输出结果
+            关闭回显 stty -echo
+            开启回显 stty echo
+            全局变量 export a=20  (系统变量默认为全局变量)
+            局部变量 a=20(只在源解释器生效)
+                [root@server0 opt]# export c=10089
+                [root@server0 opt]# bash
+                [root@server0 opt]# echo $c
+                10089
+                [root@server0 opt]# exit
+                [root@server0 opt]#
+        shell 中的 数学运算
+            方法一 expr 值1 运算符 值2
+                [root@svr5 ~]# X=1234                              //定义变量X
+                [root@svr5 ~]# expr  $X  +  78                      //加法
+                1312
+                [root@svr5 ~]# expr  $X  -  78                       //减法
+                1156
+                [root@svr5 ~]# expr  $X  \*  78                      //乘法，操作符应添加\转义 或者 '*'
+                96252
+                [root@svr5 ~]# expr  $X  /  78                      //除法，仅保留整除结果
+                15
+                [root@svr5 ~]# expr  $X  %  78                     //(求余数)求模
+                64
+
+            方法二  echo $[值1 运算符 值2]  echo $((值1 运算符 值2))
+
+                [root@svr5 ~]# X=1234
+                [root@svr5 ~]# echo $[X+78]
+                1312
+                [root@svr5 ~]# echo $[X-78]
+                1156
+                [root@svr5 ~]# echo $[X*78]
+                96252
+                [root@svr5 ~]# echo $[X/78]
+                15
+                [root@svr5 ~]# echo $[X%78]
+                64
+
+            方法三  通常对变量进行计算,不显示结果(通常用来做 变量的增减 定义)
+                [root@svr5 ~]# X=1234
+                [root@svr5 ~]# let y=X+22
+                [root@svr5 ~]# echo $y
+                1256
+                [root@svr5 ~]# let X++;  echo $X        # X++(X=X+1)
+                [root@svr5 ~]# let X--;  echo $X        # X--(X=X-1)
+                [root@svr5 ~]# let X+=78 ; echo $X        # X+=78(X=X+78)
+                [root@svr5 ~]# let X-=78 ; echo $X     # X-=78(X=X-78)
+                [root@svr5 ~]# let X*=78 ; echo $X     # X*=78(X=X*78)
+                [root@svr5 ~]# let X/=78 ; echo $X     # X/=78(X=X/78)
+                [root@svr5 ~]# let X%=78 ; echo $X     # X%=78(X=X%78)
+
+            方法四 计算小数
+                方法1-3 不支持小数
+                交互式计算
+                [root@svr5 ~]# bc
+                bc 1.06.95
+                Copyright 1991-1994, 1997, 1998, 2000, 2004, 2006 Free Software Foundation, Inc.
+                This is free software with ABSOLUTELY NO WARRANTY.
+                For details type `warranty'.
+                12.34+56.78                                        //加法
+                69.12
+                12.34-56.78                                        //减法
+                -44.44
+                12.34*56.78                                        //乘法
+                700.66
+                12.34/56.78                                        //除法
+                0
+                quit                                              //退出交互计算器
+                scale=3                                           // 小数点后3位
+
+                非交互计算
+                [root@svr5 ~]# echo 'scale=4;12.34+5.678' | bc
+                18.018
+                [root@svr5 ~]# echo 'scale=4;12.34*5.678' | bc
+                70.0665
+                [root@svr5 ~]# echo 'scale=4;12.34/5.678' | bc
+                2.1733
