@@ -137,8 +137,7 @@ shell
                 64
 
             方法三  通常对变量进行计算,不显示结果(通常用来做 变量的增减 定义)
-                [root@svr5 ~]# X=1234
-                [root@svr5 ~]# let y=X+22
+                [root@svr5 ~]# X=123                [root@svr5 ~]# let y=X+22
                 [root@svr5 ~]# echo $y
                 1256
                 [root@svr5 ~]# let X++;  echo $X        # X++(X=X+1)
@@ -175,3 +174,158 @@ shell
                 70.0665
                 [root@svr5 ~]# echo 'scale=4;12.34/5.678' | bc
                 2.1733
+
+    条件测试 (重要)
+        作用:对于系统环境进行预判,增减脚本灵活性和成果率
+            test 表达式  或   [表达式]
+                表达式两边至少要留一个空格
+                1)
+                test $USER=='root'; echo $?  ###注意空格
+                0
+                2)
+                [ $UID == '1' ] ; echo $?   ###注意空格 每个参数之间用空格隔开 //推荐使用第二种
+                1
+
+        && 前面执行成功后执行后面的命令
+        || 前面执行失败后执行后面的命令
+        ;  前面执行后执行后面命令,无逻辑关系
+        -z 检测变量的值是否为空,空为真
+                [root@svr5 ~]# var1="nb" ; var2=""
+                [root@svr5 ~]# [ -z "$var1" ] && echo "空值" || echo "非空值"
+                非空值
+                [root@svr5 ~]# [ -z $var2 ] && echo "空值" || echo "非空值"
+                空值                                      //变量var2已设置，但无任何值，视为空
+                [root@svr5 ~]# [ ! -z $var1 ]                //测试var1是否为非空
+
+        -eq   等于
+        -ne   不等
+        -gt   大于
+        -ge   大于等于
+        -lt   小于
+        -le   小于等于
+         wc -l 统计行数
+         who查看 登录用户数量
+        eg: 统计server 登录用户数量大于三时邮件报警 管理员
+            #!/bin/bash
+            n=`who | wc -l`
+            [ $n -gt 3 ] && echo 'fbiwarning $n' |mail -s 'fbi' root && echo 'dangerous'|| echo 'seaf'
+            crontab -e
+            */2 * * * * /opt/test.sh
+        -e 文档存在为真 (查询 文件和 目录 是否存在 )
+        -d 文档存在,且必须为目录为真(只能查询 目录 是否存在)
+        -f 文档存在,且必须文件为真(只能用来筛选文件是否存在)
+        -r 判断对象是否可读
+           此测试对root用户无效，无论文件是否设置r权限，root都可读
+        -w 判断对象是否可写
+            此测试同样对root用户无效，无论文件是否设置w权限，root都可写：
+        -x 判断对象是否具有可执行权限
+            这个取决于文件本身、文件系统级的控制，root或普通用户都适用：
+            eg:
+                [ -d root ]; echo $?
+                1
+                [ -d mail ]; echo $?
+                0
+                ls -ld mail
+                drwxrwxr-x. 2 root mail 4096 5月   9 14:04 mail
+                [ -r mail ];echo $?
+                0
+                [ -w mail ];echo $?
+                0
+                [ -x mail ];echo $?
+                0
+
+    判断语句
+        格式:
+            1)单分支
+                    if [条件测试] ; then
+
+                       命令序列
+
+                    fi
+            2)双分支
+                    if [条件测试] ; then
+                        命令序列1
+                    else
+                        命令序列2
+                    fi
+            3)多分支
+                    if [条件测试] ; then
+                        命令序列1
+                    elif [条件测试] ; then
+                        命令序列2
+                        ...
+                    else
+                        命令序列n
+
+                    fi
+            eg:
+                #!/bin/bash
+                ping -c 5 -i 0.2 -W 1 $1 &> /dev/null
+                if [ $? -eq 0  ] ;then
+                        echo 'connect'
+                else
+                        echo 'disconnect'
+                fi
+
+    循环语句
+        for循环
+            for i in 值1 值2
+            do
+                执行命令
+            done
+
+        eg: 使用for循环编写测试 范围 ip 的连通性
+            #!/bin/bash
+            a=0
+            b=0
+            for i in {1..10}
+            do
+            ping -c 2 -i 0.3 -W 1 172.25.0.$i &> /dev/null
+                    if [ $? -eq 0 ] ;then
+                    echo "172.25.0.${i} connect"
+                      let a++
+                   else
+                    echo "172.25.0.${i} disconnetcion'"
+                     let b++
+                    fi
+
+            done
+
+            echo "$a connect $b disconnetc"
+
+
+        while 循环
+            while 条件测试
+            do
+                命令
+            done
+
+        eg: 一个自动猜数字的 脚本 范围是 100以内
+            #!/bin/bash
+            #n=$[RANDOM%101]
+            u=0
+            while [ 1 -eq 1 ]
+            do
+            n=$[RANDOM%101]
+
+            s=$[RANDOM%101]
+
+             let u++
+            # read -p '输入一个数字' s
+              if [ $n -eq $s ] ; then
+                   echo ' 似李'
+                  echo "${u}次成功"
+                  exit
+              elif [ $s -gt $n ] ;then
+                    echo '大了'
+              else
+                    echo '小了'
+              fi
+            done
+
+
+
+
+
+
+
