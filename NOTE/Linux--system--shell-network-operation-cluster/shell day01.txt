@@ -1,0 +1,183 @@
+6天  
+复杂的操作变得简单化,简单的操作变得自动化
+200行
+
+恢复环境
+rht-vmctl reset classroom
+rht-vmctl reset server
+yum repolist
+yum -y install ksh		//安装新解释器
+cat /etc/shells			//查看所拥有的解释器
+
+>    >>      收集正确信息
+2>   2>>   收集错误信息
+&>   &>>   收集所有信息
+<  输入重定向
+
+bash优势
+支持tab,快捷键,历史命令,别名,重定向,管道
+
+shell脚本编写的三个步骤
+1,声明所用解释器
+2,写脚本功能描述,变量含义,使用位置,作者等信息
+3,编写执行指令
+
+abc.sh
+
+#!/bin/bash
+# 脚本功能
+echo "abc"
+echo "xyz"
+
+脚本执行方法
+1,添加x权限
+2,使用解释器直接执行脚本,新开启解释器
+   bash  test1.sh     //执行完毕后退出新开启的解释器
+3,使用source直接执行脚本,使用当前解释器
+   source  test1.sh   //执行完毕后退出当前解释器
+
+#!/bin/bash
+echo 'abc'
+sleep 1000
+
+编写搭建yum仓库脚本
+#!/bin/bash
+rm -rf /etc/yum.repos.d/*.repo
+echo '[abc]
+name=aabbcc
+baseurl=http://classroom/content/rhel7.0/x86_64/dvd
+enable=1
+gpgcheck=0' > /etc/yum.repos.d/abcdef.repo
+
+脚本写完后执行,并使用yum repolist检查结果
+如果失败可以考虑更换yum源
+http://classroom/content/rhel7.0/x86_64/dvd
+
+利用已有的yum环境,安装ftp服务并运行,然后设置为开机自启
+#!/bin/bash
+yum -y install vsftpd  &> /dev/null   //安装过程不显示
+systemctl restart vsftpd
+systemctl enable vsftpd
+
+脚本运行完毕后检查服务状态,脚本运行时可用  bash -x test3.sh来查看脚本运行过程,便于排错
+systemctl status vsftpd
+
+变量   使用固定的名称存储可能变化的量,增加脚本灵活,可以在脚本中反复使用
+
+自定义变量 ,需要管理员定义变量的值,变量的名称使用大小写字母,不能以数字开头,不能使用特殊符号
+定义变量        变量名称=变量的值
+查看变量内容 echo $变量名称
+取消变量        unset 变量名称
+
+系统变量: 包括
+环境变量  UID   HOME  USER   PWD  SHELL  HOSTNAME  PS1 一级提示符   PS2 二级提示符
+预定义变量 
+$0  显示脚本名
+$$  显示脚本进程号
+$?  显示上一条指令是否成功  ,0是成功,非0是失败
+$#  统计位置变量的个数
+$*  显示所有位置变量的内容
+
+位置变量
+$1  脚本名后面跟的第1个参数
+$2  脚本名后面跟的第2个参数
+$3  脚本名后面跟的第3个参数
+.
+.
+#!/bin/bash
+echo $1
+echo $2
+echo $3
+echo $0
+echo $$
+echo $?
+echo $#
+echo $*
+
+编写创建用户并配置密码的脚本
+#!/bin/bash
+useradd abcd
+echo 123 | passwd --stdin abcd
+
+脚本运行后检查结果
+id abcd
+
+升级版
+#!/bin/bash
+useradd $1
+echo $2 | passwd --stdin $1
+
+脚本运行 bash test5.sh xyz 321     //脚本名后追加用户名和密码,xyz相当于$1, 321是$2
+
+env  查看所有环境变量
+set  查看所有变量
+
+''   界定范围,屏蔽$符号的作用
+""  界定范围
+`` 反撇号或  $(),可以获取指令的输出结果
+
+使用read功能与脚本使用者交互获取变量的值,使脚本目的更明确
+#!/bin/bash
+read -p "请输入用户名"   u
+useradd $u
+read -p "请输入密码"   p
+echo $p | passwd --stdin $u
+
+stty  -echo   //关闭回显
+stty  echo    //开启回显
+
+局部变量  仅当前解释器可以使用的变量,范围小
+全局变量  解释器开启子进程(bash)后依然可以识别,范围大
+a=10
+export  a     //对已有局部变量修改为全局变量
+export  b=20   //新定义全局变量
+然后运行bash开启新解释器检查 echo $a或$b
+
+shell中的整数运算
+方法一:
+expr 值1  +  值2            //加法,值可以用常量,也可以用变量
+expr 值1  -  值2            //减法
+expr 值1  \*  值2  		//乘号需要用\转义
+expr 值1  /  值2            //除法
+expr 值1  %  值2            //求模,值1除以值2,然后取余数
+方法二:
+echo $[值1+值2]
+echo $[值1-值2]
+echo $[值1*值2]
+echo $[值1/值2]
+echo $[值1%值2]
+方法三: 通常对变量进行计算,并且可以改变变量的值,不显示结果,尽量使用主流用法
+变量a的自增减
+let a++    //a=a+1
+let a--    //a=a-1
+let a*=10   //a=a*10
+
+定义新变量b
+let b=a+10
+
+echo $a
+
+小数运算
+使用bc工具
+echo "1+1"  | bc     //非交互式利用bc工具
+echo "1+1.1"  | bc     //利用bc计算小数
+echo "scale=3;10/3"  | bc     //定义小数点后面位数
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
