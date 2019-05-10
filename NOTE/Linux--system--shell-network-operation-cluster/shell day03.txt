@@ -1,0 +1,213 @@
+字符串
+test    [   ]
+==    !=     -z    ! -z
+数字
+-eq  -ne  -gt  -ge  -lt  -le
+文件
+-e  -d  -f   -r  -w  -x
+
+单分支       &&     ||
+双分支
+多分支
+if 条件测试  ;then
+	命令序列1
+elif 条件测试 ;then
+	命令序列2
+else
+	命令序列3
+fi
+
+for i in 值1 值2
+do
+done
+
+while :
+do
+done
+
+
+case分支,简化版本的if,某些情况比if简洁,但功能不如if强大
+基本语法格式:
+使用case分支编写使用nginx服务的工具
+#!/bin/bash
+case  $1  in
+start|sta)
+     /usr/local/nginx/sbin/nginx ;;
+stop|o)
+     /usr/local/nginx/sbin/nginx -s stop ;;
+restart|re)
+	 /usr/local/nginx/sbin/nginx -s stop
+	 /usr/local/nginx/sbin/nginx ;;
+status|u)
+	 netstat -ntulp | grep -q nginx
+	  [  $? -eq 0  ]&& echo "启动了" || echo "没启动" ;;
+*)
+	echo "start|stop|restart|status";;
+esac
+
+
+
+思考题:
+两个文本里面各写了用户名和密码
+要求写个脚本,可以自动创建这些账户并配置密码
+提示:
+1,可以用for循环
+2,提取第2行可以用head -2 /etc/passwd | tail -1
+
+文本 a里面有100个账户名
+zhangsan
+lisi
+wangwu
+...
+文本 b里面有100个密码
+123
+345
+789
+...
+#!/bin/bash
+n=0
+for i in `cat /opt/a`
+do
+	useradd $i
+	let n++
+	p=`head -$n /opt/b | tail -1`
+	echo $p | passwd --stdin $i 
+done	
+
+===================================
+
+
+编写一键安装nginx的脚本:
+#!/bin/bash
+yum -y install gcc openssl-devel pcre-devel    //安装依赖包
+tar -xf nginx-1.12.2.tar.gz    //释放tar包
+cd nginx-1.12.2     //进入目录
+./configure      //进行源代码安装
+make
+make install
+写完脚本后运行, 系统自动执行nginx的安装
+安装完毕后输入 /usr/local/nginx/sbin/nginx  即可开启web服务
+然后使用  netstat  -ntulp  | grep  nginx  查看结果,看到80端口开启监听则成功
+
+shell函数
+将多组指令定义为一个函数名,脚本中可以反复使用函数名调用这些指令,达到精简脚本的目的
+
+格式1：
+function  函数名 {
+        命令序列
+        .. ..
+    }
+
+格式2：
+ 函数名() {
+        命令序列
+        .. ..
+    }
+
+cecho(){
+echo -e "\033[$1m$2\033[0m"
+}
+
+cecho 31 ABCDEFG
+cecho 32 ABCDEFG
+cecho 33 ABCDEFG
+cecho 34 ABCDEFG
+
+
+中断和退出
+
+exit      //退出整个脚本
+break     //退出脚本中的循环,执行循环后的任务
+continue   //退出当前循环,进行下一次循环
+
+编写整数求和脚本,让用户输入的数字得出总和,用户输入0为结束
+
+#!/bin/bash
+x=0
+while :
+do
+	read -p "输入一个整数(0是结束)"   n
+	[ $n -eq 0 ] && break
+	let x+=n
+done
+echo "总和是$x"
+
+
+编写脚本文件，找出1-20内6的倍数，并打印她的平方值
+#!/bin/bash
+for i in {1..20}
+do
+n=$[i%6]      //n是余数,余数是0说明是6的倍数
+[ $n -ne 0 ] && continue   //如果余数是0,则不运行continue
+echo $[i*i]		//将所有6的倍数求平方
+done
+子串截取的用法：
+${变量名:起始位置:长度}
+编写获取8位随机字符脚本
+#!/bin/bash
+pass1=       //定义最终结果,目前是空
+x=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+for i in {1..8}
+do
+s=$[RANDOM%62]
+pass=${x:s:1}		//得出一个随机字符
+pass1=$pass1$pass    //累加到pass1上面,每次循环都把随机到的字符累加,最终得到8位
+done
+echo $pass1    //显示最终结果
+
+字符串替换
+
+${x/old/new}    //替换一个
+${x//old/new}    //替换所有
+
+字符串的删除
+1, 从左往右删    掐头
+echo ${a#root}     //从左往右删除第一个root
+echo ${a#*:}	 //从左往右删除第一个冒号,以及冒号左边所有
+echo ${a##*:}    //从左往右删除最后一个冒号,以及冒号左边所有
+
+2, 从右往左删    去尾
+echo ${a%bash}     //从右往左删除第一个bash
+echo ${a%:*}	 //从右往左删除第一个冒号,以及冒号右边所有
+echo ${a%%:*}    //从右往左删除最后一个冒号,以及冒号右边所有
+
+
+编写批量修改扩展名的脚本 ,将所有.txt文件改为.doc
+#!/bin/bash
+for i in `ls *.txt`   //找到所有.txt的文件,传递给for循环的变量
+do
+	m=${i%.*}      //第1次循环,将第1个文件的扩展名去掉,得到纯文件名
+	mv $i $m.doc   //使用mv命令将文件修改为.doc结尾
+done
+
+改良版
+#!/bin/bash
+for i in `ls *.$1`   //找到所有扩展名是$1的文件,传递给for循环的变量
+do
+	m=${i%.*}      //第1次循环,将第1个文件的扩展名去掉,得到纯文件名
+	mv $i $m.$2   //使用mv命令将文件修改为$2结尾
+done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,263 @@
+1,解释器声明
+2,脚本功能,变量含义,使用位置
+3,执行的指令
+
+自定义变量
+环境变量 HOME  USER  PWD  UID  HOSTNAME  SHELL PS1 PS2,预定义变量 $0  $$  $#  $?  $*
+位置变量$1 $2 $3 ...
+
+''
+""
+``  $()
+read -p   
+stty -echo
+stty  echo
+export a=10
+
+1, expr 1 + 1
+	expr 2 \* 2
+2,echo $[1+1]
+echo $[a+b]
+3,let a++
+	let a--
+	let a+=10
+4,bc
+	echo "1+1" | bc
+	echo "scale=3;10/3" | bc
+
+
+
+条件测试,对某些环境进行预判断,增加脚本灵活与成功率
+使用方法有两种,  test 表达式   或   [ 表达式 ]
+
+一,字符串
+test abc == abc      //对比==两边的字符串是否相同,相同返回0
+[ abc == 123 ]    //使用常量测试结果
+echo $?      //测试结果成功返回0, 失败返回非0
+
+test abc != abc  	//对比!=两边的字符串是否不相同,不相同才返回0
+[ abc != 123 ]    //使用第二种方法
+
+&&    前面命令成功后才执行后面命令    和
+||      前面命令失败后才执行后面命令     或
+;	前面命令执行后再执行后面命令,无逻辑关系
+
+#!/bin/bash
+read -p "请输入用户名"  u
+[ -z $u ] && exit		//当用户没有输入用户名直接回车后,变量u是空值, 则 [ -z $u ] 测试成功, 然后执行&&后面的exit退出脚本 ,如果用户输入用户名,则不执行exit
+useradd $u
+
+改良版
+#!/bin/bash
+read -p "请输入用户名"  u
+[ -z $u ] && echo "你没输入名字!" && exit
+useradd $u
+
+二 数字
+
+-eq  等于
+-ne  不等于
+-gt  大于
+-ge  大于等于
+-lt  小于
+-le  小于等于
+
+X=20    //定义一个测试变量
+[ $X -eq 20 ] && echo "相等" || echo "不相等"
+相等
+[ $X -ne 30 ] && echo "不等于" || echo "等于"
+不等于
+[ $X -gt 10 ] && echo "大于" || echo "否"
+大于
+[ $X -ge 10 ] && echo "大于或等于" || echo "否"
+大于或等于
+[ $X -lt 10 ] && echo "小于" || echo "否"
+否
+[ $X -le 10 ] && echo "小于或等于" || echo "否"
+否
+编写增加系统安全的脚本:
+要求每2分钟检查服务器登录人数,如果超过3个人登录,就给管理员发报警邮件
+
+#!/bin/bash
+n=`who | wc -l`
+[ $n -ge 3 ] &&  echo "有$n人登录服务器啦"  | mail -s test root
+
+-ge 大于等于
+-gt 大于
+
+crontab -e
+*/2 * * * *  /opt/test2.sh         //使用计划任务每2分钟执行一次脚本,脚本不要忘记加x权限     
+
+三  ,文件 
+[ -e abc ]    //测试abc文件是否存在,存在则返回0, 不在乎文件类型  
+[ -d abc ]    //测试abc是否存在且是目录,成功则返回0
+[ -f abc ]    //测试abc是否存在且是文件,成功则返回0
+
+[ -r abc ]    //测试文件是否对当前用户有读权限,有则返回0
+[ -w abc ]    //测试文件是否对当前用户有写权限,有则返回0
+[ -x abc ]    //测试文件是否对当前用户有执行权限,有则返回0
+
+==   !=   -z   ! -z   -eq  -ne  -gt  -ge  -lt  -le
+
+&&     ||   
+
+if判断
+
+单分支
+if 条件测试   ;then
+	命令序列
+fi
+
+编写脚本,判断当前目录下是否有文件abc,如果没有则创建,如果有则不做任何动作
+#!/bin/bash
+if [ ! -e abc ] ;then      //条件测试文件abc不存在的话是成功
+	touch abc			//条件测试成功则执行touch任务
+fi
+
+ 
+
+双分支
+if 条件测试  ;then
+	命令序列1
+else
+	命令序列2
+fi
+
+编写脚本,测试与某个ip的网络状况, ping通则返回"通了",否则返回"不通"
+#!/bin/bash
+ping -c 3  -i 0.2  -W 1   $1  &> /dev/null
+if [ $? -eq 0 ]  ;then
+	echo "通了"
+else
+	echo "不通"
+fi
+
+
+ping  -c 限定次数   -i 限定ping间隔时间  -W 等待反馈时间
+ping -c 3  -i 0.2  -W 1   172.25.0.100
+
+
+
+多分支
+if 条件测试  ;then
+	命令序列1
+elif 条件测试 ;then
+	命令序列2
+else
+	命令序列3
+fi
+
+使用多分支,编写猜数脚本
+#!/bin/bash
+a=$[RANDOM%11]   //使用随机数定义变量a,a的范围是0~10
+read -p "请输入一个数字(0~10)"  s
+if [ $a -eq $s ]  ;then   //随机数与用户提供的数相等则猜对
+	echo "猜对了!"
+elif [ $s -gt $a ] ;then
+	echo "猜大了"
+else
+	echo "猜小了"
+fi
+
+for循环,主要关注循环次数和循环的变量
+
+
+for i in 值1  值2
+do
+	echo $i
+done
+
+使用for循环编写测试某范围主机的脚本,最后统计情况
+#!/bin/bash
+a=0
+b=0
+for i in {1..12}
+do
+    ping -c 3 -i 0.2 -W 1 172.25.0.$i &> /dev/null
+    if [ $? -eq 0 ];then
+        echo "172.25.0.${i}ok"
+        let a++
+    else
+        echo "172.25.0.${i}no"
+        let b++
+    fi
+done
+echo " ${a}台ok,${b}台no"
+
+
+
+while  条件测试
+do
+    命令序列
+#!/bin/bash
+
+while  [ 1 -eq 1 ]
+do
+    echo  abc
+	sleep 0.1
+done
+
+while不小心就会写成死循环,并耗尽cpu资源,使用sleep可以避免
+
+使用while编写脚本,猜0~100之间的数,直到猜对为止,猜对后统计猜的次数
+#!/bin/bash
+a=$[RANDOM%101]
+b=0
+while :
+do
+	let b++			//每猜一次,b就+1
+	read -p "请输入数字(0~100)"  s
+	if [ $a -eq $s ]  ;then
+		echo "猜对了,猜了${b}次"
+		exit		
+	elif [ $s -gt $a ]   ;then
+		echo "猜大了"
+	else
+		echo "猜小了"
+	fi	
+done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

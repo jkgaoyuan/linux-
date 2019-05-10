@@ -323,9 +323,135 @@ shell
               fi
             done
 
+        case 分支
+                命令结束后 添加  `;;` 而非每行 结尾添加
+                case 变量 in
+                    条件)
+                    命令1 ;;
+                    条件)
+                    命令2 ;;
+                    *)
+                    默认命令序列
+                esac
+            eg:创建 自动部署 nginx 的脚本
+
+                #!/bin/bash
+                yum -y install gcc openssl-devel pcre-devel
+                tar -xf nginx-1.12.2.tar.gz
+                cd nginx-1.12.2
+                ./configure
+                make
+                make install
+
+            Nginx默认安装路径为/usr/local/nginx,该目录下会提供4个子目录，分别如下：
+            /usr/local/nginx/conf	配置文件目录
+            /usr/local/nginx/html	网站页面目录
+            /usr/local/nginx/logs	Nginx日志目录
+            /usr/local/nginx/sbin	主程序目录
+            [root@svr5 ~]# /usr/local/nginx/sbin/nginx                //启动服务
+            [root@svr5 ~]# /usr/local/nginx/sbin/nginx    -s stop        //关闭服务
+            [root@svr5 ~]# /usr/local/nginx/sbin/nginx    -V            //查看软件信息
+            [root@server0 ~]# netstat -ntulp | grep nginx             //查看nginx 状态
+            tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      32743/nginx: master
+
+            netstat 命令
+                    查询系统中启动的端口信息 ,
+                    -ntulp 连着用 推荐
+                    -n以数字格式显示端口号
+                    -t显示TCP连接的端口
+                    -u显示UDP连接的端口
+                    -l显示服务正在监听的端口信息，如httpd启动后，会一直监听80端口
+                    -p显示监听端口的服务名称是什么（也就是程序名称
+            eg: 使用case 编辑一个 检测 nginx 启动 停止 显示 状态的命令.
+                #!/bin/bash
+                case $1 in
+                start|o) ###这里表示 脚本后接的参数 可以为 start 或者 o 简写 提高输入效率
+                        /usr/local/nginx/sbin/nginx ;;
+                stop|e)
+                        /usr/local/nginx/sbin/nginx -s stop ;;
+                restart|r)
+                        /usr/local/nginx/sbin/nginx -s stop
+                         /usr/local/nginx/sbin/nginx  ;;
+                status|u)
+                        netstat -ntulp | grep -q nginx   ####这里的 -q 是查询后 不输出结果
+                        [ $? -eq 0 ] && echo 'start success' || echo 'not start' ;;
+                *)
+                        echo 'enter start stop restart status' ;;
+                esac
+
+        函数
+            格式1:
+                 function 函数名 {
+                         命令
+                                }
+
+            格式2:
+                 函数名(){
+                        命令序列
+                        }
+            改变终端输出字符的颜色 并改 回来
+            echo -e "\033[31mABCD\033[0M" ##31 表示颜色
+                 #!/bin/bash
+                co(){
+                echo -e "\033[$1m$2\033[0m"
+                }
+                co 34 SIX
+                co 35 SIX
+        中断 退出 等待
+            wait //等待所有后台结束后退出 程序 ;;配合  & 使用
+            exit  //退出整个脚本
+            break //退出脚本中的循环,执行循环后的任务
+            continue  //退出当前循环进行下一次循环
 
 
+            eg: 求出 1-20 以内 被 6 整除 数字的 平方
+                #!/bin/bash
+                for i in {1..20}
+                do
+                n=$[i%6]
+                         [ $n -ne 0 ] && continue
+                         echo $[i*i]
 
+                done
+        字符串截取及切割
+            字符串截取
+            字符字符串起始 第一位为0
+            ${变量名:起始位置:长度}
+            若起始位置为第一个字符 则 起始位可以省略
+                ${x::5}
 
+            子串替换的两种用法：
+            只替换第一个匹配结果：
+            ${变量名/old/new}
+            替换全部匹配结果：
+            ${变量名//old/new}
+            字符串掐头去尾：
+            从左向右，最短匹配删除：${变量名#*关键词}
+            从左向右，最长匹配删除：${变量名##*关键词}
+            从右向左，最短匹配删除：${变量名%关键词*}
+            从右向左，最长匹配删除：${变量名%%关键词*}
+        eg:
+                [root@server0 ~]# a=123asdfasdf
+                [root@server0 ~]# echo ${a//asd/123}
+                123123f123f
 
+                [root@server0 ~]# echo $a
+                root:x:0:0:root:/root:/bin/bash
+                [root@server0 ~]# echo ${a%root*}
+                root:x:0:0:root:/
+                [root@server0 ~]# echo ${a%%root*}
+
+                [root@server0 ~]# echo ${a#*root}
+                :x:0:0:root:/root:/bin/bash
+                [root@server0 ~]# echo ${a##*root}
+                :/bin/bash
+
+        eg:    将 后缀为 txt 的文件修改为 doc
+                #!/bin/bash
+                for i in `ls *.txt`
+                do
+                        m=${i%.*}
+                        mv $i $m.doc
+                        echo 'success'
+                done
 
