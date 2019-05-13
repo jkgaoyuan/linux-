@@ -469,7 +469,7 @@ shell
 
 
 
-    正则表达式
+    正则表达式   (非常重要啊)
         基本正则表达式
 
                     基本表
@@ -477,14 +477,16 @@ shell
             正则符号                描述
                ^                 匹配行首
                $                 匹配行尾
-               []                集合,匹配集合中的任意单个字符  // 或
-               [^]               对集合取反                  // 或
+               []                集合,匹配集合中的任意单个字符  // 或   ###[a-z] 匹配任意字符大小写,- 表示范围
+               [^]               对集合取反                  // 或    ###^[^a-z] 匹配不一小写字母开头的行
                .                 匹配任意单个字符
                *                 匹配前一个字符任意次数 [*不允许单独使用]
                \{n,m\}           匹配前一个字符n-m次
                \{n\}             匹配前一个n次
                \{n,\}            匹配前一个字符n次以上
                \{\}              保留
+
+
 
                          扩展表
 
@@ -515,7 +517,7 @@ shell
                     aa
                     bb
                     abcd
-                    xyzaa
+                    xyzaa                                         ^ 这里表示取反
                  [root@server0 ~]# grep "[^ab]" 1.txt  //查找除了字符 a或b 以外的行
                     abc
                     ccc
@@ -599,11 +601,12 @@ shell
                     45646134654
                     1323yttyyaas
 
-        sed 流式编辑器  可以查看和编辑文档 ,逐行处理
+        sed 流式编辑器  (非常重要, 主要用来修改配置文件,可以查看和编辑文档 ,逐行处理)
                 选项 :
                         -n 屏蔽默认输出
                         -r 支持扩展正则
                         -i 写入文件 (加入这个选项才 意味着 确认写入   )
+
                         p 输入出文件内容
                         d 删除文件内容
                         s 替换
@@ -615,11 +618,12 @@ shell
                 sed -n '$=' 1.txt       //统计文件行数
                 sed -n 'p' 1.txt        //看全部
                 sed -n '1p' 1.txt       //看第二行
-                sed -n '1,3p' 1.txt     //看前三行
-                sed -n '1p;3p' 1.txt   //看前第1行和第3行
+                sed -n '1,3p' 1.txt     //看前三行  ','
+                sed -n '1p;3p' 1.txt   //看前第1行和第3行  ';'
                 sed -n '2,+2p' 1.txt  //查看从第2行以及,后面两行
                 sed -n '1~2p' 1.txt  //查看从奇数行
                 sed -n '2~2p' 1.txt  //查看从偶数行
+                sed -n '/^root/,/^adm/p' /etc/passwd  //匹配 以root ,开头 adm 结尾的行
 
                 sed 'p' 1.txt      //输出文件所有行,并附加默认输出
                 ###注意使用正则表达式的语法
@@ -632,6 +636,8 @@ shell
 
                 sed -n '2~2d' 1.txt        //删除奇数行
                 sed -n '$d' 1.txt        //删除最后一行
+                sed -n '/xml/!d' 1.txt        //删除不包含xml的行  ! 取反
+                sed  '/svr5/,$d' /etc/hosts  //删除匹配到的svr5一行,到最后一行
 
 
                 sed -n 's/2017/2077/' 2.txt // 将每行第一个2017 替换为2077
@@ -639,10 +645,10 @@ shell
                 sed -n '2s/2017/2077/2' 2.txt // 将第二行的第二个2017 替换为2077
                 sed -n '2s/2017/2077/2 ; 2s/2017/2077/3' 2.txt // 将第二行的第二个和第二行第三个2017 替换为2077
 
-                sed 's!/bin/bash!/sbin/sh!' 2.txt  //将bin/bash 替换为 sbin/sh
+                sed 's!/bin/bash!/sbin/sh!' 2.txt  //将bin/bash 替换为 sbin/sh  !为分隔符号同 /
                 sed 's/.//2 ; s/.$//' 2.txt   //删除每行第2个字符和最后一个字符
 
-
+                                                        \1 可视为位置变量
                 sed -r 's/(^.)(.*)(.$)/\3\2\1/' 2.txt  //使用扩展正则表达式 将文件的 头和尾互换 ;;()有复制的效果
 
 
@@ -654,4 +660,82 @@ shell
                 chmod 777 /var/ftp/pub
                 systemctl restart vsftpd
                 systemctl enable vsftpd
+
+                #### 将 passwd 文件 上下倒过来 输出,且 每行从左右倒过来;;; 不加 rev 只上下倒
+                tac /etc/passwd | rev
+                nigolon/nibs/:/::27:27:x:pmudpct
+
+            sed文本块处理动作
+                i    行前插入文本         ###2iyy 在第二行前添加文本yy; 4,7iyy 在4-7 每行前插入
+                a    行后插入文本         ###2auu 在第二行后添加文本uu ;/^xx/ayy 在以xx开头的行后添加
+                c    替换整行            ###2cyy  将第二行替换为 yy
+
+            多行文本的修改
+                    sed -n '2cxx\nyy' m.txt  ####将第二行 替换为xx yyy
+                    #### 在 hosts 文件末尾添加 两行
+                    sed  '$a192.168.4.5 server0.tarena.com svr5\n192.175.217.56 www.baidu.com' /etc/hosts
+            eg:   ###  取出 对应用户的密码 并将其输出
+                  ###  取出以bash 结尾 且替换 ':' 之后的部分 为空
+                  sed  -n '/bash$/s/:.*//p' /etc/passwd
+                  sed  -n '/bash$/p' /etc/passwd | sed -n 's/:.*//p' /etc/passwd
+                  ###
+                  遍历 文本的写法 while中的选项read 不可更换
+                  cat /etc/passwd | while read line ; do echo "[$line]"; done
+                  ### 从 shadow 中 取出 root的 密码
+                  sed -rn 's/root:([^:]+).*/\1/p' /etc/shadow
+            #######################################################################
+                  #!/bin/bash
+                  sed -n '/bash$/s/:.*//p' /etc/passwd | while read var ;
+                  do
+                  echo -n "$var -->"
+                  sed  -rn "s/$var:([^:]+1).*/\1/p" /etc/shadow
+                  done
+        awk基本用法(非常重要;;;字符串的处理)
+            格式:
+                1) 前置命令|awk [选项] '[条件][指令]'
+                2) awk[选项] '[条件][指令]' 文件
+                有多条指令可以以; 分割
+            常用的参数
+                -F : 定义分隔符;;; 可省略(默认空格或者tab位)
+                -F, 分隔符为','
+
+                    ###显示文件的第三行 第一行
+                    eg:awk '{print $3,$1}' user.txt
+                    ###取出passwd 中的 用户名
+                    awk -F: '{print $1}' /etc/passwd
+                    ###取出shadow 中的密码
+                    awk -F: '{print $2}' /etc/shadow
+                    /var/log/secure 保存的安全相关的 日志文件
+                    ### 检测等失败的 ip 地址
+                    awk '$6=="Failed"{print $11}' /var/log/secure
+                    #### 查看空闲 内存
+                    free |awk '{print $3}'
+                    ###查看网络流量
+                    ifconfig eth0 |awk '/RX p/{print $5}'
+            awk 内置变量
+                有特殊含义,可直接使用
+                    变量           用法
+                    FS           保存或设置字段分隔符,例如FS=":" ,与-F功能一样
+                    $n           指定分割的第n个字段,如   $1 , $3 分别表示第 1,3 列
+                    $0           当前读入的整行文本内容
+                    NF           纪录当前处理的字段个数(列数)
+                    NR           纪录当前已读入行的数量 (行数)
+                awk 过滤的时机
+                    开始BEGIN{}
+                        读入第一行 文本之前执行
+                        初始化操作
+                    过程{}
+                        逐行处理文本执行相应的处理
+                        常见的指令编辑模块
+                    结束END{}
+                        处理完最后一行文本后执行
+                        一般用来输出结果
+                eg:
+                     输出行列
+                    awk -F: '{print NR,NF}' /etc/passwd
+                     输入 每行的最后一列
+                    awk -F: '{print $NF} '  /etc/passwd
+                    统计passwd 中以bash 结尾的 用户数量并打野出来
+                    awk -F: 'BEGIN{x=0}/bash$/{print $1;x++}END{print x} '  /etc/passwd
+
 
