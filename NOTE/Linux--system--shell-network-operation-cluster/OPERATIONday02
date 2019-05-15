@@ -1,0 +1,84 @@
+192.168.4.5:
+lnmp_soft
+./install_lnmp.sh
+
+yum -y install gcc pcre-devel openssl-devel
+tar -xf nginx-1.8.0.tar.gz
+cd nginx-1.8.0
+./configure --with-http_ssl_module
+make 
+make install
+
+nginx   [firefox http://192.168.4.5]
+
+
+nginx                    //启动服务
+nginx -s stop            //关闭服务
+nginx -s reload        //重新加载配置文件
+nginx –V                //查看软件信息
+
+
+
+全局[日志，并发，用户]
+
+http{
+		server {
+			listen 80;
+			server_name www.a.com;
+			root html;
+		}
+}
+
+虚拟主机（一个nginx实现多个网站）
+基于域名，基于IP，基于端口
+		  
+http{
+	 server {
+			listen 80;
+			server_name www.a.com;
+			root html;
+		}
+		server {
+			listen 80;
+			server_name www.b.com;
+			root www;
+		}
+#mkdir /usr/local/nginx/www
+#echo "www" > index.html
+
+
+用户认证【http协议明文协议】
+https
+
+对称密钥：单机加密  AES,DES
+非对称密钥：网络加密 RSA,DSA
+信息摘要：数据安全md5 sha128 sha256
+
+vim /etc/hosts
+ssh -X 192.168.4.100
+firefox
+
+clone-vm7
+主机名：web2
+IP地址：eth1 192.168.2.200
+yum源
+
+
+
+							ip_hash  		web1   2.100
+client				proxy
+													web2   2.200
+
+安装nginx,升级
+用户认证auth_basic_user_file
+虚拟主机:server{name a} server{name b}
+虚拟主机:server{listen 443;私钥,公钥}
+反向代理:upstream abc {server;server}
+			proxy_pass http://abc
+
+
+
+
+
+
+

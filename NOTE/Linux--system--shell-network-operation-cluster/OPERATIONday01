@@ -1,0 +1,76 @@
+运维7天（网站）
+
+代理服务器（帮你做事情的那个人）
+squid
+正向代理（翻墙）
+反向代理（加速网站访问速度）
+缓存/var/spool/squid  硬盘
+
+真实机下载
+ftp://172.40.50.118/share/
+lnmp_soft-2017-03-28.tar.gz
+
+scp lnmp_soft-2017-03-28.tar.gz 192.168.4.5:/root/
+
+
+tar -xf lnmp_soft-2017-03-28.tar.gz
+
+cd lnmp_soft
+./install_lnmp.sh
+选7
+
+
+
+
+vim  /etc/sysconfig/varnish(前端配置）
+4
+vim  /etc/varnish/default.vcl（后端配置）
+4
++++++++++++++++++++++++++++++
+systemctl stop httpd  80 
+systemctl stop squid  80
+一个端口在同一时刻仅可以被一个程序所占有
+/etc/init.d/varnish start
+netstat -nutlp | grep 80
+
+客户端：curl http://192.168.4.5
+
+varnishlog		软件日志
+varnishncsa   访问日志
+
+缓存过期
+1.等（非实时）
+	varnish自动更新
+
+2.实时更新
+后端web
+#echo "cc" > /var/www/html/c.html
+客户端访问
+#curl http://192.168.4.5/c.html
+后端web
+#echo "XX" > /var/www/html/c.html
+客户端访问
+#curl http://192.168.4.5/c.html 【过期】
+代理
+#varnishadm -S /etc/varnish/secret -T 127.0.0.1:6082
+	ban.url c.html
+客户端访问#curl http://192.168.4.5/c.html 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

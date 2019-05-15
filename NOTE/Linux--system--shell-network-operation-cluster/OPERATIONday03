@@ -1,0 +1,14 @@
+LNMP
+		nginx
+		mariadb mariadb-server mariadb-devel
+		php  php-mysql  php-fpm
+	nginx   80
+	systemctl start mariadb  3306
+	systemctl start php-fpm  9000
+vim nginx.conf
+		location / { root html;}
+		location \.php$ {
+				root html;
+				fastcgi_pass 127.0.0.1:9000;
+		}写代码[连接数据库] PHP--(数据库)
+地址重写[a-b;4.5--tmooc;4.5/a--tmooc/a识别浏览器]$http_user_agent 

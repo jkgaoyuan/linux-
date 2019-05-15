@@ -1,0 +1,217 @@
+NoSQL -> Not Only SQL
+
+REmote Dictionary Server
+
+tui: text user interface 文本用户界面
+gui: graphical user interface图形用户界面
+cli: command line interface命令行接口
+
+一、redis基础管理
+1、安装
+[root@vh01 lnmp_soft]# tar xzf redis-3.0.6.tar.gz 
+[root@vh01 lnmp_soft]# cd redis-3.0.6/
+[root@vh01 redis-3.0.6]# make && make install
+2、初始化
+[root@vh01 redis-3.0.6]# ./utils/install_server.sh 
+提示的问题全部回车，但是要观察各种文件存放的路径
+3、服务管理
+[root@vh01 ~]# service redis_6379 status 查看状态
+[root@vh01 ~]# service redis_6379 stop
+[root@vh01 ~]# service redis_6379 start
+4、服务器基础测试
+[root@vh01 ~]# redis-cli 
+127.0.0.1:6379> ping
+PONG
+127.0.0.1:6379> set username songtao
+OK
+127.0.0.1:6379> get username
+"songtao"
+127.0.0.1:6379> set counter 10
+OK
+127.0.0.1:6379> INCR counter
+(integer) 11
+127.0.0.1:6379> GET counter
+"11"
+5、操作字符串
+127.0.0.1:6379> set first 'hello world'
+OK
+127.0.0.1:6379> get first
+"hello world"
+127.0.0.1:6379> SETRANGE first 6 'tedu.cn'
+(integer) 13
+127.0.0.1:6379> get first
+"hello tedu.cn"
+127.0.0.1:6379> APPEND username "sudan"  向变量中追加
+127.0.0.1:6379> SETBIT mytest 0 1
+(integer) 0
+127.0.0.1:6379> SETBIT mytest 1 0
+(integer) 0
+127.0.0.1:6379> get mytest
+127.0.0.1:6379> SETBIT peter 100 1   设置2进制的第100位为1
+(integer) 0
+127.0.0.1:6379> SETBIT peter 105 1   设置2进制的第105位为1
+(integer) 0
+127.0.0.1:6379> BITCOUNT peter       统计peter设置为1的位数有多少
+(integer) 2
+127.0.0.1:6379> set num1 100     相当于是num1=100
+OK
+127.0.0.1:6379> get num1
+"100"
+127.0.0.1:6379> INCR num1        相当于是num1++
+(integer) 101
+127.0.0.1:6379> DECR num1        相当于是num1--
+(integer) 100
+127.0.0.1:6379> DECRBY num1 10   # num1=num1-10
+127.0.0.1:6379> INCRBY num1 10   # num1=num1+10
+
+127.0.0.1:6379> set hi "hello world"
+127.0.0.1:6379> STRLEN hi
+127.0.0.1:6379> GETRANGE hi 6 -1
+127.0.0.1:6379> GETRANGE hi 6 10
+
+127.0.0.1:6379> set num2 10.5
+OK
+127.0.0.1:6379> INCRBYFLOAT num2 0.3
+"10.8"
+127.0.0.1:6379> INCRBYFLOAT num2 -0.8
+"10"
+127.0.0.1:6379> MGET num1 num2
+127.0.0.1:6379> MSET a 10 b "abc"
+OK
+127.0.0.1:6379> get a
+"10,"
+127.0.0.1:6379> get b
+"abc"
+
+哈希表类型数据
+127.0.0.1:6379> hset site google "www.google.com"
+(integer) 1
+127.0.0.1:6379> hset site baidu "www.baidu.com"
+(integer) 1
+127.0.0.1:6379> HGET site google
+"www.google.com"
+127.0.0.1:6379> hget site baidu
+"www.baidu.com"
+
+127.0.0.1:6379> hmset site2 tedu "www.tedu.cn" tarena "www.tarena.com"
+127.0.0.1:6379> hmget site2 tedu tarena
+127.0.0.1:6379> HKEYS site  查看key中存在的value
+127.0.0.1:6379> HKEYS site2
+127.0.0.1:6379> HGETALL site 返回field和value
+127.0.0.1:6379> HVALS site  返回site中所有的value
+127.0.0.1:6379> HDEL site google  从site中删除google
+
+列表
+127.0.0.1:6379> LPUSH mylist chenshun chenglijun yegutian
+127.0.0.1:6379> LRANGE mylist 0 -1
+127.0.0.1:6379> LPUSH mylist mayang
+127.0.0.1:6379> LRANGE mylist 0 -1
+127.0.0.1:6379> help @<tab>   #<tab>表示按tab键
+127.0.0.1:6379> help @list
+127.0.0.1:6379> RPUSH mylist wanghongli
+127.0.0.1:6379> LRANGE mylist 0 -1
+127.0.0.1:6379> LSET mylist 2 chenyuan
+
+127.0.0.1:6379> LLEN mylist
+127.0.0.1:6379> LPOP mylist
+127.0.0.1:6379> RPOP mylist
+127.0.0.1:6379> LINDEX mylist 1
+
+127.0.0.1:6379> get username
+127.0.0.1:6379> ttl username  # 查看生存周期
+127.0.0.1:6379> PERSIST username # 设置永不过期
+127.0.0.1:6379> EXPIRE username 30  # 生存时间为30秒
+127.0.0.1:6379> del mylist    # 删除mylist
+
+127.0.0.1:6379> keys *  # 查看所有的key
+127.0.0.1:6379> set hello 10
+OK
+127.0.0.1:6379> set hllo 20
+OK
+127.0.0.1:6379> set habllo 30
+OK
+127.0.0.1:6379> set hfllo 40
+OK
+127.0.0.1:6379> KEYS h?llo  # ?匹配任意一个字符
+127.0.0.1:6379> KEYS h*llo  # *匹配0到多个任意思字符
+127.0.0.1:6379> KEYS h[a-z]llo  # []匹配1个字符
+127.0.0.1:6379> set h1llo 5
+127.0.0.1:6379> KEYS h[a-z0-9]llo
+127.0.0.1:6379> KEYS h[ade0-9]llo
+
+127.0.0.1:6379> KEYS *
+127.0.0.1:6379> FLUSHALL  清空所有数据
+127.0.0.1:6379> KEYS *
+127.0.0.1:6379> set username zhangsan
+127.0.0.1:6379> get username
+"zhangsan"
+127.0.0.1:6379> select 1
+127.0.0.1:6379[1]> get username
+(nil)
+127.0.0.1:6379[1]> select 0
+127.0.0.1:6379> get username
+"zhangsan"
+127.0.0.1:6379> select 0
+127.0.0.1:6379> MOVE username 1
+(integer) 1
+127.0.0.1:6379> get username
+(nil)
+127.0.0.1:6379> select 1
+OK
+127.0.0.1:6379[1]> get username
+"zhangsan"
+127.0.0.1:6379[1]> 
+
+127.0.0.1:6379[1]> keys *
+1) "username"
+127.0.0.1:6379[1]> RENAME username name  # 改名
+OK
+127.0.0.1:6379[1]> keys *
+1) "name"
+127.0.0.1:6379[1]> get name
+"zhangsan"
+
+127.0.0.1:6379[1]> lpush mylist 10 2 38 69 42
+127.0.0.1:6379[1]> SORT mylist  # 不会改变mylist
+127.0.0.1:6379[1]> LRANGE mylist 0 -1
+127.0.0.1:6379[1]> sort mylist desc   # 降序
+
+127.0.0.1:6379[1]> lpush names zhangsan lisi bob alice
+127.0.0.1:6379[1]> sort names alpha  #按字母顺序排序
+按字母顺序排序，从下标为1的单词开始，取出2项
+127.0.0.1:6379[1]> SORT names alpha limit 1 2
+127.0.0.1:6379[1]> SORT names alpha limit 1 2 desc
+将mylist排序后，另存为mylist2
+127.0.0.1:6379[1]> sort mylist store mylist2
+127.0.0.1:6379[1]> LRANGE mylist2 0 -1
+
+配置redis主从
+1、主服务器使用现有的redis
+2、从服务器
+[root@vh02 lnmp_soft]# yum install -y gcc gcc-c++
+[root@vh02 lnmp_soft]# tar xzf redis-3.0.6.tar.gz 
+[root@vh02 lnmp_soft]# cd redis-3.0.6/
+[root@vh02 redis-3.0.6]# make && make install
+[root@vh02 redis-3.0.6]# ./utils/install_server.sh 
+3、主服务器设置同步密码
+[root@vh01 ~]# vim /etc/redis/6379.conf 
+requirepass redis123
+[root@vh01 ~]# service redis_6379 restart 或
+[root@vh01 ~]# /etc/init.d/redis_6379 restart
+4、设置关闭服务的认证密码
+[root@vh01 ~]# vim /etc/init.d/redis_6379 
+            $CLIEXEC -a redis123 -p $REDISPORT shutdown
+[root@vh01 ~]# service redis_6379 restart
+5、配置从属服务器
+[root@vh02 ~]# vim /etc/redis/6379.conf 
+slaveof 192.168.4.1 6379
+masterauth redis123
+[root@vh02 ~]# service redis_6379 restart
+6、验证
+[root@vh02 ~]# redis-cli 
+[root@vh01 ~]# redis-cli -h 192.168.4.1 -a redis123
+192.168.4.1:6379> set aaa 100
+[root@vh02 ~]# redis-cli 
+127.0.0.1:6379> keys *
+127.0.0.1:6379> get aaa
+

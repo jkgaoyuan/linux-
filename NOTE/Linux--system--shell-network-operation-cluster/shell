@@ -389,7 +389,7 @@ shell
                  函数名(){
                         命令序列
                         }
-            改变终端输出字符的颜色 并改 回来
+            改变终端颜色输出字符的颜色 并改 回来
             echo -e "\033[31mABCD\033[0M" ##31 表示颜色
                  #!/bin/bash
                 co(){
@@ -737,5 +737,70 @@ shell
                     awk -F: '{print $NF} '  /etc/passwd
                     统计passwd 中以bash 结尾的 用户数量并打野出来
                     awk -F: 'BEGIN{x=0}/bash$/{print $1;x++}END{print x} '  /etc/passwd
+
+                eg: 如何筛选出系统中cpu使用率最高的部分,并输出
+                    ### 显示 系统信息
+                    [root@server0 ~]# ps -eo %mem,%cpu,ucmd
+                  ### $1  $2   $3
+                    %MEM %CPU CMD
+                     0.7  0.0 systemd
+                     0.0  0.0 kthreadd
+                     0.0  0.0 ksoftirqd/0
+                                                    A=A+$2
+                    ps -eo %mem,%cpu,ucmd | awk '{A[$3]+=$2}END{for (i in A)print A[i],i}' | sort -n
+                    ### 显示 系统中内存占用最大的部分
+                    ps -eo %mem,%cpu,ucmd | awk '{A[$3]+=$1}END{for (i in A)print A[i],i}' | sort -n
+
+
+                eg: 编写脚本 要求如下
+                    检测cpu 负载              uptime    uptime | awk '{print $(NF-2)}'|  sed 's/,//'
+                    网卡流量                  ifconfig   ifconfig eth0 | awk '/RX p/{print $5/1024^2"Mib"}'
+                    内存剩余容量               free       free -m | awk '/Mem/{print $4"MIB"}'
+                    计算机账户数量             df          df -h | awk '/\/$/{print $(NF-2)}'
+                    当前登录计算机账户数量      /etc/passwd /  who  awk 'END{print NR}' /etc/passwd
+                    计算机当前开启进程数量      ps aux          ps aux | awk 'END{print NR}'
+                    本机安装软件包数量         rpm -qa         rpm -qa | awk 'END{print NR}'
+                脚本如下:
+                    #!/bin/bash
+                    echo -ne "系统负载:\t"
+                    uptime | awk '{print $(NF-2)}'|  sed 's/,//'
+                                 echo -ne "网卡流量\t"
+                    ifconfig eth0 | awk '/RX p/{print $5/1024^2"Mib"}'
+                                 echo -ne " 内存剩余容量\t"
+                    free -m | awk '/Mem/{print $4"MIB"}'
+                                       echo -ne "计算机账户数量\t"
+                    df -h | awk '/\/$/{print $(NF-2)}'
+                                     echo -ne  " 当前登录计算机账户数量\t"
+                    awk 'END{print NR}' /etc/passwd
+                                     echo -ne  "计算机当前开启进程数量\t"
+                    ps aux | awk 'END{print NR}'
+                           echo -ne " 本机安装软件包数量\t"
+                    rpm -qa | awk 'END{print NR}'
+            补充:
+            每秒执行一次 xxx,配合其他命令使用 来持续检测 .
+            watch -n 1 'ps aux'
+            echo -n  不换行
+            echo -e  对转义字符进行解释
+            echo -t  tab
+            echo -r  回到行首显示
+                    ###实现类似 计时器的功能
+                    for i in {00..99};do
+                    > echo -ne "id:${i}\r "
+                    > sleep 1
+                    > done
+                      id:05
+                    ### 进度条  主要用 \033[110Ga 的 功能
+                                          110 表示输出的列数,a 代表输出内容
+                    #!/bin/bash
+                    astr="|-->"
+                    for i in {00..100};do
+                            echo -en "\033[110G${i}%"
+                            echo -en "\033[${i}G${astr}"
+                            sleep 0.2
+                    done
+
+
+
+
 
 
