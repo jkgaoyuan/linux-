@@ -1,1 +1,216 @@
-啊啊啊
+运维 (7天)
+        主机ip 以及ip地址
+        clients eth0 192.168.4.10/24
+        proxy   eth0 192.168.4.5/24
+                eth1 192.168.2.5/24
+        web1    eth1 192.168.2.100/24
+        web2    eth2 192.168.2.200/24
+    web服务器对比
+        unix 与 linux 平台下
+        -apache  Nginx  Tengine Lighttp
+        -Tomcat   IBM websphere Jboss
+        windows
+        -IIS Internet information server
+        Nginx(相比于Apache,开源) 更快 更小  效率更高 并发量更高
+        Tengine 为Nginx的改编
+
+    Nginx 介绍
+        轻量级的http服务器
+        高性能http和反向代理服务器同时 也是 imap /pops smtp 代理服务器
+        现代化软件都是模块化设计
+
+    如何查看 网页使用的服务器
+        F12 进入 network 选项 ,选择其中一项, 查看 response head  找关键词    server
+    安全策略都是针对用户和用户组的
+        谁启动服务,该服务就具有谁的权限.
+    安装 NGINX
+        root ------>httpd(nginx)--------客户访问
+        useradd nginx
+        root执行命令---->以nginx普通用户启动服务 systemctl restart
+        ##########################################################
+        由于软件可能存在 漏洞 ,在yum 安装程序的时候 会自动创建一个用户名称和软件相同的用户,启动服务的时候以该用户启动.
+        若该程序被攻击,那么攻击者也只能获取该用户的权限 与 / 无关. 而在使用源码安装的的时候 这些需要 手动 操作.
+        ##########################################################
+        1)安装依赖包
+            若不知道依赖包 则 查看 官方文档 或者直接安装 包什么错误 装什么包
+        2)./configure 安装
+            [root@proxy ~]# yum -y install gcc pcre-devel openssl-devel        //安装依赖包
+            [root@proxy ~]# useradd -s /sbin/nologin nginx
+            [root@proxy ~]# tar  -xf   nginx-1.10.3.tar.gz
+            [root@proxy ~]# cd  nginx-1.10.3
+            [root@proxy nginx-1.10.3]# ./configure   \
+            > --prefix=/usr/local/nginx   \                //指定安装路径
+            > --user=nginx   \                            //指定用户
+            > --group=nginx  \                            //指定组
+            > --with-http_ssl_module                        //开启SSL加密功能 ###with XXX 安装附加模块 without XXX不添加 附加模块
+            [root@proxy nginx-1.10.3]# make && make install    //编译并安装
+
+        3)启动服务
+            [root@proxy ~]# /usr/local/nginx/sbin/nginx                    //启动服务
+            [root@proxy ~]# /usr/local/nginx/sbin/nginx -s stop            //关闭服务
+            [root@proxy ~]# /usr/local/nginx/sbin/nginx -s reload        //重新加载配置文件 ### (不关闭服务)使配置文件立刻生效
+            [root@proxy ~]# /usr/local/nginx/sbin/nginx -V                //查看软件信息
+            [root@proxy ~]# ln -s /usr/local/nginx/sbin/nginx /sbin/        //方便后期使用
+            当创建完成 软连接后 就可以使用
+                nginx 来代替 /usr/local/nginx/sbin/nginx
+                nginx -s stop
+
+
+        查看服务端口
+            netstat命令可以查看系统中启动的端口信息，该命令常用选项如下：
+                -a显示所有端口的信息
+                -n以数字格式显示端口号
+                -t显示TCP连接的端口
+                -u显示UDP连接的端口
+                -l显示服务正在监听的端口信息，如httpd启动后，会一直监听80端口
+                -p显示监听端口的服务名称是什么（也就是程序名称）
+                netstat -untlp
+                        -anptu
+                netstat -anptul | grep 80 查找80 端口谁在使用
+
+
+        版本升级/功能安装
+            功能安装没有办法动态安装只能重新安装(升级安装)
+            1.版本老旧,需要升级
+            2.添加模块
+
+            生成的objs 是从src(源码)中提取需要安装的文件,且没有编译,使用make(而不是make install)编译生成安装文件.
+            make install 是重新安装将会覆盖/usr/local/nginx/html or conf or logs or /sbin/nginx ,也就是这些文件夹下所有的文件将会删除.
+
+        1）编译新版本nginx软件
+            [root@proxy ~]# tar  -zxvf   nginx-1.12.2.tar.gz
+            [root@proxy ~]# cd nginx-1.12.2
+            [root@proxy nginx-1.12.2]# ./configure   \
+            > --prefix=/usr/local/nginx   \
+            > --user=nginx   \
+            > --group=nginx  \
+            > --with-http_ssl_module
+            ####################### 注意这里是make 且 不适用make install(重新安装)
+            [root@proxy nginx-1.12.2]# make
+
+        2)备份老的nginx主程序，并使用编译好的新版本nginx替换老版本
+            [root@proxy nginx-1.12.2]# mv /usr/local/nginx/sbin/nginx  \
+            >/usr/local/nginx/sbin/nginxold
+            [root@proxy nginx-1.12.2]# cp objs/nginx  /usr/local/nginx/sbin/         //拷贝新版本
+
+            ###########################################
+            [root@proxy nginx-1.12.2]# make upgrade                            //升级
+            ############################################333
+            #或者使用killall nginx杀死进程后再启动nginx。
+            /usr/local/nginx/sbin/nginx -t
+            nginx: the configuration file /usr/local/nginx/conf/nginx.conf syntax is ok
+            nginx: configuration file /usr/local/nginx/conf/nginx.conf test is successful
+            kill -USR2 `cat /usr/local/nginx/logs/nginx.pid`
+            sleep 1
+            test -f /usr/local/nginx/logs/nginx.pid.oldbin
+            kill -QUIT `cat /usr/local/nginx/logs/nginx.pid.oldbin`
+            [root@proxy ~]# /usr/local/nginx/sbin/nginx –v                //查看版本
+
+    访问测试
+        1)分别使用浏览器和命令行工具curl测试服务器页面
+            [root@client ~]# firefox http://192.168.4.5
+            [root@client ~]# curl http://192.168.4.5
+
+
+    nginx 和 httpd 的配置
+        httpd 配置
+            <virtualhost *:80>
+            documentroot /var/www/html
+            servername www.example.com
+            </virtualhost>
+        nginx 配置
+          vim /usr/local/nginx/conf/nginx.con       f
+            server {
+                ###监听端口
+                listen 80;
+                ###域名
+                server_name www.dc.com;
+                ####网页根路径
+                root html;###默认写相对路径,也可以是用绝对路径
+                ######root "/usr/local/nginx/html";
+                ####默认首页,第二个是当第一个网页失效的时候备份
+                index index.html index.htm;
+                    }
+
+
+    实验目的: 给网页添加用户访问认证,输入正确的账户密码才能访问
+        1)修改配置文件
+            vim /usr/local/nginx/conf/nginx.con
+            server {
+            listen       80;
+            server_name  localhost;
+
+            #charset koi8-r;
+
+            #access_log  logs/host.access.log  main;
+            需要手动添加的配置
+            ###############################################
+            auth_basic "Input Password:";                 ###提示信息
+            auth_basic_user_file "/usr/local/nginx/pass"; ###保存用户名密码的文件
+            ###############################################
+            location / {
+                root   html;
+                index  index.html index.htm;
+            }
+        2)生成密码文件
+            ####################
+            ###不要使用 vim 创建##
+            ####################
+            安装httpd-Tools,创建 密码文件
+            yum -y install httpd-tools
+            #############################################################
+            -c 新建文件,当添加第二个用户时应当 不写 -c
+            [root@proxy lnmp_soft]# htpasswd -c /usr/local/nginx/pass tom
+            New password:
+            Re-type new password:
+            Adding password for user tom
+            [root@proxy lnmp_soft]# htpasswd /usr/local/nginx/pass dc
+            New password:
+            Re-type new password:
+            Adding password for user dc
+
+        3)重启服务
+            软连接
+            nginx -s reload
+        4)排错
+
+            cd /usr/local/nginx/logs
+
+            tailf error.log
+            进入文件后 一路回车 让页面 什么都不显示 用浏览器访问 , 之后出现的错误错误信息 可作为排错的依据
+
+    虚拟主机服务
+        基于域名(最常用),基于IP,基于端口
+
+        1)修改配置文件
+
+            [root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
+                .. ..
+                server {
+                        listen       80;                                      //端口
+                        server_name  www.a.com;                                //域名
+                        auth_basic "Input Password:";                        //认证提示符
+                        auth_basic_user_file "/usr/local/nginx/pass";        //认证密码文件
+                location / {
+                        root   html;                                    //指定网站根路径
+                        index  index.html index.htm;
+                               }
+
+                }
+                … …
+                    server {
+                        listen  80;                                        //端口
+                        server_name  www.b.com;                                //域名
+                    location / {
+                        root   www;                                 //指定网站根路径
+                        index  index.html index.htm;
+                        }
+                }
+
+            批量修改配置文件参考 ADMIN 349 行
+            vim 末行模式 中 :88,90s/#//
+
+
+
+
+
