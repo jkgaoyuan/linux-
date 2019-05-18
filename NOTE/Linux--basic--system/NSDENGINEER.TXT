@@ -577,7 +577,7 @@ systemctl students
 （软件）Maria DB
 一.环境准备＆重启服务
 安装　　
-	[root@server0 ~]# yum -y install mariadb-server
+	[root@server0 ~]# yum -y install mariadb-server (服务端软件)
 重启服务
 	[root@server0 ~]# systemctl restart mariadb
 卸载　 ####这个是和删根一样的操作，别用
@@ -953,7 +953,8 @@ web访问限制控制
 位置: 调用配置文件
 
 若格式忘记的话,可主配置文件,中可以查到
-[root@server0 ~]# vim /etc/httpd/conf/httpd.conf 
+[root@server0 ~]# vim /etc/httpd/conf/httpd.conf
+
    ######对//var/www设置
 		<Directory "/var/www">
 		    AllowOverride None

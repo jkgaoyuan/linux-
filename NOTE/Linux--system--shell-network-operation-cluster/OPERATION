@@ -183,7 +183,7 @@
         基于域名(最常用),基于IP,基于端口
 
         1)修改配置文件
-
+                 每一个server 就是一个 网站 并且放在 html中
             [root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
                 .. ..
                 server {
@@ -209,8 +209,121 @@
 
             批量修改配置文件参考 ADMIN 349 行
             vim 末行模式 中 :88,90s/#//
+        2) 重启服务
+            /usr/local/nginx/sbin/nginx -s reload(重新加载nginx配置文件)
 
 
+    https加密服务
+         对称加密
+            AES DES [安全]
+            单机加密(安全)
+            网络加密(不安全)
+         非对称加密
+            RSA DSA 私钥 公钥
+         信息摘要
+            MD5 SHA256 SHA
 
 
+         1)生成私钥与公钥
+            [root@proxy ~]# cd /usr/local/nginx/conf
+            [root@proxy ~]# openssl genrsa > cert.key                            //生成私钥
+                                              格式
+            [root@proxy ~]# openssl req -new -x509 -key cert.key > cert.pem      //生成证书
 
+         2)修改配置文件
+            [root@proxy ~]# vim  /usr/local/nginx/conf/nginx.conf
+            … …
+            server {
+                    listen       443 ssl;
+                    server_name            www.c.com;
+                    ssl_certificate      cert.pem;         #这里是证书文件
+                    ssl_certificate_key  cert.key;         #这里是私钥文件
+                    ssl_session_cache    shared:SSL:1m;
+                    ssl_session_timeout  5m;
+                    ssl_ciphers  HIGH:!aNULL:!MD5;
+                    ssl_prefer_server_ciphers  on;
+                    location / {
+                        root   html;
+                        index  index.html index.htm;
+                    }
+                }
+         3)重启服务
+            [root@proxy ~]# /usr/local/nginx/sbin/nginx -s reload
+            #请先确保nginx是启动状态，否则运行该命令会报错,报错信息如下：
+            #[error] open() "/usr/local/nginx/logs/nginx.pid" failed (2: No such file or directory)
+
+         4)验证
+            [root@client ~]# vim /etc/hosts  ####添加hosts 由于没有 dns服务器.
+            192.168.4.5    www.c.com  www.a.com   www.b.com
+            firefox https://www.c.com
+            curl  https://www.c.com
+            需要输入密码
+            curl  -u tom:123 https://www.c.com
+    动态页面和静态页面的实现
+         区别
+            动态(Java,php,py,sh...)代码在服务器执行
+            静态(jpg,MP4...)
+         1) 安装 nginx mariadb(客户端软件)  mariadb-server(服务器端软件) mariadb-devel(mariadb依赖软件) php php-ftm(PHP服务) php-mysql(链接mysql数据库模块)
+            [root@proxy ~]# yum -y install   mariadb   mariadb-server   mariadb-devel
+            [root@proxy ~]# yum -y  install  php   php-mysql
+            [root@proxy ~]# yum -y  install php-fpm
+
+
+         2)启动服务
+            这里需要注意的是，如果服务器上已经启动了其他监听80端口的服务软件（如httpd），则需要先关闭该服务，否则会出现冲突。
+
+            1.启动Nginx服务
+            [root@proxy ~]# systemctl stop httpd                //如果该服务存在则关闭该服务
+            [root@proxy ~]# /usr/local/nginx/sbin/nginx             //启动Nginx服务
+            [root@proxy ~]# netstat -utnlp | grep :80
+            tcp    0    0 0.0.0.0:80        0.0.0.0:*        LISTEN        32428/nginx
+            2.启动MySQL服务
+            [root@proxy ~]# systemctl start  mariadb           //启动服务器
+            [root@proxy ~]# systemctl status mariadb           //查看服务状态
+            [root@proxy ~]# systemctl enable mariadb           //设置开机启动
+            3.启动PHP-FPM服务
+            [root@proxy ~]# systemctl start php-fpm           //启动服务
+            [root@proxy ~]# systemctl status php-fpm          //查看服务状态
+            [root@proxy ~]# systemctl enable php-fpm          //设置开机启动
+
+
+            若网页会静态,nginx 直接返回文件
+            若网页会动态,nginx 转发给9000(php)端口
+
+            location 匹配用户的地址栏,从域名/ip往后 ; 且支持正则模糊匹配 添加 '~'; 不添加~ 表示模糊匹配
+              location 一定要写在 server 中来
+              server {
+                location / {
+                deny 1.1.1.1;
+                allow all;
+                }
+
+                location /abc {
+                allow all;
+                }
+                location /dachui {
+                allow all;
+                    }
+                }
+
+                #######匹配 动态网页 (以php 结尾的文件, '\'代表 转义 ,   ,'~' 表示使用正则 , '.' 在linux 中代表 匹配任意字符)
+                修改nginx.conf 动静分离
+                location ~ \.php$ {
+                  root           html;
+                ################# 将动态文件转发给9000 端口 交个 php-fpm 处理
+                  fastcgi_pass   127.0.0.1:9000;
+                  fastcgi_index  index.php;
+                 #  fastcgi_param  SCRIPT_FILENAME  /s    cripts$fastcgi_script_name;
+                 ########## 导入 nginx 变量
+                  include        fastcgi.conf;
+                 }
+
+
+         3)添加 网页测试访问
+                cd /root/lnmp_soft/php_scripts/
+                firefox 192.168.4.5/mysql.php
+         3)排错
+            当重启nginx服务没有错误时,且页面加载失败那么,可能是 php 错误
+            Nginx的默认访问日志文件为/usr/local/nginx/logs/access.log
+            Nginx的默认错误日志文件为/usr/local/nginx/logs/error.log
+            PHP默认错误日志文件为/var/log/php-fpm/www-error.log
