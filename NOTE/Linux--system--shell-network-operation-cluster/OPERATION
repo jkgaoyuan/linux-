@@ -119,7 +119,7 @@
             servername www.example.com
             </virtualhost>
         nginx 配置
-          vim /usr/local/nginx/conf/nginx.con       f
+          vim /usr/local/nginx/conf/nginx.conf
             server {
                 ###监听端口
                 listen 80;
@@ -131,7 +131,14 @@
                 ####默认首页,第二个是当第一个网页失效的时候备份
                 index index.html index.htm;
                     }
+          配置格式
+            server {                     #### server 代表的是     网站
 
+                location / {             #### location 代表的是  网站下的某个网页
+                }
+                location / {
+                }
+            }
 
     实验目的: 给网页添加用户访问认证,输入正确的账户密码才能访问
         1)修改配置文件
@@ -263,6 +270,7 @@
          区别
             动态(Java,php,py,sh...)代码在服务器执行
             静态(jpg,MP4...)
+            注意，FastCGI的内存消耗问题，一个PHP-FPM解释器将消耗约25M的内存。
          1) 安装 nginx mariadb(客户端软件)  mariadb-server(服务器端软件) mariadb-devel(mariadb依赖软件) php php-ftm(PHP服务) php-mysql(链接mysql数据库模块)
             [root@proxy ~]# yum -y install   mariadb   mariadb-server   mariadb-devel
             [root@proxy ~]# yum -y  install  php   php-mysql
@@ -327,3 +335,201 @@
             Nginx的默认访问日志文件为/usr/local/nginx/logs/access.log
             Nginx的默认错误日志文件为/usr/local/nginx/logs/error.log
             PHP默认错误日志文件为/var/log/php-fpm/www-error.log
+##################################################################
+    地址重写
+             NGINX服务器地址重写
+             用到的参数 : rewrite
+             rewrite regex replacement flag
+             用到的参数 : rewrite 旧地址(支持正则表达式) 新地址 参数
+             #######################
+             地址重写格式【总结】
+             #######################
+             rewrite 旧地址 新地址 [选项];
+             last 不再读其他rewrite
+             break 不再读其他语句，结束请求
+             redirect 临时重定向
+             permament 永久重定向
+         1.访问a跳转到b
+            1)修改nginx配置参数
+
+                [root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
+                .. ..
+                server {
+                        listen       80;
+                        server_name  localhost;
+                charset utsf-8; ####支持中文显示
+                rewrite /a.html  /b.html redirect; ####实现地址转换 ### redirect 访问a.html重定向到b.html（跳转地址栏）
+
+                ###auth_basic "Input Password:"; #提示信息
+                ###auth_basic_user_file "/usr/local/nginx/pass"; ###保存用户名密码的文件
+                location / {
+                    root   html;
+                index  index.html index.htm;
+                }
+                }
+            2) 测试访问
+                重新加载配置文件
+                /usr/local/nginx/sbin/nginx  -s  reload
+                firefox  http://192.168.4.5/a.html 添加 redirect 后注意访问 地址栏的的变化
+
+         2.访问192.168.4.5的请求重定向至www.tmooc.cn
+            1)修改配置文件
+                [root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
+                .. ..
+                server {
+                        listen       80;
+                        server_name  localhost;
+         #####################################################
+                rewrite ^/  http://www.tmooc.cn/;
+         ####################################################
+                location / {
+                    root   html;
+                index  index.html index.htm;
+                # rewrite /a.html  /b.html  redirect;
+                }
+                }
+            2)访问测试
+                /usr/local/nginx/sbin/nginx  -s  reload
+                firefox  http://192.168.4.5/a.html (真机测试 虚拟机 没有 网络)
+
+         3.访问192.168.4.5/下面子页面，重定向至www.tmooc.cn/下相同的页面
+            1)修改配置文件
+                [root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
+                .. ..
+                server {
+                        listen       80;
+                        server_name  localhost;
+                ############在正则中()表示复制 \1 表示粘贴第一个参数,
+                ############但是 在 nginx中粘贴第一个复制参数  $1 表示;;; 注意这个不同
+                rewrite ^/(.*)$  http://www.tmooc.cn/$1;
+                location / {
+                    root   html;
+                index  index.html index.htm;
+                }
+                }
+            2) 重新加载配置文件 ,访问测试
+               /usr/local/nginx/sbin/nginx  -s  reload
+               firefox 192.168.4.5/free
+
+         4.修改配置文件(实现curl和火狐访问相同链接返回的页面不同)
+            不同终端访问相同的网站 显示不同网页(移动端和桌面端网页的实现)
+            1)修改配置文件
+                [root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
+                .. ..
+                server {
+                        listen       80;
+                        server_name  localhost;
+                location / {
+                    root   html;
+                index  index.html index.htm;
+                }
+                #这里，~符号代表模糊正则匹配，*符号代表不区分大小写,只要包含firefox 字符就执行
+                if ($http_user_agent ~* firefox) {            //识别客户端firefox浏览器
+                rewrite ^(.*)$  /firefox/$1;
+                }
+                }
+            2) 添加网页
+                [root@proxy ~]# echo "I am Normal page" > /usr/local/nginx/html/test.html
+                [root@proxy ~]# mkdir  -p  /usr/local/nginx/html/firefox/
+                [root@proxy ~]# echo "firefox page" > /usr/local/nginx/html/firefox/test.html
+            3)重启服务 访问测试
+                [root@proxy html]# nginx -s reload
+                firefox 192.168.4.5/test.html
+                Google-chrome 192.168.4.5/test.html
+
+
+    NGINX反向代理服务器
+         功能: 调度(负载均衡).健康检查(/)
+             使用Nginx实现Web反向代理功能，实现如下功能：
+                后端Web服务器两台，可以使用httpd实现
+                Nginx采用轮询的方式调用后端Web服务器
+                两台Web服务器的权重要求设置为不同的值
+                最大失败次数为1，失败超时时间为30秒
+
+         算法: 轮询算法(roundrobin,RR)
+                                 |------->web1
+                clients---->proxy-
+                                 |------->web2
+              IP_hash
+         1.部署实施后端Web服务器
+             1）部署后端Web1服务器
+                [root@web1 ~]# yum  -y  install  httpd
+                [root@web1 ~]# echo "192.168.2.100" > /var/www/html/index.html
+                [root@web1 ~]# systemctl restart httpd
+                [root@web1 ~]# firewall-cmd --set-default-zone=trusted
+                [root@web1 ~]# setenforce 0
+             2)部署后端Web2服务器
+                [root@web2 ~]# yum  -y  install  httpd
+                [root@web2 ~]# echo "192.168.2.200" > /var/www/html/index.html
+                [root@web2 ~]# systemctl restart httpd
+                [root@web2 ~]# firewall-cmd --set-default-zone=trusted
+                [root@web2 ~]# setenforce 0
+         2.配置Nginx服务器，添加服务器池，实现反向代理功能
+             1）修改/usr/local/nginx/conf/nginx.conf配置文件
+                [root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
+                .. ..
+                http {
+                .. ..
+                #使用upstream定义后端服务器集群，集群名称任意(如webserver)
+                #使用server定义集群中的具体服务器和端口
+                upstream webserver {
+                                server 192.168.2.100:80;
+                                server 192.168.2.200:80;
+                        }
+                .. ..
+                server {
+                        listen        80;
+                        server_name  localhost;
+                            location / {
+                #通过proxy_pass将用户的请求转发给webserver集群
+                            proxy_pass http://webserver;
+                        }
+                }
+             2)重启nginx服务
+                [root@proxy ~]# /usr/local/nginx/sbin/nginx -s reload
+                #请先确保nginx是启动状态，否则运行该命令会报错,报错信息如下：
+                #[error] open() "/usr/local/nginx/logs/nginx.pid" failed (2: No such file or directory)
+             3）客户端使用浏览器访问代理服务器测试轮询效果
+                [root@client ~]# curl http://192.168.4.5            //使用该命令多次访问查看效果
+                [root@client ~]# curl http://192.168.4.5            //使用该命令多次访问查看效果
+
+         3.配置upstream服务器集群池属性
+             1）设置失败次数，超时时间，权重
+                weight可以设置后台服务器的权重，max_fails可以设置后台服务器的失败次数，fail_timeout可以设置后台服务器的失败超时时间。
+                [root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
+                .. ..
+                http {
+                .. ..
+                upstream webserver {
+                           ####这里端口默认可以不写(80)         失败多少次后认为失败    超时(检测服务失败后重新开始检测的时间)
+                                server 192.168.2.100 weight=1 max_fails=1 fail_timeout=30;
+                                server 192.168.2.200 weight=2 max_fails=2 fail_timeout=30;
+                                ####彻底关闭2.101的集群服务
+                                server 192.168.2.101 down;
+                                ip_hash; ###客户端访问网页后,之后的访问依然又第一次提供服务的server提供,除非该server挂了
+                        }
+                #weight设置服务器权重值，默认值为1
+                #max_fails设置最大失败次数
+                #fail_timeout设置失败超时时间，单位为秒
+                #down标记服务器已关机，不参与集群调度
+                .. ..
+                server {
+                        listen        80;
+                        server_name  localhost;
+                            location / {
+                            proxy_pass http://webserver;
+                        }
+                }
+
+             2）重启nginx服务
+                [root@proxy ~]# /usr/local/nginx/sbin/nginx -s reload
+                #请先确保nginx是启动状态，否则运行该命令会报错,报错信息如下：
+                #[error] open() "/usr/local/nginx/logs/nginx.pid" failed (2: No such file or directory)
+
+             3）关闭一台后端服务器（如web1）
+                [root@web1 ~]# systemctl stop httpd
+
+             4）客户端使用浏览器访问代理服务器测试轮询效果
+                [root@client ~]# curl http://192.168.4.5            //使用该命令多次访问查看效果
+             5)重启web1,再次进行测试
+                [root@client ~]# curl http://192.168.4.5            //使用该命令多次访问查看效果

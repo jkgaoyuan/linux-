@@ -506,6 +506,8 @@ shell
                 grep -n 查找时显示行号
                      -v 查找时取反
                      -i 忽略大小写
+
+            保留(a)(b)  粘贴\1 \2
             eg:  [root@server0 ~]# grep "bash$" /etc/passwd
                     root:x:0:0:root:/root:/bin/bash    //匹配开头
                  [root@server0 ~]# grep "^root" /etc/passwd
