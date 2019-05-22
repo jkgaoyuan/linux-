@@ -13,6 +13,8 @@
         -IIS Internet information server
         Nginx(相比于Apache,开源) 更快 更小  效率更高 并发量更高
         Tengine 为Nginx的改编
+    LNMP(PHP) NGNIX+PHP  只能这么配合
+    TOMCATE+JAVA
 
     Nginx 介绍
         轻量级的http服务器
@@ -111,7 +113,7 @@
             [root@client ~]# firefox http://192.168.4.5
             [root@client ~]# curl http://192.168.4.5
 
-
+    LNMP的配置
     nginx 和 httpd 的配置
         httpd 配置
             <virtualhost *:80>
@@ -533,3 +535,647 @@
                 [root@client ~]# curl http://192.168.4.5            //使用该命令多次访问查看效果
              5)重启web1,再次进行测试
                 [root@client ~]# curl http://192.168.4.5            //使用该命令多次访问查看效果
+
+    Nginx的TCP/UDP调度器
+         问题
+
+            使用Nginx实现TCP/UDP调度器功能，实现如下功能：
+            后端SSH服务器两台
+            Nginx编译安装时需要使用--with-stream，开启ngx_stream_core_module模块
+            Nginx采用轮询的方式调用后端SSH服务器
+         方案
+
+            使用4台RHEL7虚拟机，其中一台作为Nginx代理服务器，该服务器需要配置两块网卡，
+            IP地址分别为192.168.4.5和192.168.2.5，两台SSH服务器IP地址分别为192.168.2.100和192.168.2.200。
+            客户端测试主机IP地址为192.168.4.10。
+
+         步骤
+         1.部署支持4层TCP/UDP代理的Nginx服务器
+           1)部署nginx服务器
+                编译安装必须要使用--with-stream参数开启4层代理模块。
+                [root@proxy ~]# yum -y install gcc pcre-devel openssl-devel        //安装依赖包
+                [root@proxy ~]# tar  -xf   nginx-1.12.2.tar.gz
+                [root@proxy ~]# cd  nginx-1.12.2
+                [root@proxy nginx-1.12.2]# ./configure   \
+                > --with-http_ssl_module                                //开启SSL加密功能
+                > --with-stream                                       //开启4层反向代理功能
+                [root@proxy nginx-1.12.2]# make && make install           //编译并安装
+
+         2.配置Nginx服务器，添加服务器池，实现TCP/UDP反向代理功能
+            1)修改/usr/local/nginx/conf/nginx.conf配置文件
+            ########################################################################
+                注意这段配置文件应该在http 之前 ;;; 若写在 http中则会使用 http协议来传输数据
+            ##########################################################################
+                [root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
+                stream {
+                            upstream backend {
+                               server 192.168.2.100:22;            //后端SSH服务器的IP和端口
+                               server 192.168.2.200:22;
+                }
+                            server {
+                                listen 12345;                    //Nginx监听的端口
+                                proxy_connect_timeout 1s;         //连接的超时时间，可选配置
+                                proxy_timeout 3s;
+                                 proxy_pass backend;
+                             }
+                }
+                http {
+                .. ..
+                }
+            2)重启nginx服务
+                [root@proxy ~]# /usr/local/nginx/sbin/nginx -s reload
+                #请先确保nginx是启动状态，否则运行该命令会报错,报错信息如下：
+                #[error] open() "/usr/local/nginx/logs/nginx.pid" failed (2: No such file or directory)
+
+
+            3）客户端使用访问代理服务器测试轮询效果
+                [root@client ~]# ssh 192.168.4.5 -p 12345            //使用该命令多次访问查看效果
+
+    Nginx常见问题处理
+         问题
+
+            本案例要求对Nginx服务器进行适当优化，解决如下问题，以提升服务器的处理性能：
+            如何自定义返回给客户端的404错误页面
+            如何查看服务器状态信息
+            如果客户端访问服务器提示“Too many open files”如何解决
+            如何解决客户端访问头部信息过长的问题
+            如何让客户端浏览器缓存数据
+            日志切割
+            开启gzip压缩功能，提高数据传输效率
+            开启文件缓存功能
+            然后客户机访问此Web服务器验证效果：
+            使用ab压力测试软件测试并发量
+            编写测试脚本生成长头部信息的访问请求
+            客户端访问不存在的页面，测试404错误页面是否重定向
+
+         步骤
+         1.自定义报错页面
+            1)优化前，客户端使用浏览器访问不存在的页面，会提示404文件未找到
+                [root@client ~]# firefox http://192.168.4.5/xxxxx        //访问一个不存在的页面
+            2）修改Nginx配置文件，自定义报错页面
+                [root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
+                .. ..
+                        charset utf-8;                    //仅需要中文时需要改选项，可选项
+                error_page   404  /404.html;    //自定义错误页面
+                .. ..
+                [root@proxy ~]# vim /usr/local/nginx/html/404.html        //生成错误页面
+                Oops,No NO no page …
+                [root@proxy ~]# nginx -s reload
+                #请先确保nginx是启动状态，否则运行该命令会报错,报错信息如下：
+                #[error] open() "/usr/local/nginx/logs/nginx.pid" failed (2: No such file or directory)
+
+            3）优化后，客户端使用浏览器访问不存在的页面，会提示自己定义的40x.html页面
+                [root@client ~]# firefox http://192.168.4.5/xxxxx        //访问一个不存在的页面
+
+          ###############################################################################
+
+         2.如何查看服务器状态信息（非常重要的功能）
+            服务器状态信息
+                1.实时并发量
+                2.等待的数量
+                3.总链接数量
+                4.pv量和uv量 需要自己写脚本
+                  page view
+                  user view
+            1）编译安装时使用--with-http_stub_status_module开启状态页面模块
+                [root@proxy ~]# tar  -zxvf   nginx-1.12.2.tar.gz
+                [root@proxy ~]# cd  nginx-1.12.2
+                [root@proxy nginx-1.12.2]# ./configure   \
+                > --with-http_ssl_module                        //开启SSL加密功能
+                > --with-stream                                //开启TCP/UDP代理模块
+                > --with-http_stub_status_module                //开启status状态页面
+                [root@proxy nginx-1.12.2]# make && make install    //编译并安装
+
+            2）启用Nginx服务并查看监听端口状态
+                ss命令可以查看系统中启动的端口信息，该命令常用选项如下：
+                -a显示所有端口的信息
+                -n以数字格式显示端口号
+                -t显示TCP连接的端口
+                -u显示UDP连接的端口
+                -l显示服务正在监听的端口信息，如httpd启动后，会一直监听80端口
+                -p显示监听端口的服务名称是什么（也就是程序名称）
+                注意：在RHEL7系统中可以使用ss命令替代netstat命令，功能一样，选项一样。
+
+                [root@proxy ~]# /usr/local/nginx/sbin/nginx
+                [root@proxy ~]# netstat  -anptu  |  grep nginx
+                tcp        0        0 0.0.0.0:80        0.0.0.0:*        LISTEN        10441/nginx
+                [root@proxy ~]# ss  -anptu  |  grep nginx
+            3）修改Nginx配置文件，定义状态页面
+                [root@proxy ~]# cat /usr/local/nginx/conf/nginx.conf
+                … …
+                location /status {
+                                stub_status on;
+                                 #allow IP地址;
+                                 #deny IP地址;
+                        }
+                … …
+                [root@proxy ~]# nginx
+
+            4）优化后，查看状态页面信息
+                [root@proxy ~]# curl  http://192.168.4.5/status
+                Active connections: 1
+                server accepts handled requests
+                 10 10 3
+                Reading: 0 Writing: 1 Waiting: 0
+            #######################################################
+                Active connections：当前活动的连接数量。
+                Accepts：已经接受客户端的连接总数量。
+                Handled：已经处理客户端的连接总数量。
+                （一般与accepts一致，除非服务器限制了连接数量）。
+                Requests：客户端发送的请求数量。
+                Reading：当前服务器正在读取客户端请求头的数量。
+                Writing：当前服务器正在写响应信息的数量。
+                Waiting：当前多少客户端在等待服务器的响应
+
+         3.优化Nginx并发量
+
+            操作系统的资源限制
+            软件限制(samba,nginx)
+            这两者来管理 软件所占用的资源
+            ulimit -a
+            查看系统 资源限制
+                [root@proxy ~]# ulimit -a
+                    core file size          (blocks, -c) 0
+                    data seg size           (kbytes, -d) unlimited
+                    scheduling priority             (-e) 0
+                    file size               (blocks, -f) unlimited
+                    pending signals                 (-i) 5569
+                    max locked memory       (kbytes, -l) 64
+                    max memory size         (kbytes, -m) unlimited
+                    open files                      (-n) 1024
+                    pipe size            (512 bytes, -p) 8
+                    POSIX message queues     (bytes, -q) 819200
+                    real-time priority              (-r) 0
+                    stack size              (kbytes, -s) 8192
+                    cpu time               (seconds, -t) unlimited
+                    max user processes              (-u) 5569
+                    virtual memory          (kbytes, -v) unlimited
+                    file locks                      (-x) unlimited
+                #########修改硬限制#################################### (决断值)
+                [root@proxy ~]# ulimit -Hn 100000
+                #########修改软限制#####################################(警告值)
+                [root@proxy ~]# ulimit -Sn 100000
+                [root@proxy ~]# ulimit -a
+                    core file size          (blocks, -c) 0
+                    data seg size           (kbytes, -d) unlimited
+                    scheduling priority             (-e) 0
+                    file size               (blocks, -f) unlimited
+                    pending signals                 (-i) 5569
+                    max locked memory       (kbytes, -l) 64
+                    max memory size         (kbytes, -m) unlimited
+                ########################################################
+                    open files                      (-n) 100000
+                    pipe size            (512 bytes, -p) 8
+                ########################################################
+                    POSIX message queues     (bytes, -q) 819200
+                    real-time priority              (-r) 0
+                    stack size              (kbytes, -s) 8192
+                    cpu time               (seconds, -t) unlimited
+                    max user processes              (-u) 5569
+                    virtual memory          (kbytes, -v) unlimited
+                    file locks                      (-x) unlimited
+
+            1）优化前使用ab高并发测试
+                [root@proxy ~]# ab -n 2000 -c 2000 http://192.168.4.5/
+                Benchmarking 192.168.4.5 (be patient)
+                socket: Too many open files (24)                //提示打开文件数量过多
+            2）修改Nginx配置文件，增加并发量
+                [root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
+                .. ..
+                worker_processes  2;                    //与CPU核心数量一致
+                events {
+                worker_connections 65535;        //每个worker最大并发连接数
+                }
+                .. ..
+                [root@proxy ~]# nginx -s reload
+
+            3）优化Linux内核参数（最大文件数量）
+                [root@proxy ~]# ulimit -a                        //查看所有属性值
+                [root@proxy ~]# ulimit -Hn 100000                //设置硬限制（临时规则）
+                [root@proxy ~]# ulimit -Sn 100000                //设置软限制（临时规则）
+                ################## 永久限制 ###############################
+                [root@proxy ~]# vim /etc/security/limits.conf
+                    .. ..
+                *               soft    nofile            100000
+                *               hard    nofile            100000
+                #该配置文件分4列，分别如下：
+                #用户或组    硬限制或软限制    需要限制的项目   限制的值
+            4）优化后测试服务器并发量（因为客户端没调内核参数，所以在proxy测试）
+                ab命令最多支持2w并发
+                [root@proxy ~]# ab -n 2000 -c 2000 http://192.168.4.5/
+         4.优化Nginx数据包头缓存
+            1）优化前，使用脚本测试长头部请求是否能获得响应
+                [root@proxy ~]# cat lnmp_soft/buffer.sh
+                    #!/bin/bash
+                    URL=http://192.168.4.5/index.html?
+                    for i in {1..5000}
+                    do
+                        URL=${URL}v$i=$i
+                    done
+                    curl $URL                                //经过5000次循环后，生成一个长的URL地址栏
+                    [root@proxy ~]# ./buffer.sh
+                    .. ..
+                    <center><h1>414 Request-URI Too Large</h1></center>        //提示头部信息过大
+
+            2）修改Nginx配置文件，增加数据包头部缓存大小
+                [root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
+                    .. ..
+                    http {
+                    client_header_buffer_size    1k;        //默认请求包头信息的缓存
+                    large_client_header_buffers  4 4k;        //大请求包头部信息的缓存个数与容量
+                    .. ..
+                    }
+                    [root@proxy ~]# nginx -s reload
+                    3）优化后，使用脚本测试长头部请求是否能获得响应
+                    [root@proxy ~]#cat cat buffer.sh
+                    #!/bin/bash
+                    URL=http://192.168.4.5/index.html?
+                    for i in {1..5000}
+                    do
+                        URL=${URL}v$i=$i
+                        done
+                    curl $URL
+                [root@proxy ~]# ./buffer.sh
+
+
+
+         5.浏览器本地缓存静态数据
+            1)浏览器具有缓存功能,但  缓存什么 缓存多久 则是由 服务器决定
+                浏览器访问 查看缓存
+                about:cache
+
+            2）清空firefox本地缓存数据
+
+            3）修改Nginx配置文件，定义对静态页面的缓存时间
+                [root@proxy ~]# vim /usr/local/nginx/conf/nginx.conf
+                server {
+                        listen       80;
+                        server_name  localhost;
+                        location / {
+                            root   html;
+                            index  index.html index.htm;
+                        }
+                location ~* \.(jpg|jpeg|gif|png|css|js|ico|xml)$ {
+                expires        30d;            //定义客户端缓存时间为30天
+                }
+                }
+                [root@proxy ~]# cp /usr/share/backgrounds/day.jpg /usr/local/nginx/html
+                [root@proxy ~]# nginx -s reload
+                #请先确保nginx是启动状态，否则运行该命令会报错,报错信息如下：
+                #[error] open() "/usr/local/nginx/logs/nginx.pid" failed (2: No such file or directory)
+            4）优化后，使用Firefox浏览器访问图片，再次查看缓存信息
+                [root@client ~]# firefox http://192.168.4.5/day.jpg
+
+                在firefox地址栏内输入about:cache，查看本地缓存数据，查看是否有图片以及过期时间是否正确。
+
+
+         6.日志切割(重要)
+            日志文件越来越大怎么办？单个文件10G? 如何切割？（非常常见的面试题）
+            步骤：
+
+            (1) 把旧的日志重命名
+            (2) kill USR1 PID(nginx的进程PID号)   kill,(设计用来传递信息), 命令有许多功能 杀进程只是其中一个
+
+            1）手动执行
+                备注：/usr/local/nginx/logs/nginx.pid文件中存放的是nginx的进程PID号。
+                [root@proxy ~]#  mv access.log access2.log
+                [root@proxy ~]# kill -USR1 $(cat /usr/local/nginx/logs/nginx.pid)
+            2）自动完成
+                每周5的03点03分自动执行脚本完成日志切割工作。
+                [root@proxy ~]# vim /usr/local/nginx/logbak.sh
+                    #!/bin/bash
+                    date=`date +%Y%m%d`
+                    logpath=/usr/local/nginx/logs
+                    mv $logpath/access.log $logpath/access-$date.log
+                    mv $logpath/error.log $logpath/error-$date.log
+                    kill -USR1 $(cat $logpath/nginx.pid)
+                    [root@proxy ~]# crontab -e
+                    03 03 * * 5  /usr/local/nginx/logbak.sh
+
+         7.页面进行压缩处理
+                所有主流浏览器支持gzip 压缩
+                 小于 1000字节的文件 不压缩
+                1）修改Nginx配置文件
+                    [root@proxy ~]# cat /usr/local/nginx/conf/nginx.conf
+                    http {
+                    .. ..
+                    gzip on;                            //开启压缩
+                    gzip_min_length 1000;                //小文件不压缩
+                    gzip_comp_level 4;                //压缩比率
+                    gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+                                                        //对特定文件压缩，类型参考mime.types
+                    .. ..
+                    }
+
+         8.服务器内存缓存
+                  加速用户读取 网页 ,默认不开启.
+                1）如果需要处理大量静态文件，可以将文件缓存在(服务器)内存，下次访问会更快。
+                http {
+                open_file_cache          max=2000  inactive=20s;
+                        open_file_cache_valid    60s;
+                        open_file_cache_min_uses 5;
+                        open_file_cache_errors   off;
+                //设置服务器最大缓存2000个文件句柄，关闭20秒内无请求的文件句柄
+                //文件句柄的有效时间是60秒，60秒后过期
+                //只有访问次数超过5次会被缓存
+                }
+
+    Session与Cookie 、 部署memcached 、 Session共享
+            通过Nginx调度器负载后端两台Web服务器，实现以下目标：
+            部署Nginx为前台调度服务器
+            调度算法设置为轮询
+            后端为两台LNMP服务器
+            部署测试页面，查看PHP本地的Session信息
+
+         1.PHP的本地Session信息
+            注册                           写数据
+           clients ---------------------> server
+            登录                          vim uuid.txt(session)
+                                          tom,logined:true/f
+            cookie <----------------------
+           session: 储存在服务器端,保护用户名登录信息
+           cookies: 储存在本地用户,由服务器下发给客户端,保存在客户端的一个文件中
+           session和cookie是为了解决 用户登录状态
+         搭建集群后 用户的登录会出现问题
+            1)部署后端LNMP服务器相关软件(这里跳过)
+            2)构建memcached服务
+               安装memcached软件，并启动服务
+               使用telnet测试memcached服务
+               对memcached进行增、删、改、查等操
+
+                验证时需要客户端主机安装telnet，远程memcached来验证服务器的功能：
+                add name 0 180 10	//变量不存在则添加
+                set name 0 180 10	//添加或替换变量
+                replace name 0 180 10	//替换
+                get name	//读取变量
+                append name 0 180 10	//向变量中追加数据
+                delete name	//删除变量
+                flush_all	//清空所有
+                提示：0表示不压缩，180为数据缓存时间，10为需要存储的数据字节数量。
+
+            构建memcached服务
+
+                (1）使用yum安装软件包memcached
+                    [root@proxy ~]# yum -y  install   memcached
+                    [root@proxy ~]# rpm -qa memcached
+                    memcached-1.4.15-10.el7_3.1.x86_64
+                (2) memcached配置文件（查看即可，不需要修改）
+                    [root@proxy ~]# vim /usr/lib/systemd/system/memcached.service
+                    ExecStart=/usr/bin/memcached -u $USER -p $PORT -m $CACHESIZE -c $MAXCONN $OPTIONS
+                    [root@proxy ~]# vim /etc/sysconfig/memcached
+                    PORT="11211"
+                    USER="memcached"
+                    MAXCONN="1024"
+                    CACHESIZE="64"
+                    OPTIONS=""
+                (3）启动服务并查看网络连接状态验证是否开启成功：
+                    netstat命令可以查看系统中启动的端口信息，该命令常用选项如下：
+                    -a显示所有端口的信息
+                    -n以数字格式显示端口号
+                    -t显示TCP连接的端口
+                    -u显示UDP连接的端口
+                    -l显示服务正在监听的端口信息，如httpd启动后，会一直监听80端口
+                    -p显示监听端口的服务名称是什么（也就是程序名称）
+                    注意：在RHEL7系统中，使用ss命令可以替代netstat，功能与选项一样。
+                    [root@proxy ~]# systemctl  start  memcached
+                    [root@proxy ~]# systemctl  status  memcached
+                    [root@proxy ~]# netstat  -anptu  |  grep memcached
+                    tcp    0    0 0.0.0.0:11211        0.0.0.0:*        LISTEN        2839/memcached
+                    tcp    0    0 :::11211            :::*                LISTEN        2839/memcached
+                    udp    0    0 0.0.0.0:11211        0.0.0.0:*                    2839/memcached
+                    udp    0    0 :::11211            :::*                            2839/memcached
+                    [root@proxy ~]# setenforce 0
+                    [root@proxy ~]# firewall-cmd --set-default-zone=trusted
+               使用telnet访问memcached服务器
+
+                (4）使用yum安装telnet
+                    [root@proxy ~]# yum -y install telnet
+                (5)使用telnet连接服务器测试memcached服务器功能，包括增、删、改、查等操作。
+                    [root@proxy ~]# telnet  192.168.4.5  11211
+                    Trying 192.168.4.5...
+                    ……
+                    ##提示：0表示不压缩，180为数据缓存时间，3为需要存储的数据字节数量。
+                    set name 0 180 3                //定义变量，变量名称为name
+                    plj                            //输入变量的值，值为plj
+                    STORED
+                    get name                        //获取变量的值
+                    VALUE name 0 3                 //输出结果
+                    plj
+                    END
+                    ##提示：0表示不压缩，180为数据缓存时间，3为需要存储的数据字节数量。
+                    add myname 0 180 10            //新建，myname不存在则添加，存在则报错
+                    set myname 0 180 10            //添加或替换变量
+                    replace myname 0 180 10        //替换，如果myname不存在则报错
+                    get myname                    //读取变量
+                    append myname 0 180 10        //向变量中追加数据
+                    delete myname                    //删除变量
+                    flush_all                        //清空所有
+                    quit                            //退出登录
+
+                                                             web1 + php-pecl-memcache  链接 memcache
+                client-------------proxy+memcached-----------
+                                                             wbe2 + php-pecl-memcache
+
+         LNMP(php动态网站)+memcached
+
+                沿用已经部署的 LNMP+memcached 网站平台,通过PHP页面实现对memcached服务器的数据操作，
+                实现以下目标：
+
+            为PHP安装memcache扩展
+                创建PHP页面，并编写PHP代码，实现对memcached的数据操作
+            1.方案
+
+                如果希望使用PHP来操作memcached，注意必须要为PHP安装memcache扩展（php-pecl-memcache），否则PHP无法解析连接memcached的指令。客户端测试时需要提前安装telnet远程工具。
+            2. 步骤
+
+                实现此案例需要按照如下步骤进行。
+                步骤一：创建PHP页面，使用PHP语言测试memcached服务
+
+               1）部署测试页面
+                    创建PHP首页文档/usr/local/nginx/html/index.php，测试页面可以参考lnmp_soft/php_scripts/mem.php。
+                    注意：192.168.2.5是memcached数据库。
+                     [root@web1 ~]# vim /usr/local/nginx/html/mem.php
+                    <?php
+                    $memcache=new Memcache;                //创建memcache对象
+                    $memcache->connect('192.168.2.5',11211) or die ('could not connect!!');
+                    $memcache->set('key','test');             //定义变量
+                    $get_values=$memcache->get('key');        //获取变量值
+                    echo $get_values;
+                    ?>
+               2）客户端测试（结果会失败）
+                    客户端使用浏览器访问服务器PHP首页文档，检验对memcached的操作是否成功：
+                    [root@web1 ~]# firefox http://192.168.2.100/mem.php
+                    注意：这里因为没有给PHP安装扩展包，默认PHP无法连接memcached数据库，需要给PHP安装扩展模块才可以连接memcached数据库。
+               3）为PHP添加memcache扩展
+                    [root@web1 ~]# yum -y install  php-pecl-memcache
+                    [root@web1 ~]# systemctl restart php-fpm
+               4）客户端再次测试（结果会成功显示数据结果）
+                    [root@web1 ~]# firefox http://192.168.2.100/mem.php
+                     显示test
+         PHP实现session共享
+            目标: 实现web1 和 web2 将session 写入 proxy  中  并 必要时在 proxy读取session
+                  Nginx服务器除了承担调度器外，还需要担任memcached数据库的角色，
+                  并在两台后端LNMP服务器上实现PHP的session会话共享。
+
+            1)为PHP添加memcache扩展
+                注意，因为后端两台web服务器(web1,web2)都需要连接memcached数据库，所以两台主机都需要安装PHP扩展模块(下面也web1为例)。
+                [root@web1 ~]# yum -y install  php-pecl-memcache
+                注意：这里因为没有给PHP安装扩展包，默认PHP无法连接memcached数据库，需要给PHP安装扩展模块才可以连接memcached数据库。
+            2）客户端测试（结果会失败）
+                客户端使用浏览器访问服务器PHP首页文档，检验对memcached的操作是否成功：
+                [root@web1 ~]# firefox http://192.168.2.100/test.php
+            3）为PHP添加memcache扩展
+                [root@web1 ~]# yum -y install  php-pecl-memcache
+                [root@web1 ~]# systemctl restart php-fpm
+            4）客户端再次测试（结果会成功显示数据结果）
+                [root@web1 ~]# firefox http://192.168.2.100/test.php
+
+
+         TOMCATE+JAVA
+            jdk(jre是jdk的阉割版)开放技术
+                安装部署JDK基础环境
+                安装部署Tomcat服务器
+                创建JSP测试页面，文件名为test.jsp，显示服务器当前时间
+                访问Tomcat服务器的8080端口，浏览默认首页
+            常见的servlet容器
+
+
+            1.安装部署Tomcat服务器
+                1)使用RPM安装JDK环境
+                    [root@web1 ~]# yum -y install  java-1.8.0-openjdk                //安装JDK
+                    [root@web1 ~]# yum -y install java-1.8.0-openjdk-headless        //安装JDK
+                    [root@web1 ~]# java -version                                    //查看JAVA版本
+                2）安装Tomcat（apache-tomcat-8.0.30.tar.gz软件包，在lnmp_soft中有提供）
+                    [root@web1 ~]# tar -xf  apache-tomcat-8.0.30.tar.gz
+                    [root@web1 ~]# mv apache-tomcat-8.0.30  /usr/local/tomcat
+                    [root@web1 ~]# ls /usr/local/tomcat
+                    bin/                                            //主程序目录
+                    lib/                                            //库文件目录
+                    logs/                                          //日志目录
+                    temp/                                         //临时目录
+                    work/                                        //自动编译目录jsp代码转换servlet
+                    conf/                                        //配置文件目录
+                    webapps/                                        //页面目录
+                3）启动服务
+                    [root@web1 ~]# /usr/local/tomcat/bin/startup.sh
+
+                4）服务器验证端口信息
+                    [root@web1 ~]# netstat -nutlp |grep java        //查看java监听的端口
+                    tcp        0      0 :::8080              :::*                LISTEN      2778/java
+                    tcp        0      0 ::ffff:127.0.0.1:8005     :::*         LISTEN       2778/java
+
+                    TOMCATE每次启动都需要读取足够多的随机数据 所以会造成8005 端口的服务起不来
+                    提示：如果检查端口时，8005端口启动非常慢，可用使用下面的命令用urandom替换random（非必须操作）。
+                    [root@web1 ~]# mv /dev/random  /dev/random.bak
+                    [root@web1 ~]# ln -s /dev/urandom  /dev/random
+                5）客户端浏览测试页面(proxy作为客户端)
+                    [root@proxy ~]# firefox http://192.168.2.100:8080
+
+
+            (2).修改Tomcat配置文件
+                1）创建测试JSP页面
+                    [root@web1 ~]# vim  /usr/local/tomcat/webapps/ROOT/test.jsp
+                    <html>
+                    <body>
+                    <center>
+                    Now time is: <%=new java.util.Date()%>            //显示服务器当前时间
+                    </center>
+                    </body>
+                    </html>
+                2）重启服务
+                    [root@web1 ~]# /usr/local/tomcat/bin/shutdown.sh
+                    [root@web1 ~]# /usr/local/tomcat/bin/startup.sh
+
+
+            (3)验证测试
+                1) 测试
+                    [root@proxy ~]# firefox http://192.168.2.100:8080
+                    [root@proxy ~]# firefox 使用Tomcat部署虚拟主机http://192.168.2.100:8080/test.jsp
+
+
+
+            2.使用Tomcat部署虚拟主机
+                目标:
+                    实现两个基于域名的虚拟主机，域名分别为：www.a.com和 www.b.com
+                    使用www.a.com域名访问的页面根路径为/usr/local/tomcat/a/ROOT
+                    使用www.b.com域名访问的页面根路径为/usr/local/tomcat/b/base
+                    访问www.a.com/test时，页面自动跳转到/var/www/html目录下的页面
+                    访问页面时支持SSL加密通讯
+                    私钥、证书存储路径为/usr/local/tomcat/conf/cert
+                    每个虚拟主机都拥有独立的访问日志文件
+                    配置tomcat集群环境
+                TOMCATE 修改 conf的 server.conf
+                    中参数
+
+                        <Host name="www.a.com"  appBase="a"
+                        unpackWARs="true" autoDeploy="true">
+                        </Host>
+
+                        # cat /usr/local/tomcat/conf/server.xml
+                        <Server>
+                           <Service>
+                             <Connector port=8080 />
+                             <Connector port=8009 />
+                             <Engine name="Catalina" defaultHost="localhost">
+                        <Host name="www.a.com" appBase="a" unpackWARS="true" autoDeploy="true">
+                        </Host>
+                        <Host name="www.b.com" appBase="b" unpackWARS="true" autoDeploy="true">
+                        </Host>
+
+                (1)配置服务器虚拟主机
+                    1）修改server.xml配置文件，创建虚拟主机
+                        [root@web1 ~]# vim /usr/local/tomcat/conf/server.xml
+                        … …
+                        <Host name="www.a.com" appBase="a" unpackWARS="true" autoDeploy="true">
+                        </Host>
+                        <Host name="www.b.com" appBase="b" unpackWARS="true" autoDeploy="true">
+                        </Host>
+                    2）创建虚拟主机对应的页面根路径
+                        [root@web1 ~]# mkdir -p  /usr/local/tomcat/{a,b}/ROOT
+                        [root@web1 ~]# echo "AAA"   > /usr/local/tomcat/a/ROOT/index.html
+                        [root@web1 ~]# echo "BBB" > /usr/local/tomcat/b/ROOT/index.html
+
+                    3）重启Tomcat服务器
+                        [root@web1 ~]# /usr/local/tomcat/bin/shutdown.sh
+                        [root@web1 ~]# /usr/local/tomcat/bin/startup.sh
+                    4)客户端设置host文件，并浏览测试页面进行测试(proxy充当客户端角色)
+                        [root@proxy ~]# vim /etc/hosts
+                        … …
+                        192.168.2.100      www.a.com  www.b.com
+                        [root@proxy ~]# firefox http://www.a.com:8080/        //注意访问的端口为8080
+                        [root@proxy ~]# firefox http://www.b.com:8080/
+
+                    访问测试
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
