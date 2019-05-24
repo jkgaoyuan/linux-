@@ -1327,22 +1327,298 @@
                         [root@proxy ~]# varnishadm
                         varnish> ban req.url ~ .*
                         //清空缓存数据，支持正则表达式
+    Git
+
+         Git基本操作
+            1.配置git服务器
+                目标
+                安装Git软件
+                创建版本库
+                客户端克隆版本仓库到本地
+                本地工作目录修改数据
+                提交本地修改到服务器
+
+                方案
+                1）YUM安装Git软件。
+                    [root@web1 ~]# yum -y install git
+                    [root@web1 ~]# git --version
+                2) 初始化一个空仓库。
+                    [root@web1 ~]# mkdir /var/git
+                    [root@web1 ~]# git init /var/git/project --bare
+                    [root@web1 ~]# ls /var/git/
+                    config  description  HEAD  hooks  info  objects  refs
+
+            2. 客户端测试 192.168.2.200
+                 常用指令
+                    clone  将远程服务器的仓库克隆到本地
+                    config 修改git配置
+                    add    添加修改到暂存区
+                    commit 提交修改到本地仓库
+                    push   提交的远程服务器
+                1) clone克隆服务器仓库到本地。
+                    [root@web2 ~]# yum -y install git
+                    [root@web2 ~]# git clone root@192.168.2.100:/var/git/project
+                    [root@web2 ~]# cd project
+                    [root@web2 ~]# ls
+                2) 修改git配置。
+                    [root@web2 project]# git config --global user.email "you@example.com"
+                    [root@web2 project]# git config --global user.name "Your Name"
+                    [root@web2 project]# cat ~/.gitconfig
+                    [user]
+                        email = you@example.com
+                        name = Your Name
+                3） 本地工作区对数据进行增删改查(必须要先进入仓库再操作数据)。
+                    [root@web2 project]# echo "init date" > init.txt
+                    [root@web2 project]# mkdir demo
+                    [root@web2 project]# cp /etc/hosts demo
+                4） 查看仓库中数据的状态。
+                    [root@web2 project]# git status
+                5） 将工作区的修改提交到暂存区。
+                    [root@web2 project]# git add .
+                6) 将暂存区修改提交到本地仓库。
+                    [root@web2 project]# git commit  -m  "注释，可以为任意字符"
+                    [root@web2 project]# git status
+                7） 将本地仓库中的数据推送到远程服务器(web2将数据推送到web1)。
+                    [root@web2 project]# git config --global push.default simple
+                    [root@web2 project]# git push
+                    root@192.168.2.100's password:  输入服务器root密码
+                    [root@web2 project]# git status
+                8) 将服务器上的数据更新到本地（web1的数据更新到web2）。
+                    备注：可能其他人也在修改数据并提交服务器，就会导致自己的本地数据为旧数据，使用pull就可以将服务器上新的数据更新到本地。
+                    [root@web2 project]# git pull
+                9) 查看版本日志。
+                    [root@web2 project]# git log
+                    [root@web2 project]# git log --pretty=oneline
+                    [root@web2 project]# git log --oneline
+                    [root@web2 project]# git reflog
+                    备注：客户端也可以使用图形程序访问服务器。
+            3.HEAD指针操作
+                目标
+                    查看Git版本信息
+                    移动指针
+                    通过移动HEAD指针恢复数据
+                    合并版本
+                方案
+                    HEAD指针是一个可以在任何分支和版本移动的指针，
+                    通过移动指针我们可以将数据还原至任何版本。
+                    没做一次提交操作都会导致git更新一个版本，
+                    HEAD指针也跟着自动移动
+                HEAD指针基本操作
+
+                1）准备工作（多对数据仓库进行修改、提交操作，以产生多个版本）。
+                    [root@web2 project]# echo "new file" > new.txt
+                    [root@web2 project]# git add .
+                    [root@web2 project]# git commit -m "add new.txt"
+                    [root@web2 project]# echo "first" >> new.txt
+                    [root@web2 project]# git add .
+                    [root@web2 project]# git commit -m "new.txt:first line"
+                    [root@web2 project]# echo "second" >> new.txt
+                    [root@web2 project]# git add .
+                    [root@web2 project]# git commit -m "new.txt:second"
+                    [root@web2 project]# echo "third" >> new.txt
+                    [root@web2 project]# git add .
+                    [root@web2 project]# git commit -m "new.txt:third"
+                    [root@web2 project]# git push
+                    [root@web2 project]# echo "123" > num.txt
+                    [root@web2 project]# git add .
+                    [root@web2 project]# git commit -m "num.txt:123"
+                    [root@web2 project]# echo "456" > num.txt
+                    [root@web2 project]# git add .
+                    [root@web2 project]# git commit -m "num.txt:456"
+                    [root@web2 project]# echo "789" > num.txt
+                    [root@web2 project]# git add .
+                    [root@web2 project]# git commit -m "num.txt:789"
+                    [root@web2 project]# git push
+                2) 查看Git版本信息。
+                    [root@web2 project]# git reflog
+                    [root@web2 project]# git log --oneline
+                    04ddc0f num.txt:789
+                    7bba57b num.txt:456
+                    301c090 num.txt:123
+                    b427164 new.txt:third
+                    0584949 new.txt:second
+                    ece2dfd new.txt:first line
+                    e1112ac add new.txt
+                    1a0d908 初始化
+                3）移动HEAD指针，将数据还原到任意版本。
+                    提示：当前HEAD指针为HEAD@{0}。
+                    [root@web2 project]# git reset --hard 301c0
+                    [root@web2 project]# git reflog
+                    301c090 HEAD@{0}: reset: moving to 301c0
+                    04ddc0f HEAD@{1}: commit: num.txt:789
+                    7bba57b HEAD@{2}: commit: num.txt:456
+                    301c090 HEAD@{3}: commit: num.txt:123
+                    b427164 HEAD@{5}: commit: new.txt:third
+                    0584949 HEAD@{6}: commit: new.txt:second
+                    ece2dfd HEAD@{7}: commit: new.txt:first line
+                    e1112ac HEAD@{8}: commit: add new.txt
+                    1a0d908 HEAD@{9}: commit (initial): 初始化
+                    [root@web2 project]# cat num.txt                #查看文件是否为123
+                    123
+                    [root@web2 project]# git reset --hard 7bba57b
+                    [root@web2 project]# cat num.txt                #查看文件是否为123，456
+                    123
+                    456
+                    [root@web2 project]# git reflog                #查看指针移动历史
+                    7bba57b HEAD@{0}: reset: moving to 7bba57b
+                    301c090 HEAD@{1}: reset: moving to 301c0
+                    … …
+                    [root@web2 project]# git reset --hard 04ddc0f    #恢复num.txt的所有数据
+                4)模拟误删后的数据还原操作。
+                    [root@web2 project]# git rm init.txt                    #删除文件
+                    rm 'init.txt'
+                    [root@web2 project]# git commit -m "delete init.txt"    #提交本地仓库
+                    [root@web2 project]# git reflog                        #查看版本历史
+                    0dc2b76 HEAD@{0}: commit: delete init.txt
+                    7bba57b HEAD@{0}: reset: moving to 7bba57b
+                    301c090 HEAD@{1}: reset: moving to 301c0
+                    … …
+                    [root@web2 project]# git reset --hard 04ddc0f            #恢复数据
+                    [root@web2 project]# ls
+                    demo  init.txt  new.txt  num.txt
+
+            4.Git分支操作
+                沿用上个练习，学习操作Git分支，具体要求如下：
+                    查看分支
+                    创建分支
+                    切换分支
+                    合并分支
+                    解决分支的冲突
+                Git支持按功能模块、时间、版本等标准创建分支，分支可以让开发分多条主线同时进行，每条主线互不影响
+
+                常见的分支规范如下：
+                    MASTER分支（MASTER是主分支，是代码的核心）。
+                    DEVELOP分支（DEVELOP最新开发成果的分支）。
+                    RELEASE分支（为发布新产品设置的分支）。
+                    HOTFIX分支（为了修复软件BUG缺陷的分支）。
+                    FEATURE分支（为开发新功能设置的分支）。
+
+                (1)查看并创建分支
+
+                1）查看当前分支。
+                    [root@web2 project]# git status
+                    # On branch master
+                    nothing to commit, working directory clean
+                    [root@web2 project]# git branch -v
+                    * master 0dc2b76 delete init.txt
+                2）创建分支。
+                    [root@web2 project]# git branch hotfix
+                    [root@web2 project]# git branch feature
+                    [root@web2 project]# git branch -v
+                      feature 0dc2b76 delete init.txt
+                      hotfix  0dc2b76 delete init.txt
+                    * master  0dc2b76 delete init.txt
+                (2)切换与合并分支
+
+                1）切换分支。
+                    [root@web2 project]# git checkout hotfix
+                    [root@web2 project]# git branch -v
+                      feature 0dc2b76 delete init.txt
+                    * hotfix  0dc2b76 delete init.txt
+                    master  0dc2b76 delete init.txt
+                2）在新的分支上可以继续进行数据操作（增、删、改、查）。
+                    [root@web2 project]# echo "fix a bug" >> new.txt
+                    [root@web2 project]# git add .
+                    [root@web2 project]# git commit -m "fix a bug"
+                3）将hotfix修改的数据合并到master分支。
+                    注意，合并前必须要先切换到master分支，然后再执行merge命令。
+                    [root@web2 project]# git checkout master
+                    [root@web2 project]# cat new.txt        #默认master分支中没有hotfix分支中的数据
+                    [root@web2 project]# git merge hotfix
+                    Updating 0dc2b76..5b4a755
+                    Fast-forward
+                     new.txt | 1 ++
+                     1 file changed, 1 insertions(+)
+                4）将所有本地修改提交远程服务器。
+                    [root@web2 project]# git push
+
+                (3)解决版本分支的冲突问题
+
+                1）在不同分支中修改相同文件的相同行数据，模拟数据冲突。
+                    [root@web2 project]# git checkout hotfix
+                    [root@web2 project]# echo "AAA" > a.txt
+                    [root@web2 project]# git add .
+                    [root@web2 project]# git commit -m "add a.txt by hotfix"
+                    [root@web2 project]# echo "BBB" > a.txt
+                    [root@web2 project]# git add .
+                    [root@web2 project]# git commit -m "add a.txt by master"
+                    自动合并 a.txt
+                    冲突（添加/添加）：合并冲突于 a.txt
+                    自动合并失败，修正冲突然后提交修正的结果。
+                2）查看有冲突的文件内容，修改文件为最终版本的数据，解决冲突。
+                    [root@web2 project]# cat a.txt                #该文件中包含有冲突的内容
+                    <<<<<<< HEAD
+                    BBB
+                    =======
+                    AAA
+                    >>>>>>> hotfix
+                    [root@web2 project]# vim a.txt              #修改该文件，为最终需要的数据，解决冲突
+                    BBB
+                    [root@web2 project]# git add .
+                    [root@web2 project]# git commit -m "resolved"
+                    总结：分支指针与HEAD指针的关系。
+                    创建分支的本质是在当前提交上创建一个可以移动的指针
+                    如何判断当前分支呢？答案是根据HEAD这个特殊指针
 
 
 
+            Git服务器
+                问题
 
+                沿用练习三，学习Git不同的服务器形式，具体要求如下：
+                创建SSH协议服务器
+                创建Git协议服务器
+                创建HTTP协议服务器
+                方案
 
+                Git支持很多服务器协议形式，不同协议的Git服务器，客户端就可以使用不同的形式访问服务器。
+                创建的服务器协议有SSH协议、Git协议、HTTP协议。
 
+            (1)：SSH协议服务器（支持读写操作）
 
+                1）创建基于密码验证的SSH协议服务器（web1主机操作）。
+                    [root@web1 ~]# git init --bare /var/git/base_ssh
+                    Initialized empty Git repository in /var/git/base_ssh/
+                2)客户端访问的方式（web2主机操作）。
+                    [root@web2 ~]# git clone root@192.168.2.100:/var/git/base_ssh
+                    [root@web2 ~]# rm -rf base_ssh
+                3）客户端生成SSH密钥，实现免密码登陆git服务器（web2主机操作）。
+                    [root@web2 ~]# ssh-keygen -f /root/.ssh/id_rsa -N ''
+                    [root@web2 ~]# ssh-copy-id  192.168.2.100
+                    [root@web2 ~]# git clone root@192.168.2.100:/var/git
+                    [root@web2 ~]# git push
+                (2)Git协议服务器（只读操作的服务器）
 
+                1）安装git-daemon软件包（web1主机操作）。
+                    [root@web1 ~]# yum -y install git-daemon
+                2）创建版本库（web1主机操作）。
+                    [root@web1 ~]# git init --bare /var/git/base_git
+                    Initialized empty Git repository in /var/git/base_git/
+                3）修改配置文件，启动git服务（web1主机操作）。
+                    [root@web1 ~]# vim /usr/lib/systemd/system/git@.service
+                    修改前内容如下：
+                    ExecStart=-/usr/libexec/git-core/git-daemon --base-path=/var/lib/git
+                    --export-all --user-path=public_git --syslog --inetd –verbose
+                    修改后内容如下：
+                    ExecStart=-/usr/libexec/git-core/git-daemon --base-path=/var/git
+                    --export-all --user-path=public_git --syslog --inetd –verbose
+                    [root@web1 ~]# systemctl  start  git.socket
+                4）客户端访问方式（web2主机操作）
+                    [root@web2 ~]# git clone git://192.168.2.100/base_git
+                (3)HTTP协议服务器（只读操作的服务器）
 
-
-
-
-
-
-
-
+                    1）安装gitweb、httpd软件包（web1主机操作）。
+                        [root@web1 ~]# yum -y install httpd gitweb
+                    2）修改配置文件，设置仓库根目录（web1主机操作）。
+                        [root@web1 ~]# vim +11 /etc/gitweb.conf  ###打开文件 后进入第 11 行
+                        $projectroot = "/var/git";                        #添加一行
+                    3) 创建版本仓库（web1主机操作）
+                        [root@web1 ~]# git init --bare /var/git/base_http
+                    4）启动httpd服务器
+                        [root@web1 ~]# systemctl start httpd
+                    5）客户端访问方式（web2主机操作）
+                        注意：调用虚拟机中的firefox浏览器，需要在远程时使用ssh -X 服务器IP，并且确保真实主机的firefox已经关闭。
+                        [root@web2 ~]# firefox http://192.168.2.100/git/
 
 
 
