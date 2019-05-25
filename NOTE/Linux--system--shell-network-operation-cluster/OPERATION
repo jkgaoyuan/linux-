@@ -1878,6 +1878,20 @@
                 5）翻墙设置（非必需操作）
                     [root@client ~]# iptables -t nat -A POSTROUTING -s 192.168.3.0/24 \
                     >  -j SNAT --to-source 201.1.2.10
+            3.客户端设置
+
+                启动一台Windows虚拟机，将虚拟机网卡桥接到public2，配置IP地址为201.1.2.20。
+                1) 新建网络连接（参考案例2），输入VPN服务器账户与密码（参考案例2）。
+                    属性 选择 安全  xl2   randpass
+                    若是 win7 以上则不需要修改注册表
+                2)设置Windows注册表（不修改注册表，连接VPN默认会报789错误），具体操作如下：
+                    单击"开始"，单击"运行"，键入"regedit"，然后单击"确定"
+                    找到下面的注册表子项，然后单击它：
+                    HKEY_LOCAL_MACHINE\ System\CurrentControlSet\Services\Rasman\Parameters
+                    在"编辑"菜单上，单击"新建"->"DWORD值"
+                    在"名称"框中，键入"ProhibitIpSec"
+                    在"数值数据"框中，键入"1"，然后单击"确定"
+                    退出注册表编辑器，然后重新启动计算机
 
 
 
