@@ -1,5 +1,10 @@
 还原命令： rht-vmctl reset  电脑名
 虚拟机： classroom  server  desktop  win
+GPL 协议 (开源协议)
+    1.随便复制
+    2.随便修改
+    3.随便发布
+    4.具有继承性
 
 程序 硬盘
 进程 内存 在进程中可以启动多个线程
@@ -1353,7 +1358,7 @@ date  #查看当前系统时间
 date -s 'year-month-day h:m:s' #注意格式 
 自动时间同步
 NTP时间服务器
- -ntp服务器为客户机提供标准时间
+ -ntp服务器为客户机提供标准时间  端口123
   -客户机与ntp服务器保持通讯
 ntp服务器 classroom
 ntp客户机 server
