@@ -465,7 +465,7 @@ shell
                 echo ${p:-132} | passwd --stdin $u
                 #[ $p$# -eq 0 ] && echo 'passwd def'
                 #[ $p -z  ] && echo 'passwd def'
-                [ -z $p  ] && echo 'passwd def'
+                [ -z $p  ] && echo 'passwd def' #### -z 检测参数是否为空
 
 
 
