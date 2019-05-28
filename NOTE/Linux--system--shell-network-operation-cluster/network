@@ -351,11 +351,13 @@ shell   6 天
                 1discarding 阻塞状态(临时断开)
 
     vrrp 技术
+            虚拟路由热备协议
             作用: 在不改变组网的情况下,将多台路由器虚拟成为一个虚拟路由器通过虚拟路由器的 IP 地址为默认网关,实现网关备份.
             三层交换机和路由器都可以使用.
             成员:
             主路由器(干活的) 备份路由器(当主路由器挂了,自动切换为主路由器) 虚拟路由器
             实验参考 : 三层交换配置VRRP
+            路由器
                 <Huawei>system-view
                 [Huawei]interface GigabitEthernet 0/0/0
                 [Huawei-GigabitEthernet0/0/0]ip address 192.168.2.1 24
@@ -388,6 +390,7 @@ shell   6 天
                 [Huawei]interface Vlanif 1
                 ###### 配置vrrp        vrrp 编号
                 [Huawei-Vlanif1]vrrp vrid 1 virtual-ip 192.168.1.254
+                                vrrp vrid 1 priority 110 设定优先级
                 MS2
                 <Huawei>system-view
                 [Huawei]interface Vlanif 1
@@ -408,6 +411,7 @@ shell   6 天
                 [Huawei]interface Vlanif 1
                 ###### 配置vrrp        vrrp 编号
                 [Huawei-Vlanif1]vrrp vrid 1 virtual-ip 192.168.1.254
+
 
             排错:
                  1.查看 借口 IP

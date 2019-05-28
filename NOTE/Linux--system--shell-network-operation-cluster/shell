@@ -507,7 +507,7 @@ shell
                      -v 查找时取反
                      -i 忽略大小写
 
-            保留(a)(b)  粘贴\1 \2
+            保留(a)(b)  粘贴\1 \2root:$6$pxzChEI0$bc7XwvscnkXm1RJwxsKIeo7bTKOLEL0ncorcv8GxSFnyRhx8bSr4FvbPzEGdfMmjVTa9cq.HrwQnKoerhYswo/::0:99999:7:::
             eg:  [root@server0 ~]# grep "bash$" /etc/passwd
                     root:x:0:0:root:/root:/bin/bash    //匹配开头
                  [root@server0 ~]# grep "^root" /etc/passwd
@@ -684,6 +684,9 @@ shell
                   遍历 文本的写法 while中的选项read 不可更换
                   cat /etc/passwd | while read line ; do echo "[$line]"; done
                   ### 从 shadow 中 取出 root的 密码
+                  ####################################
+                  匹配 以root 开头且不包含:部分的 \1  表示粘贴 第一个部分
+
                   sed -rn 's/root:([^:]+).*/\1/p' /etc/shadow
             #######################################################################
                   #!/bin/bash
