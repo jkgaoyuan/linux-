@@ -693,6 +693,7 @@ shell
                   sed -n '/bash$/s/:.*//p' /etc/passwd | while read var ;
                   do
                   echo -n "$var -->"
+                  #####################?????#############
                   sed  -rn "s/$var:([^:]+1).*/\1/p" /etc/shadow
                   done
         awk基本用法(非常重要;;;字符串的处理)

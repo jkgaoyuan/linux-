@@ -1620,7 +1620,7 @@
                     5）客户端访问方式（web2主机操作）
                         注意：调用虚拟机中的firefox浏览器，需要在远程时使用ssh -X 服务器IP，并且确保真实主机的firefox已经关闭。
                         [root@web2 ~]# firefox http://192.168.2.100/git/
-         制作nginx的RPM包
+         制作nginx源码的RPM包(将源码包制作成rpm包)
             rpm就是一个压缩包
             方法
                 安装 rpm-build
@@ -2144,7 +2144,7 @@
                             接下来给web1配置VIP地址。
                             注意：这里的子网掩码必须是32（也就是全255），网络地址与IP地址一样，广播地址与IP地址也一样。
                             [root@web1 ~]# cd /etc/sysconfig/network-scripts/
-                            [root@web1 ~]# cp ifcfg-lo{,:0}
+                            [root@web1 ~]# cp ifcfg-lo{,:0}    ####将 ifcfg-lo 复制并重命名为 ifcfg-lo:0
                             [root@web1 ~]# vim ifcfg-lo:0
                             DEVICE=lo:0
                             IPADDR=192.168.4.15
@@ -2640,6 +2640,14 @@
                     3）启动服务器并设置开机启动
                         [root@haproxy ~]# systemctl start haproxy
                         [root@haproxy ~]# systemctl enable haproxy
+
+
+
+
+             keeplive (vrrp)
+                    浮动vip (高可用)
+                    自动配置lvs规则 ,健康检查(tcp_check , http_get  , ssl_get)
+
 
 
 
