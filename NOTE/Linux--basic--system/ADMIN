@@ -900,7 +900,7 @@ root 不受权限管理
 		-R 递归修改 属主 属组 
 		chown [-R] 属主 位置
 		chown [-R] 属主:属组 位置
-			
+		chown ceph.ceph /dev/vdb1 (用这个修改磁盘 是零时的  重启后失效)　永久修改需要修改配置文件 vim /etc/udev/rules.d/70-vdb.rules 该文件需要创建
 		归属选项修改 需要注销后生效
 	
 	2.附加权限(特殊权限)
