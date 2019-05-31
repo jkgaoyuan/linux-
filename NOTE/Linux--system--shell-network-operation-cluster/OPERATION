@@ -2872,7 +2872,7 @@
 
                 3）初始化清空磁盘数据（仅node1操作即可）。 ceph 会远程链接node2 3 进行处理
                     [root@node1 ceph-cluster]# ceph-deploy disk  zap  node1:vdc   node1:vdd
-                    [root@node1 ceph-cluster]# ceph-deploy disk  zap  node2:vdc   node2:vdd
+                    [root@node1 ceph-cluster]# ceph-deploy disk  zap  node2:vd
                     [root@node1 ceph-cluster]# ceph-deploy disk  zap  node3:vdc   node3:vdd
 
 
@@ -2989,7 +2989,7 @@
                     SNAPID NAME            SIZE
                          4 image-snap1 15360 MB
                 3) 删除客户端写入的测试文件
-                    [root@client ~]# rm  -rf   /mnt/test.txt
+                l    [root@client ~]# rm  -rf   /mnt/test.txt
                     不允许在线还原下线后还原
                     [root@client ~]# umount  /mnt
                 4) 还原快照
@@ -2997,7 +2997,289 @@
                     #客户端重新挂载分区
                     [root@client ~]# mount /dev/rbd0 /mnt/
                     [root@client ~]# ls  /mnt
+            9.创建快照克隆
+                1)快照克隆
+                     rbd snap protect image --snap image-snap1
+                     rbd snap rm image --snap image-snap1 //会失败 ,已经保护了
+                     rbd clone \
+                     image --snap image-snap1 image-clone --image-feature layering
+                    //使用image的快照image-snap1克隆一个新的名称为image-clone镜像
+
+                2)查看克隆镜像与父镜像快照的关系
+                    [root@node1 ~]#  rbd info image-clone
+                    rbd image 'image-clone':
+                        size 15360 MB in 3840 objects
+                        order 22 (4096 kB objects)
+                        block_name_prefix: rbd_data.d3f53d1b58ba
+                        format: 2
+                        features: layering
+                        flags:
+                        parent: rbd/image@image-snap1
+                    #克隆镜像很多数据都来自于快照链
+                    #如果希望克隆镜像可以独立工作，就需要将父快照中的数据，全部拷贝一份，但比较耗时！！！
+                    [root@node1 ~]#  rbd flatten image-clone
+                    [root@node1 ~]#  rbd info image-clone
+                    rbd image 'image-clone':
+                        size 15360 MB in 3840 objects
+                        order 22 (4096 kB objects)
+                        block_name_prefix: rbd_data.d3f53d1b58ba
+                        format: 2
+                        features: layering
+                        flags:
+                    #注意，父快照信息没了！
+                    [root@node1 ~]#  rbd snap unprotect image --snap image-snap1     #取消快照保护
+                    [root@node1 ~]#  rbd snap rm image --snap image-snap1            #可以删除快照
+
+                3） 客户端撤销磁盘映射
+                    [root@client ~]# umount /mnt
+                    [root@client ~]# rbd showmapped
+                    id pool image        snap device
+                    0  rbd  image        -    /dev/rbd0
+                    //语法格式:
+                    [root@client ~]# rbd unmap /dev/rbd0
 
 
+        块储存应用案例
+            要求:使用上次实验,演示块存储在KVM虚拟化中的应用案例，实现以下功能：
+                Ceph创建块存储镜像
+                客户端安装部署ceph软件
+                客户端部署虚拟机
+                客户端创建secret
+                设置虚拟机配置文件，调用ceph存储
 
+            方法:
+                使用Ceph存储创建镜像。
+                KVM虚拟机调用Ceph镜像作为虚拟机的磁盘。
+            1)创建磁盘镜像
+                [root@node1 ~]# rbd create vm1-image --image-feature  layering --size 10G
+                [root@node1 ~]# rbd  list
+                [root@node1 ~]# rbd  info  vm1-image
+                [root@node1 ~]# qemu-img  info  rbd:rbd/vm1-image
+                image: rbd:rbd/vm1-image
+                file format: raw
+                virtual size: 10G (10737418240 bytes)
+                disk size: unavailable
+            2）Ceph认证账户（仅查看即可）。
+                Ceph默认开启用户认证，客户端需要账户才可以访问，默认账户名称为client.admin，key是账户的密钥。
+                可以使用ceph auth添加新账户（案例我们使用默认账户）。
+                [root@node1 ~]# cat /etc/ceph/ceph.conf                    //配置文件
+                [global]
+                mon_initial_members = node1, node2, node3
+                mon_host = 192.168.2.10,192.168.2.20,192.168.2.30
+                auth_cluster_required = cephx                                //开启认证
+                auth_service_required = cephx                                //开启认证
+                auth_client_required = cephx                                //开启认证
+                [root@node1 ~]# cat /etc/ceph/ceph.client.admin.keyring        //账户文件
+                [client.admin]
+                    key = AQBTsdRapUxBKRAANXtteNUyoEmQHveb75bISg==
+            3）创建KVM虚拟机（注意：这里使用真实机当客户端！！！）。
+                 使用virt-manager创建2台普通的KVM虚拟机。
+            4）配置libvirt secret（注意：这里使用真实机当客户端！！！）。
+                编写账户信息文件，让KVM知道ceph的账户名称。
+                [root@room9pc01 ~]# vim secret.xml            //新建临时文件，内容如下
+                <secret ephemeral='no' private='no'>
+                        <usage type='ceph'>
+                                <name>client.admin secret</name>
+                        </usage>
+                </secret>
+                #使用XML配置文件创建secret
+                [root@room9pc01 ~]# virsh secret-define secret.xml
+                733f0fd1-e3d6-4c25-a69f-6681fc19802b
+                //随机的UUID，这个UUID对应的有账户信息
+            5)给secret绑定admin账户的密码，密码参考 node1 /etc/ceph/ceph.client.admin.keyring文件
+
+                [root@room9pc01] virsh secret-set-value \
+                --secret 733f0fd1-e3d6-4c25-a69f-6681fc19802b \
+                --base64 AQBTsdRapUxBKRAANXtteNUyoEmQHveb75bISg
+                //这里secret后面是之前创建的secret的UUID
+                //base64后面是client.admin账户的密码
+                //现在secret中既有账户信息又有密钥信息
+            6）虚拟机的XML配置文件。
+                每个虚拟机都会有一个XML配置文件，包括：
+                虚拟机的名称、内存、CPU、磁盘、网卡等信息。
+                [root@room9pc01 ~]# vim /etc/libvirt/qemu/vm1.xml
+                //修改前内容如下
+                <disk type='file' device='disk'>
+                      <driver name='qemu' type='qcow2'/>
+                      <source file='/var/lib/libvirt/images/vm1.qcow2'/>
+                      <target dev='vda' bus='virtio'/>
+                      <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
+                    </disk>
+                不推荐直接使用vim修改配置文件，推荐使用virsh edit修改配置文件，效果如下：
+                [root@room9pc01] virsh edit vm1                //vm1为虚拟机名称
+                <disk type='network' device='disk'>
+                      <driver name='qemu' type='raw'/>
+                      <auth username='admin'>
+                      <secret type='ceph' uuid='733f0fd1-e3d6-4c25-a69f-6681fc19802b'/>
+                      </auth>
+                      <source protocol='rbd' name='rbd/vm1-image'>          <host name='192.168.4.11' port='6789'/>     </source>
+                    <target dev='vda' bus='virtio'/>
+                      <address type='pci' domain='0x0000' bus='0x09' slot='0x08' function='0x0'/>
+                 </disk>
+                注意：如果有设备编号冲突的情况下，需要修改设备编号，任意修改一个数字即可。
+
+
+                磁盘格式化前 叫块设备 完成后叫 文件系统
+                fat32 ntfs ext4 xfs
+                格式化后文件系统:
+                iNode 默认254字节/每块 : 存放在block中存放的文件(数据,也叫元数据,数据的数据)的详细信息(在哪里存放了什么 权限 属主 大小 创建时间)  : 占磁盘的 少部分
+                block 默认4k/每块     : 存放文件 数据 : 占磁盘的大部分
+
+                ######这两部分默认的 大小可以调整####
+                当磁盘存小文件的时候就不要用 大的block
+                当磁盘存大文件的时候就不要用 小的block
+                当block的数量 太大的时候寻址就会太慢
+                删 压根就没删除
+                写 真的写上去了
+                mkfs.ext4 -i -b  /dev/vdbc
+
+
+        Ceph文件系统
+
+            问题:延续前面的实验，实现Ceph文件系统的功能。具体实现有以下功能：
+                部署MDSs节点
+                创建Ceph文件系统
+                客户端挂载文件系统
+            思路:
+                创建两个rbd 共享池
+                合并两个池子 a b(假装是一块硬盘)
+                安装ceph-mds //支持文件系统
+
+            注意 : 一下 方法和 案例中不同
+                选取 node3
+            1) 拷贝配置文件启动服务
+                由于ceph-mds 已经安装到 node1-3 中 所以在 只需要在node1中
+                node1 中操作
+                先进入目录  才能 使用 ceph-deploy
+                cd ceph-cluster/
+                ceph-deploy mds create node3
+                来启动服务
+            2)制作共享池
+                ceph中只能创建一个文件系统
+                不同于 nfs samba
+                node3中操作
+                创建共享池
+                #######################################################
+                [root@node3 ~]# ceph osd pool create cephfs_data 128
+                //创建存储池，对应128个PG
+                [root@node3 ~]# ceph osd pool create cephfs_metadata 128
+                //创建存储池，对应128个PG
+                    PG  是个逻辑上的概念 ,  1 osd 对应 若干个  PG ,这里PG 相当于文件夹个数  且数量需为 2^n 个
+
+                metadata 元数据
+                创建文件系统
+                #######################################################################
+
+                创建Ceph文件系统
+                [root@node3 ~]# ceph mds stat                     //查看mds状态
+                e2:, 1 up:standby
+                [root@node3 ~]# ceph fs new myfs1 cephfs_metadata cephfs_data
+                new fs with metadata pool 2 and data pool 1
+                //注意，先写medadata池，再写data池
+                //默认，只能创建1个文件系统，多余的会报错
+                检查
+                [root@node3 ~]# ceph fs ls
+                name: myfs1, metadata pool: cephfs_metadata, data pools: [cephfs_data ]
+                [root@node4 ~]# ceph mds stat
+                e4: 1/1/1 up {0=node3=up:creating}
+            6）客户端挂载
+                [root@client ~]# mount -t ceph 192.168.4.13:/  /mnt/cephfs/ \
+                -o name=admin,secret=AQBTsdRapUxBKRAANXtteNUyoEmQHveb75bISg==
+                //注意:文件系统类型为ceph
+                //192.168.4.13为MON节点的IP（不是MDS节点）
+                //admin是用户名,secret是密钥
+                //密钥可以在/etc/ceph/ceph.client.admin.keyring中找到
+
+        ceph 对象存储
+            软件 : ceph-rad
+
+
+            创建对象存储服务器
+                要求:
+
+                延续前面的实验，实现Ceph对象存储的功能。具体实现有以下功能：
+                安装部署Rados Gateway
+                启动RGW服务
+                设置RGW的前端服务与端口
+                客户端测试
+
+
+            1.部署对象存储服务器
+
+                1）准备实验环境，要求如下：
+                    IP地址:192.168.4.15
+                    主机名:node5
+                    配置yum源（包括rhel、ceph的源）
+                    与Client主机同步时间
+                    node1允许无密码远程node5
+                    修改node1的/etc/hosts，并同步到所有node主机
+                2）部署RGW软件包
+                    [root@node1 ~]# ceph-deploy install --rgw node5
+                    同步配置文件与密钥到node5
+                    [root@node1 ~]# cd /root/ceph-cluster
+                    [root@node1 ~]# ceph-deploy admin node5
+                3）新建网关实例
+                    启动一个rgw服务
+                    [root@node1 ~]# ceph-deploy rgw create node5
+                    登陆node5验证服务是否启动
+                    [root@node5 ~]# ps aux |grep radosgw
+                    ceph      4109  0.2  1.4 2289196 14972 ?       Ssl  22:53   0:00 /usr/bin/radosgw -f --cluster ceph --name client.rgw.node4 --setuser ceph --setgroup ceph
+                    [root@node5 ~]# systemctl  status ceph-radosgw@\*
+                4）修改服务端口
+                    登陆node5，RGW默认服务端口为7480，修改为8000或80更方便客户端记忆和使用
+                    [root@node5 ~]#  vim  /etc/ceph/ceph.conf
+                    [client.rgw.node5]
+                    host = node5
+                    rgw_frontends = "civetweb port=8000"
+                    //node5为主机名
+                    //civetweb是RGW内置的一个web服务
+            2.客户端测试（扩展选做实验）
+
+                1）curl测试
+                    [root@client ~]# curl  192.168.4.15:8000
+                    <?xml version="1.0" encoding="UTF-8"?><ListAllMyBucketsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Owner><ID>anonymous</ID><DisplayName></DisplayName></Owner><Buckets></Buckets></ListAllMyBucketsResult>
+                2）使用第三方软件访问
+                                                登陆node5（RGW）创建账户
+                    [root@node5 ~]#  radosgw-admin user create \
+                    --uid="testuser" --display-name="First User"
+                    … …
+                    "keys": [
+                            {
+                                "user": "testuser",
+                                "access_key": "5E42OEGB1M95Y49IBG7B",
+                                "secret_key": "i8YtM8cs7QDCK3rTRopb0TTPBFJVXdEryRbeLGK6"
+                            }
+                        ],
+                    ... ...
+                    #
+                    [root@node5 ~]# radosgw-admin user info --uid=testuser
+                    //testuser为用户，key是账户访问密钥
+                3）客户端安装软件
+                    [root@client ~]#  yum install s3cmd-2.0.1-1.el7.noarch.rpm
+                    修改软件配置（注意，除了下面设置的内容，其他提示都默认回车）
+                    [root@client ~]#  s3cmd --configure
+                    Access Key: 5E42OEGB1M95Y49IBG7BSecret Key: i8YtM8cs7QDCK3rTRopb0TTPBFJVXdEryRbeLGK6
+                    S3 Endpoint [s3.amazonaws.com]: 192.168.4.15:8000
+                    [%(bucket)s.s3.amazonaws.com]: %(bucket)s.192.168.4.15:8000
+                    Use HTTPS protocol [Yes]: No
+                    Test access with supplied credentials? [Y/n] n
+                    Save settings? [y/N] y
+                    //注意，其他提示都默认回车
+                4）创建存储数据的bucket（类似于存储数据的目录）
+                    [root@client ~]# s3cmd ls
+                    [root@client ~]# s3cmd mb s3://my_bucket
+                    Bucket 's3://my_bucket/' created
+                    [root@client ~]# s3cmd ls
+                    2018-05-09 08:14 s3://my_bucket
+                    [root@client ~]# s3cmd put /var/log/messages s3://my_bucket/log/
+                    [root@client ~]# s3cmd ls
+                    2018-05-09 08:14 s3://my_bucket
+                    [root@client ~]# s3cmd ls s3://my_bucket
+                    DIR s3://my_bucket/log/
+                    [root@client ~]# s3cmd ls s3://my_bucket/log/
+                    2018-05-09 08:19 309034 s3://my_bucket/log/messages
+                    测试下载功能
+                    [root@client ~]# s3cmd get s3://my_bucket/log/messages /tmp/
+                    测试删除功能
+                    [root@client ~]# s3cmd del s3://my_bucket/log/message
 
