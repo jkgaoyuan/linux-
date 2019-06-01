@@ -1,0 +1,137 @@
+
+    以一个完整的项目来演示第二个阶段所学
+            1.服务器硬件
+                ECC内存 具有数据校验功能
+                服务器宽度
+                1U = 44.45mm =4.45cm
+                2U
+                4U
+                机柜也分 1u 2u 的
+                服务器用sas 接口 (硬盘) 也指出SATA 接口
+                远程控制卡
+                RAID : 服务器的RAID 支持类型需要有RAID卡 来提供支持
+                    write_back  回写 : 先写缓存,再写磁盘 写入速度块但是 突发断电会导致 数据丢失
+                    write_throuth  直写: 同时写入 缓存和磁盘 安全 写入速度慢
+
+                    若RADI中磁盘损坏,将坏掉的磁盘拿出来,换上新的磁盘 RAID会自动恢复
+                    但是当损毁的磁盘数量超过RAID的限制的时候,会导致数据恢复失败
+                    ,可以使用热备盘(hote spares 不推荐在RAID5 上做热备 最好用RAID6 )来减少,RAID数据丢失的可能性.
+
+                服务的远程管理:
+                    1)dell服务器 远程管理
+                    iDARAC 远程管理配置iDRAC需要授权使用，
+                    有授权的情况下可以直接通过浏览器访问：http://服务器IP，
+                    远程管理服务器，没有授权的情况下可以通过端口重定向将服务器上的显示内容重定向到远程管理端的电脑上
+                    （一般是用自己的笔记本远程服务器），这种方式不需要授权。
+                    进入BIOS Settings后，选择Serial Communication菜单
+                    将控制台重定向到com2，设置Serial Device=com1，Serial Device=com2
+                    2）初始化清空iDRAC设置
+                    进入iDRAC Setting界面选择Rest iDRAC configuration to defaults
+
+                    3）配置iDRAC网络
+                    进入iDRAC Setting界面选择network
+                    选择网卡并配置IP地址
+                    开启IPMI智能平台管理接口（配置后可以通过命令行管理服务器），客户端安装ipmitool软件包
+
+                    4）配置远程管理账户
+                    进入iDRAC Setting界面选择User Configuration
+
+                    配置账户名称root，并设置密码
+
+                    5）远程管理端主机配置，安装ipmitool软件包
+                    [root@centos7 ~]# yum -y install ipmitool
+                    常用命令操作列表如下。
+                    [root@centos7 ~]# ipmitool -I lanplus -U root -H 服务器IP  power status
+                    #查看服务器电源状态
+                    [root@centos7 ~]# ipmitool -I lanplus -U root -H 服务器IP  power on
+                    #开启服务器电源
+                    [root@centos7 ~]# ipmitool -I lanplus -U root -H 服务器IP  power off
+                    #关闭服务器电源
+                    [root@centos7 ~]# ipmitool -I lanplus -U root -H 服务器IP  power reset
+                    #重启服务器电源
+                    [root@centos7 ~]# ipmitool -I lanplus -U root -H 服务器IP  sol activate
+                    #远程管理
+
+            2.部署lnmp
+                要求:
+                    安装LNMP平台相关软件
+                    配置Nginx实现动静分离
+                    配置数据库，创建账户与密码
+                    上线Wordpress代码
+                    使用Wordpress后台管理界面，调整Wordpress版式
+
+
+                物理机作为clients 虚拟机作为 ser 2.11
+
+
+                1)安装部署LNMP软件
+                    mariadb（数据库客户端软件）、mariadb-server（数据库服务器软件）、
+                    mariadb-devel（其他客户端软件的依赖包）、php（解释器）
+                    、php-fpm（进程管理器服务）、php-mysql（PHP的数据库扩展包）
+
+
+                        [root@centos7 ~]# yum -y install gcc openssl-devel pcre-devel
+                        [root@centos7 ~]# useradd -s /sbin/nologin  nginx
+                        [root@centos7 ~]# tar -xvf nginx-1.12.2.tar.gz
+                        [root@centos7 ~]# cd nginx-1.12.2
+                        [root@centos7 nginx-1.12.2]# ./configure   \
+                        --user=nginx   --group=nginx \
+                        --with-http_ssl_module   \
+                        --with-http_stub_status_module
+                        [root@centos7 nginx-1.12.2]# make && make install
+                        [root@centos7 ~]# yum -y install   mariadb   mariadb-server   mariadb-devel
+                        [root@centos7 ~]# yum -y install   php        php-mysql        php-fpm
+                    2)启动服务(nginx、mariadb、php-fpm)
+                        [root@centos7 ~]# /usr/local/nginx/sbin/nginx                 #启动Nginx服务
+                        [root@centos7 ~]# echo "/usr/local/nginx/sbin/nginx" >> /etc/rc.local
+                        [root@centos7 ~]# chmod +x /etc/rc.local
+                        [root@centos7 ~]# ss -utnlp | grep :80                        #查看端口信息
+                        [root@centos7 ~]# systemctl start   mariadb                   #启动mariadb服务器
+                        [root@centos7 ~]# systemctl enable  mariadb
+
+                        [root@centos7 ~]# systemctl start  php-fpm                   #启动php-fpm服务
+                        [root@centos7 ~]# systemctl enable php-fpm
+                    3）修改Nginx配置文件，实现动静分离
+                        修改配置文件，通过两个location实现动静分离，一个location匹配动态页面，一个loation匹配其他所有页面。
+                        注意修改默认首页为index.php!
+                        [root@centos7 ~]# vim /usr/local/nginx/conf/nginx.conf
+                        ...省略部分配置文件内容...
+                        location / {
+                                    root   html;
+                                    index  index.php index.html index.htm;
+                                }
+                        ...省略部分配置文件内容...
+                        location ~ \.php$ {
+                                    root           html;
+                                    fastcgi_pass   127.0.0.1:9000;
+                                    fastcgi_index  index.php;
+                                    include        fastcgi.conf;
+                                }
+                        ...省略部分配置文件内容...
+                        [root@centos7 ~]# /usr/local/nginx/sbin/nginx -s reload            #重新加载配置
+                    3）配置数据库账户与权限
+                        为网站提前创建一个数据库、添加账户并设置该账户有数据库访问权限。
+                        [root@centos7 ~]# mysql
+                        MariaDB [(none)]> create database wordpress character set utf8mb4;
+                        MariaDB [(none)]> grant all on wordpress.* to wordpress@'%' identified by 'wordpress';
+                        MariaDB [(none)]> grant all on wordpress.* to wordpress@'localhost' identified by 'wordpress';
+                        MariaDB [(none)]> flush privileges;
+                        MariaDB [(none)]> exit
+                        提示：在mysql和mariadb中%代表匹配所有，这里是授权wordpress用户可以从任意主机连接数据库服务器，生产环境建议仅允许特定的若干主机访问数据库服务器。
+
+
+                (2)上线wordpress代码
+                    1）上线PHP动态网站代码
+                        [root@centos7 ~]# unzip wordpress.zip
+                        [root@centos7 ~]# cd wordpress
+                        [root@centos7 wordpress]# tar -xf wordpress-5.0.3-zh_CN.tar.gz
+                        [root@centos7 wordpress]# cp -r  wordpress/*  /usr/local/nginx/html/
+                        [root@centos7 wordpress]# chown -R apache.apache  /usr/local/nginx/html/
+                        提示：动态网站运行过程中，php脚本需要对网站目录有读写权限，而php-fpm默认启动用户为apache。
+                    2)初始化网站配置（使用客户端访问web服务器IP）
+                        [root@client ~]# firefox http://192.168.2.11/
+                        密码wordpress
+                        用户名wordpress
+                        数据库名wordpress
+                        数据库主机192.168.2.11
+                        之后按照 步骤来
