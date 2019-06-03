@@ -1096,6 +1096,12 @@ cobbler 装机平台 (pxe)  ( 新技术越来越多)
             cobbler import --path=/dvd --name=dc
             扩展虚拟机磁盘  309 查询行
 
+            LANG=en growpart /dev/vda 1  ##扩展/dev/vda 的第一个分区空间
+            lsblk
+            blkid /dev/vda1
+            xfs_growfs /dev/vda1###扩展/dev/vda1 文件系统
+            df -h
+
  ####################################################################
 rsync 同步操作
        同步与复制的差异:

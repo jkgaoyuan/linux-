@@ -2589,6 +2589,7 @@
                         maxconn 软件最大并发量
                     default
                         maxconn 每个集群最大并发量 , 每个集群 并发量 相加超过   全局的maxconn 是不可以的
+
                     写法1 :listen
                             集群
                            listen
@@ -2599,8 +2600,35 @@
                          backend static
                             balance     roundrobin
                             server      192.168.1.22
-                    这两个写法都可以正常启动服务 推荐写法1
+                    这两个写法都可以正常启动服务 推荐写法1,用的时候只保留一个 一下的全部删除
+                    ##############################
+                    # main frontend which proxys to the backends
+                    #---------------------------------------------------------------------
+                    frontend  main *:5000
+                        acl url_static       path_beg       -i /static /images /javascript /stylesheets
+                        acl url_static       path_end       -i .jpg .gif .png .css .js
 
+                        use_backend static          if url_static
+                        default_backend             app
+
+                    #---------------------------------------------------------------------
+                    # static backend for serving up images, stylesheets and such
+                    #---------------------------------------------------------------------
+                    backend static
+                        balance     roundrobin
+                        server      static 127.0.0.1:4331 check
+
+                    #---------------------------------------------------------------------
+                    # round robin balancing between the various backends
+                    #---------------------------------------------------------------------
+                    backend app
+                        balance     roundrobin
+                        server  app1 127.0.0.1:5001 check
+                        server  app2 127.0.0.1:5002 check
+                        server  app3 127.0.0.1:5003 check
+                        server  app4 127.0.0.1:5004 check
+
+                    ######################################################################
 
 
 

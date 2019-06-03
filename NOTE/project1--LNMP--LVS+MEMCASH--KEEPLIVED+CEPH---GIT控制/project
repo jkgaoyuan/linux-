@@ -1,137 +1,430 @@
+LNMP
 
     以一个完整的项目来演示第二个阶段所学
-            1.服务器硬件
-                ECC内存 具有数据校验功能
-                服务器宽度
-                1U = 44.45mm =4.45cm
-                2U
-                4U
-                机柜也分 1u 2u 的
-                服务器用sas 接口 (硬盘) 也指出SATA 接口
-                远程控制卡
-                RAID : 服务器的RAID 支持类型需要有RAID卡 来提供支持
-                    write_back  回写 : 先写缓存,再写磁盘 写入速度块但是 突发断电会导致 数据丢失
-                    write_throuth  直写: 同时写入 缓存和磁盘 安全 写入速度慢
 
-                    若RADI中磁盘损坏,将坏掉的磁盘拿出来,换上新的磁盘 RAID会自动恢复
-                    但是当损毁的磁盘数量超过RAID的限制的时候,会导致数据恢复失败
-                    ,可以使用热备盘(hote spares 不推荐在RAID5 上做热备 最好用RAID6 )来减少,RAID数据丢失的可能性.
+        project DAY01
+                1.服务器硬件
+                    ECC内存 具有数据校验功能
+                    服务器宽度
+                    1U = 44.45mm =4.45cm
+                    2U
+                    4U
+                    机柜也分 1u 2u 的
+                    服务器用sas 接口 (硬盘) 也指出SATA 接口
+                    远程控制卡
+                    RAID : 服务器的RAID 支持类型需要有RAID卡 来提供支持
+                        write_back  回写 : 先写缓存,再写磁盘 写入速度块但是 突发断电会导致 数据丢失
+                        write_throuth  直写: 同时写入 缓存和磁盘 安全 写入速度慢
 
-                服务的远程管理:
-                    1)dell服务器 远程管理
-                    iDARAC 远程管理配置iDRAC需要授权使用，
-                    有授权的情况下可以直接通过浏览器访问：http://服务器IP，
-                    远程管理服务器，没有授权的情况下可以通过端口重定向将服务器上的显示内容重定向到远程管理端的电脑上
-                    （一般是用自己的笔记本远程服务器），这种方式不需要授权。
-                    进入BIOS Settings后，选择Serial Communication菜单
-                    将控制台重定向到com2，设置Serial Device=com1，Serial Device=com2
-                    2）初始化清空iDRAC设置
-                    进入iDRAC Setting界面选择Rest iDRAC configuration to defaults
+                        若RADI中磁盘损坏,将坏掉的磁盘拿出来,换上新的磁盘 RAID会自动恢复
+                        但是当损毁的磁盘数量超过RAID的限制的时候,会导致数据恢复失败
+                        ,可以使用热备盘(hote spares 不推荐在RAID5 上做热备 最好用RAID6 )来减少,RAID数据丢失的可能性.
 
-                    3）配置iDRAC网络
-                    进入iDRAC Setting界面选择network
-                    选择网卡并配置IP地址
-                    开启IPMI智能平台管理接口（配置后可以通过命令行管理服务器），客户端安装ipmitool软件包
+                    服务的远程管理:
+                        1)dell服务器 远程管理
+                        iDARAC 远程管理配置iDRAC需要授权使用，
+                        有授权的情况下可以直接通过浏览器访问：http://服务器IP，
+                        远程管理服务器，没有授权的情况下可以通过端口重定向将服务器上的显示内容重定向到远程管理端的电脑上
+                        （一般是用自己的笔记本远程服务器），这种方式不需要授权。
+                        进入BIOS Settings后，选择Serial Communication菜单
+                        将控制台重定向到com2，设置Serial Device=com1，Serial Device=com2
+                        2）初始化清空iDRAC设置
+                        进入iDRAC Setting界面选择Rest iDRAC configuration to defaults
 
-                    4）配置远程管理账户
-                    进入iDRAC Setting界面选择User Configuration
+                        3）配置iDRAC网络
+                        进入iDRAC Setting界面选择network
+                        选择网卡并配置IP地址
+                        开启IPMI智能平台管理接口（配置后可以通过命令行管理服务器），客户端安装ipmitool软件包
 
-                    配置账户名称root，并设置密码
+                        4）配置远程管理账户
+                        进入iDRAC Setting界面选择User Configuration
 
-                    5）远程管理端主机配置，安装ipmitool软件包
-                    [root@centos7 ~]# yum -y install ipmitool
-                    常用命令操作列表如下。
-                    [root@centos7 ~]# ipmitool -I lanplus -U root -H 服务器IP  power status
-                    #查看服务器电源状态
-                    [root@centos7 ~]# ipmitool -I lanplus -U root -H 服务器IP  power on
-                    #开启服务器电源
-                    [root@centos7 ~]# ipmitool -I lanplus -U root -H 服务器IP  power off
-                    #关闭服务器电源
-                    [root@centos7 ~]# ipmitool -I lanplus -U root -H 服务器IP  power reset
-                    #重启服务器电源
-                    [root@centos7 ~]# ipmitool -I lanplus -U root -H 服务器IP  sol activate
-                    #远程管理
+                        配置账户名称root，并设置密码
 
-            2.部署lnmp
-                要求:
-                    安装LNMP平台相关软件
-                    配置Nginx实现动静分离
-                    配置数据库，创建账户与密码
-                    上线Wordpress代码
-                    使用Wordpress后台管理界面，调整Wordpress版式
-                    所需软件 在运维 下的 WordPress 中有
+                        5）远程管理端主机配置，安装ipmitool软件包
+                        [root@centos7 ~]# yum -y install ipmitool
+                        常用命令操作列表如下。
+                        [root@centos7 ~]# ipmitool -I lanplus -U root -H 服务器IP  power status
+                        #查看服务器电源状态
+                        [root@centos7 ~]# ipmitool -I lanplus -U root -H 服务器IP  power on
+                        #开启服务器电源
+                        [root@centos7 ~]# ipmitool -I lanplus -U root -H 服务器IP  power off
+                        #关闭服务器电源
+                        [root@centos7 ~]# ipmitool -I lanplus -U root -H 服务器IP  power reset
+                        #重启服务器电源
+                        [root@centos7 ~]# ipmitool -I lanplus -U root -H 服务器IP  sol activate
+                        #远程管理
 
-                物理机作为clients 虚拟机作为 ser 2.11
+            使用LNMP搭建网站WordPress
+                    配置 IP eht1 为 192.168.2.11
 
+                    记得扩容 虚拟机磁盘
+                    ##########################################################
+                    LANG=en growpart /dev/vda 1  ##扩展/dev/vda 的第一个分区空间
+                    lsblk
+                    blkid /dev/vda1
+                    xfs_growfs /dev/vda1###扩展/dev/vda1 文件系统
+                    df -h
+                    ########################################################
+                2.部署lnmp
+                    要求:
+                        安装LNMP平台相关软件
+                        配置Nginx实现动静分离
+                        配置数据库，创建账户与密码
+                        上线Wordpress代码
+                        使用Wordpress后台管理界面，调整Wordpress版式
+                        所需软件 在运维 下的 WordPress 中有
 
-                1)安装部署LNMP软件
-                    mariadb（数据库客户端软件）、mariadb-server（数据库服务器软件）、
-                    mariadb-devel（其他客户端软件的依赖包）、php（解释器）
-                    、php-fpm（进程管理器服务）、php-mysql（PHP的数据库扩展包）
-
-
-                        [root@centos7 ~]# yum -y install gcc openssl-devel pcre-devel
-                        [root@centos7 ~]# useradd -s /sbin/nologin  nginx
-                        [root@centos7 ~]# tar -xvf nginx-1.12.2.tar.gz
-                        [root@centos7 ~]# cd nginx-1.12.2
-                        [root@centos7 nginx-1.12.2]# ./configure   \
-                        --user=nginx   --group=nginx \
-                        --with-http_ssl_module   \
-                        --with-http_stub_status_module
-                        [root@centos7 nginx-1.12.2]# make && make install
-                        [root@centos7 ~]# yum -y install   mariadb   mariadb-server   mariadb-devel
-                        [root@centos7 ~]# yum -y install   php        php-mysql        php-fpm
-                    2)启动服务(nginx、mariadb、php-fpm)
-                        [root@centos7 ~]# /usr/local/nginx/sbin/nginx                 #启动Nginx服务
-                        [root@centos7 ~]# echo "/usr/local/nginx/sbin/nginx" >> /etc/rc.local
-                        [root@centos7 ~]# chmod +x /etc/rc.local
-                        [root@centos7 ~]# ss -utnlp | grep :80                        #查看端口信息
-                        [root@centos7 ~]# systemctl start   mariadb                   #启动mariadb服务器
-                        [root@centos7 ~]# systemctl enable  mariadb
-
-                        [root@centos7 ~]# systemctl start  php-fpm                   #启动php-fpm服务
-                        [root@centos7 ~]# systemctl enable php-fpm
-                    3）修改Nginx配置文件，实现动静分离
-                        修改配置文件，通过两个location实现动静分离，一个location匹配动态页面，一个loation匹配其他所有页面。
-                        注意修改默认首页为index.php!
-                        [root@centos7 ~]# vim /usr/local/nginx/conf/nginx.conf
-                        ...省略部分配置文件内容...
-                        location / {
-                                    root   html;
-                                    index  index.php index.html index.htm;
-                                }
-                        ...省略部分配置文件内容...
-                        location ~ \.php$ {
-                                    root           html;
-                                    fastcgi_pass   127.0.0.1:9000;
-                                    fastcgi_index  index.php;
-                                    include        fastcgi.conf;
-                                }
-                        ...省略部分配置文件内容...
-                        [root@centos7 ~]# /usr/local/nginx/sbin/nginx -s reload            #重新加载配置
-                    3）配置数据库账户与权限
-                        为网站提前创建一个数据库、添加账户并设置该账户有数据库访问权限。
-                        [root@centos7 ~]# mysql
-                        MariaDB [(none)]> create database wordpress character set utf8mb4;
-                        MariaDB [(none)]> grant all on wordpress.* to wordpress@'%' identified by 'wordpress';
-                        MariaDB [(none)]> grant all on wordpress.* to wordpress@'localhost' identified by 'wordpress';
-                        MariaDB [(none)]> flush privileges;
-                        MariaDB [(none)]> exit
-                        提示：在mysql和mariadb中%代表匹配所有，这里是授权wordpress用户可以从任意主机连接数据库服务器，生产环境建议仅允许特定的若干主机访问数据库服务器。
+                    物理机作为clients 虚拟机作为 ser 2.11
 
 
-                (2)上线wordpress代码
-                    1）上线PHP动态网站代码
-                        [root@centos7 ~]# unzip wordpress.zip
-                        [root@centos7 ~]# cd wordpress
-                        [root@centos7 wordpress]# tar -xf wordpress-5.0.3-zh_CN.tar.gz
-                        [root@centos7 wordpress]# cp -r  wordpress/*  /usr/local/nginx/html/
-                        [root@centos7 wordpress]# chown -R apache.apache  /usr/local/nginx/html/
-                        提示：动态网站运行过程中，php脚本需要对网站目录有读写权限，而php-fpm默认启动用户为apache。
-                    2)初始化网站配置（使用客户端访问web服务器IP）
-                        [root@client ~]# firefox http://192.168.2.11/
-                        密码wordpress
-                        用户名wordpress
-                        数据库名wordpress
-                        数据库主机192.168.2.11
-                        之后按照 步骤来
+                    1)安装部署LNMP软件
+                        mariadb（数据库客户端软件）、mariadb-server（数据库服务器软件）、
+                        mariadb-devel（其他客户端软件的依赖包）、php（解释器）
+                        、php-fpm（进程管理器服务）、php-mysql（PHP的数据库扩展包）
+
+
+                            [root@centos7 ~]# yum -y install gcc openssl-devel pcre-devel
+                            [root@centos7 ~]# useradd -s /sbin/nologin  nginx
+                            [root@centos7 ~]# tar -xvf nginx-1.12.2.tar.gz
+                            [root@centos7 ~]# cd nginx-1.12.2
+                            [root@centos7 nginx-1.12.2]# ./configure   \
+                            --user=nginx   --group=nginx \
+                            --with-http_ssl_module   \
+                            --with-http_stub_status_module
+                            [root@centos7 nginx-1.12.2]# make && make install
+                            [root@centos7 ~]# yum -y install   mariadb   mariadb-server   mariadb-devel
+                            [root@centos7 ~]# yum -y install   php        php-mysql        php-fpm
+                        2)启动服务(nginx、mariadb、php-fpm)
+                            [root@centos7 ~]# /usr/local/nginx/sbin/nginx                 #启动Nginx服务
+                            [root@centos7 ~]# echo "/usr/local/nginx/sbin/nginx" >> /etc/rc.local
+                            [root@centos7 ~]# chmod +x /etc/rc.local
+                            [root@centos7 ~]# ss -utnlp | grep :80                        #查看端口信息
+                            [root@centos7 ~]# systemctl start   mariadb                   #启动mariadb服务器
+                            [root@centos7 ~]# systemctl enable  mariadb
+
+                            [root@centos7 ~]# systemctl start  php-fpm                   #启动php-fpm服务
+                            [root@centos7 ~]# systemctl enable php-fpm
+                        3）修改Nginx配置文件，实现动静分离
+                            修改配置文件，通过两个location实现动静分离，一个location匹配动态页面，一个loation匹配其他所有页面。
+                            注意修改默认首页为index.php!
+                            [root@centos7 ~]# vim /usr/local/nginx/conf/nginx.conf
+                            ...省略部分配置文件内容...
+                            location / {
+                                        root   html;
+                                        index  index.php index.html index.htm;
+                                    }
+                            ...省略部分配置文件内容...
+                            location ~ \.php$ {
+                                        root           html;
+                                        fastcgi_pass   127.0.0.1:9000;
+                                        fastcgi_index  index.php;
+                                        include        fastcgi.conf;
+                                    }
+                            ...省略部分配置文件内容...
+                            [root@centos7 ~]# /usr/local/nginx/sbin/nginx -s reload            #重新加载配置
+                        3）配置数据库账户与权限
+                            为网站提前创建一个数据库、添加账户并设置该账户有数据库访问权限。
+                            [root@centos7 ~]# mysql
+                            MariaDB [(none)]> create database wordpress character set utf8mb4;
+                            MariaDB [(none)]> grant all on wordpress.* to wordpress@'%' identified by 'wordpress';
+                            MariaDB [(none)]> grant all on wordpress.* to wordpress@'localhost' identified by 'wordpress';
+                            MariaDB [(none)]> flush privileges;
+                            MariaDB [(none)]> exit
+                            提示：在mysql和mariadb中%代表匹配所有，这里是授权wordpress用户可以从任意主机连接数据库服务器，生产环境建议仅允许特定的若干主机访问数据库服务器。
+
+
+                    (2)上线wordpress代码
+                        1）上线PHP动态网站代码
+                            [root@centos7 ~]# unzip wordpress.zip
+                            [root@centos7 ~]# cd wordpress
+                            [root@centos7 wordpress]# tar -xf wordpress-5.0.3-zh_CN.tar.gz
+                            [root@centos7 wordpress]# cp -r  wordpress/*  /usr/local/nginx/html/
+                            [root@centos7 wordpress]# chown -R apache.apache  /usr/local/nginx/html/
+                            提示：动态网站运行过程中，php脚本需要对网站目录有读写权限，而php-fpm默认启动用户为apache。
+                        2)初始化网站配置（使用客户端访问web服务器IP）
+                            [root@client ~]# firefox http://192.168.2.11/
+                            密码wordpress
+                            用户名wordpress
+                            数据库名wordpress
+                            数据库主机192.168.2.11
+                            之后按照 步骤来
+
+        project day02
+            我们将网站分为 耦合(所有业务在一台服务器上,) 和 解耦合(将业务分开,在不同的服务器上运行,提高可靠性)
+            1.网站架构的转变
+                接上一个实验我门将web1中的 动态网站 数据库独立(由于数据库还没有学,只将数据库基本的功能做分离)出去,
+                并保证数据库迁移到新的数据库中,
+
+                数据库 是会消耗 较高的内存的
+                脚本则消耗 较高的 cpu
+
+
+                从单机版本转变到集群架构
+                    单机版本单台服务器包场
+                    集群对任务进行细分 不同服务器提供不同 任务
+
+                                                 web服务器(静态页面集群,不需要链接数据库)
+
+                    client-------->调度服务器集群  ----web服务器集群 (动态页面需要数据库 代码 php Java, -------->数据库务器(mariadb 数据库,之后还会做数据库集群,高可用,读写分离  ) ------->存储服务器(专门用来对整个系统提供存储空间)
+                               |                     web服务器集群 session 保持)
+                               |
+                            DNS服务器
+
+
+                            缓存服务器
+                    一下是从 软件角度 将 lnmp 分类
+
+                    1.单机版LNMP
+                        用户量少时使用，简单、成本低、存在单点故障
+                    2.独立数据库服务器
+
+                          独立数据库服务器是将网站静态文件、代码文件等资料与数据库分离的架构，当用户量增加时单机的处理能力有限，
+                        PHP或JAVA代码的执行需要消耗大量CPU资源，数据库的增删改查需要调用大量的内存资源，将两者分离可以减轻服务器的压力
+
+                        Web服务器和数据库服务器的压力都可以得到有效改善，访问量有所增加。但是服务器依然存在单点故障问题。
+                    3.Web服务器集群与Session保持
+                          我们可以通过Nginx、Haproxy代理服务器实现Web负载均衡集群，也可以使用LVS调度器实现Web负载均衡集群。
+                        部署完Web集群后还需要考虑如何进行Session会话保持，方法很多，如：根据源IP保持，代理服务器重写Cookie信息，
+                        共享文件系统保存session，使用数据库共享session等等。
+
+                        但是如果只有一台调度器依然会导致单点故障的问题，因此还需要使用Keepalived或Heartbeat之类的软件进行高可用配置
+
+                        对于网站内容而言可以分离为动态页面和静态页面，静态页面就需要数据文件，动态页面则需要CPU解析代码，需要消耗大量的CPU资源，
+                        因此可以将静态和动态分离为两组服务器，动态页面有脚本代码组成，是一种基于网页的应用程序，因此这一组服务器也称为应用服务器，
+
+
+                    4.动静分离、数据库集群
+
+                        随着服务器的增加，虽然性能与并发量得到了明显的提升，但是数据的一致性、管理的便利性成为了新的问题，因此就需要增加统一的存储服务器，
+                        实现数据的同步一致，可以使用NFS，GlusterFS、Ceph等软件实现该功能
+
+                        此时所有应用服务器都连接一台数据库服务器进行读写操作，而且后期随着数据库中的数据不断增加，
+                        会导致数据库成为整个网站的瓶颈！这就需要我们对数据进行分库分表，创建数据库主从或者数据库集群，实现读写分离
+
+                    5.缓存服务器与业务模型
+
+                        对于静态数据我们可以通过varnish、squid或者nginx进行缓存，将数据缓存到距离用户更近的位置，构建CDN（内容分发网络）架构。
+                        对于传统的SQL数据库而言，我们也可以通过增加NoSQL数据库，实现数据缓存的功能，提升数据库的访问速度。
+                        备注：数据库相关知识在第三阶段课程有详细介绍，第二阶段项目暂时不做数据库优化。
+                        最后，基于前面的架构，我们还可以将网站按照公司的业务进行分离，每个业务都可以是一个独立的集群
+
+
+                        也可以通过 业务对lnmp 进行分类(解耦合)
+
+
+
+
+
+                LNP+Mariadb 数据库分离
+
+                    配置 IP eht1 为 192.168.2.21
+                    1.部署数据库服务器
+
+                        1）准备一台独立的服务器，安装数据库软件包
+                            [root@database ~]# yum -y install mariadb mariadb-server mariadb-devel
+                            [root@database ~]# systemctl start mariadb
+                            [root@database ~]# systemctl enable mariadb
+                        2)将之前单机版LNMP网站中的数据库迁移到新的数据库服务器。
+                            登陆192.168.2.11主机，备份数据库并拷贝给新的服务器，关闭旧的数据库服务。
+                            [root@centos7 ~]# mysqldump wordpress > wordpress.bak
+                            [root@centos7 ~]# scp wordpress.bak 192.168.2.21:/root/
+                            [root@centos7 ~]# systemctl stop mariadb
+                            [root@centos7 ~]# systemctl disable mariadb
+                            登陆192.168.2.21主机，使用备份文件还原数据库。
+                            创建空数据库：
+                            [root@database ~]# mysql
+                            MariaDB [(none)]> create database wordpress character set utf8mb4;
+                            MariaDB [(none)]> exit
+                            使用备份文件还原数据：
+                            [root@database ~]# mysql wordpress < wordpress.bak
+                            重新创建账户并授权访问：
+                            [root@database ~]# mysql
+                            MariaDB [(none)]> grant all on wordpress.* to wordpress@'%' identified by 'wordpress';
+                            MariaDB [(none)]> flush privileges;
+                            MariaDB [(none)]> exit
+                        3）修改wordpress网站配置文件，调用新的数据库服务器。
+                            Wordpress在第一次初始化操作时会自动生产配置文件：wp-config.php，登陆192.168.2.11修改该文件即可调用新的数据库服务。
+                            [root@centos7 ~]# vim /usr/local/nginx/html/wp-config.php
+                            修改前内容如下：
+                            define('DB_HOST', '192.168.2.11');
+                            修改后内容如下：
+                            define('DB_HOST', '192.168.2.21');
+                    2.客户端测试
+
+                        1）客户端使用浏览器访问wordpress网站。
+                           [root@client ~]# firefox http://192.168.2.11
+
+
+                Web服务器集群
+
+                    目标:
+                        使用HAProxy部署Web服务器集群，实现以下目标：
+                        部署三台Web服务器
+                        迁移网站数据，使用NFS实现数据共享
+                        部署HAProxy代理服务器实现负载均衡
+                        部署DNS域名解析服务器
+
+                        client                      2.11/24
+                        proxy (DNS+代理 服务器)     eth0  4.5/24
+                                                   eth1  2.5/24
+                        web1                       eth1  2.11/24
+                        web2                       eth1 2.12 /24
+                        web3                       eth1 2.13 /24
+                        database                   eth1 2.21 /24
+                        NFS                        eth1 2.31 /24
+
+                    1.部署web2和web3服务器
+
+                        1）安装LNP软件包
+                            [root@web2 ~]# yum -y install gcc pcre-devel openssl-devel
+                            [root@web2 lnmp_soft]# tar -xf nginx-1.12.2.tar.gz
+                            [root@web2 lnmp_soft]# cd nginx-1.12.2/
+                            [root@web2 nginx-1.12.2]# ./configure \
+                            --with-http_ssl_module \
+                            --with-http_stub_status_module
+                            [root@web2 nginx-1.12.2]# make && make instal
+                            [root@web2 ~]# yum -y install php php-fpm php-mysql mariadb-devel
+                            [root@web3 ~]# yum -y install gcc pcre-devel openssl-devel
+                            [root@web3 lnmp_soft]# tar -xf nginx-1.12.2.tar.gz
+                            [root@web3 lnmp_soft]# cd nginx-1.12.2/
+                            [root@web3 nginx-1.12.2]# ./configure \
+                            --with-http_ssl_module \
+                            --with-http_stub_status_module
+                            [root@web3 nginx-1.12.2]# make && make instal
+                            [root@web3 ~]# yum -y install php php-fpm php-mysql mariadb-devel
+                        2）修改nginx配置实现动静分离（web2和web3操作）
+                            web2修改默认首页index.php，配置两个location实现动静分离。
+                            [root@web2 ~]# vim /usr/local/nginx/conf/nginx.conf
+                            location / {
+                                        root   html;
+                                        index  index.php index.html index.htm;
+                                    }
+                            location ~ \.php$ {
+                                        root            html;
+                                        fastcgi_pass   127.0.0.1:9000;
+                                        fastcgi_index  index.php;
+                                        include         fastcgi.conf;
+                                    }
+                            web3修改默认首页index.php，配置两个location实现动静分离。
+                            [root@web3 ~]# vim /usr/local/nginx/conf/nginx.conf
+                            location / {
+                                        root   html;
+                                        index  index.php index.html index.htm;
+                                    }
+                            location ~ \.php$ {
+                                        root            html;
+                                        fastcgi_pass   127.0.0.1:9000;
+                                        fastcgi_index  index.php;
+                                        include         fastcgi.conf;
+                                    }
+                        3）启动相关服务
+                            [root@web2 ~]# echo "/usr/local/nginx/sbin/nginx" >> /etc/rc.local
+                            [root@web2 ~]# chmod +x /etc/rc.local
+                            [root@web2 ~]# /usr/local/nginx/sbin/nginx
+                            [root@web2 ~]# systemctl start  php-fpm                   #启动php-fpm服务
+                            [root@web2 ~]# systemctl enable php-fpm
+                            [root@web3 ~]# echo "/usr/local/nginx/sbin/nginx" >> /etc/rc.local
+                            [root@web3 ~]# chmod +x /etc/rc.local
+                            [root@web3 ~]# /usr/local/nginx/sbin/nginx
+                            [root@web3 ~]# systemctl start  php-fpm                   #启动php-fpm服务
+                            [root@web3 ~]# systemctl enable php-fpm
+                    2.部署NFS，将网站数据迁移至NFS共享服务器
+
+                        1）部署NFS共享服务器
+                            [root@nfs ~]# yum install nfs-utils
+                            [root@nfs ~]# mkdir /web_share
+                            [root@nfs ~]# vim /etc/exports
+                            /web_share  192.168.2.0/24(rw,no_root_squash)
+                            [root@nfs ~]# systemctl restart rpcbind
+                            [root@nfs ~]# systemctl eanble rpcbind
+                            NFS使用的是随机端口，每次启动NFS都需要将自己的随机端口注册到rpcbind服务，这样客户端访问NFS时先到rpcbind查询端口信息，得到端口信息后再访问NFS服务。
+                            [root@nfs ~]# systemctl restart nfs
+                            [root@nfs ~]# systemctl enable nfs
+                        2）迁移旧的网站数据到NFS共享服务器
+                            将web1（192.168.2.11）上的wordpress代码拷贝到NFS共享。
+                            [root@web1 ~]# cd /usr/local/nginx/
+                            [root@web1 nginx]# tar -czpf html.tar.gz html/
+                            [root@web1 nginx]# scp html.tar.gz 192.168.2.31:/web_share/
+                            登陆nfs服务器，将压缩包解压
+                            [root@nfs ~]# cd /web_share/
+                            [root@nfs web_share]# tar -xf html.tar.gz
+                        3)所有web服务器访问挂载NFS共享数据。
+                            [root@web1 ~]# rm -rf /usr/local/nginx/html/*
+                            [root@web1 ~]# yum -y install nfs-utils
+                            [root@web1 ~]# echo "192.168.2.31:/web_share/html /usr/local/nginx/html/ nfs defaults 0 0" >> /etc/fstab
+                            [root@web1 ~]# mount -a
+                            [root@web2 ~]# yum -y install nfs-utils
+                            [root@web2 ~]# echo "192.168.2.31:/web_share/html /usr/local/nginx/html/ nfs defaults 0 0" >> /etc/fstab
+                            [root@web2 ~]# mount -a
+                            [root@web3 ~]# yum -y install nfs-utils
+                            [root@web3 ~]# echo "192.168.2.31:/web_share/html /usr/local/nginx/html/ nfs defaults 0 0" >> /etc/fstab
+                            [root@web3 ~]# mount -a
+                    3.部署HAProxy代理服务器
+
+                        1）部署HAProxy
+                        安装软件，手动修改配置文件，添加如下内容。
+                        [root@proxy ~]# yum -y install haproxy
+                        [root@proxy ~]# vim /etc/haproxy/haproxy.cfg
+                        listen wordpress *:80
+                          balance roundrobin
+                          server web1 192.168.2.11:80 check inter 2000 rise 2 fall 3
+                          server web2 192.168.2.12:80 check inter 2000 rise 2 fall 3
+                          server web3 192.168.2.13:80 check inter 2000 rise 2 fall 3
+                        [root@proxy ~]# systemctl start haproxy
+                        [root@proxy ~]# systemctl enable haproxy
+                    4.部署DNS域名服务器
+
+                        1）安装DNS相关软件（192.168.4.5操作）。
+                            [root@proxy ~]# yum -y  install bind bind-chroot
+                        2）修改主配置文件，添加zone。
+                            [root@proxy ~]# vim /etc/named.conf
+                            options {
+                                    listen-on port 53 { any; };           #服务监听的地址与端口
+                                    directory       "/var/named";         #数据文件路径
+                                    allow-query     { any; };             #允许任何主机访问DNS服务
+                            ... ...
+                            };
+                            zone "lab.com" IN {                        #定义正向区域
+                                    type master;
+                                    file "lab.zone";
+                            };
+                            #include "/etc/named.rfc1912.zones";        #注释掉改行
+                            #include "/etc/named.root.key";              #注释掉改行
+                            [root@proxy ~]# named-checkconf /etc/named.conf            #检查语法
+                        3）修改正向解析记录文件。
+                            注意：保留文件权限。
+                            [root@proxy named]# cp -p /var/named/named.localhost /var/named/lab.com.zone
+                            [root@proxy named]# vim /var/named/lab.zone
+                            $TTL 1D
+                            @       IN SOA  @ rname.invalid. (
+                                                                    0       ; serial
+                                                                    1D      ; refresh
+                                                                    1H      ; retry
+                                                                    1W      ; expire
+                                                                    3H )    ; minimum
+                            @        NS     dns.lab.com.
+                            dns     A       192.168.4.5
+                            www     A       192.168.4.5
+                        4）启动服务
+                            [root@proxy named]# systemctl start named
+                            [root@proxy named]# systemctl enable named
+                        5）客户端修改DNS解析文件
+                            提示：做完实验修改回原始内容。
+                            [root@room9pc01 data]# cat /etc/resolv.conf
+                            # Generated by NetworkManager
+                            search tedu.cn
+                            nameserver 192.168.4.5
+                            nameserver 172.40.1.10
+                            nameserver 192.168.0.220
+                    5.修改wordpress配置文件
+
+                        1）修改wp-config.php
+                            在define('DB_NAME', 'wordpress')这行前面添加如下两行内容：
+                            [root@web3 html]# vim /usr/local/nginx/html/wp-config.php
+                            define('WP_SITEURL', 'http://www.lab.com');
+                            define('WP_HOME', 'http://www.lab.com');
+
+
+
+
