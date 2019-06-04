@@ -1272,10 +1272,13 @@
                     通过源码编译安装Varnish缓存服务器
                     编译安装Varnish软件
                     修改配置文件，缓存代理源Web服务器，实现Web加速功能
-                    使用3台RHEL7虚拟机，其中一台作为Web服务器（192.168.2.100）、一台作为Varnish代理服务器（192.168.4.5,192.168.2.5)，另外一台作为测试用的Linux客户机（192.168.4.10），如图-2所示。
+                    使用3台RHEL7虚拟机，其中一台作为Web服务器（192.168.2.100）、一台作为Varnish代理服务器（192.168.4.5,192.168.2.5)，
+                    另外一台作为测试用的Linux客户机（192.168.4.10）
 
-                    图-2
-                    对于Web服务器的部署，此实验中仅需要安装nginx或者httpd软件、启动服务，并生成测试首页文件即可，默认httpd网站根路径为/var/www/html，首页文档名称为index.html，默认nginx网站根路径为/usr/local/nginx/html，默认首页为index.html。下面的实验我们以httpd为例作为Web服务器。
+
+                    对于Web服务器的部署，此实验中仅需要安装nginx或者httpd软件、启动服务，并生成测试首页文件即可，
+                    默认httpd网站根路径为/var/www/html，首页文档名称为index.html，
+                    默认nginx网站根路径为/usr/local/nginx/html，默认首页为index.html。下面的实验我们以httpd为例作为Web服务器。
 
 
 
@@ -2516,6 +2519,7 @@
                             192.168.4.15
                             }
                             }
+                            #################这里是lvs (ipvsadm)规则 实现集群###############
                             virtual_server 192.168.4.15 80 {          //自动设置LVS规则（实验需要修改）
                               delay_loop 6
                               lb_algo wrr                          //设置LVS调度算法为WRR
@@ -2900,7 +2904,7 @@
 
                 3）初始化清空磁盘数据（仅node1操作即可）。 ceph 会远程链接node2 3 进行处理
                     [root@node1 ceph-cluster]# ceph-deploy disk  zap  node1:vdc   node1:vdd
-                    [root@node1 ceph-cluster]# ceph-deploy disk  zap  node2:vd
+                    [root@node1 ceph-cluster]# ceph-deploy disk  zap  node2:vdc   node2:vdd
                     [root@node1 ceph-cluster]# ceph-deploy disk  zap  node3:vdc   node3:vdd
 
 
