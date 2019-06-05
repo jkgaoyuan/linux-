@@ -83,6 +83,9 @@
         1）编译新版本nginx软件
             [root@proxy ~]# tar  -zxvf   nginx-1.12.2.tar.gz
             [root@proxy ~]# cd nginx-1.12.2
+            ############请在nginx安装包目录下执行否则会出错####################################################
+            [root@proxy nginx-1.12.8]# cat auto/options | grep YES  ##查看默认安装和可以安装的nginx模块
+            #######################################################################################
             [root@proxy nginx-1.12.2]# ./configure   \
             > --prefix=/usr/local/nginx   \
             > --user=nginx   \
@@ -276,6 +279,23 @@
          区别
             动态(Java,php,py,sh...)代码在服务器执行
             静态(jpg,MP4...)
+            #########添加php-fpm后用户访问网站流程##############################
+             www.example.com        |
+                   |
+                Nginx        |
+                   |路由到www.example.com/index.php        |
+                   |加载nginx的fast-cgi模块        |
+                   |fast-cgi监听127.0.0.1:9000地址        |
+                   |www.example.com/index.php请求到达127.0.0.1:9000
+                   |
+                   |php-fpm 监听127.0.0.1:9000
+                   |
+                   |php-fpm 接收到请求，启用worker进.程处理请求        |
+                   |php-fpm 处理完请求，返回给nginx        |
+                   |nginx将结果通过http返回给浏览器
+            ############  nginx 是不可以 处理 web页面的 只能交给php处理,而php-fpm则加快了php处理的速度########
+            cgi是一个传输协议
+            php-fpm 提供fastcgi的进程管理功能,也就是说实现了fastercgi.
             注意，FastCGI的内存消耗问题，一个PHP-FPM解释器将消耗约25M的内存。
          1) 安装 nginx mariadb(客户端软件)  mariadb-server(服务器端软件) mariadb-devel(mariadb依赖软件) php php-ftm(PHP服务) php-mysql(链接mysql数据库模块)
             [root@proxy ~]# yum -y install   mariadb   mariadb-server   mariadb-devel
@@ -556,6 +576,7 @@
          步骤
          1.部署支持4层TCP/UDP代理的Nginx服务器
            1)部署nginx服务器
+
                 编译安装必须要使用--with-stream参数开启4层代理模块。
                 [root@proxy ~]# yum -y install gcc pcre-devel openssl-devel        //安装依赖包
                 [root@proxy ~]# tar  -xf   nginx-1.12.2.tar.gz
