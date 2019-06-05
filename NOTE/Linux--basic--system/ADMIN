@@ -330,6 +330,11 @@ echo  复读机 只会显示 echo后面输入的字符
 
 	[root@jkgao gaoyuan]# echo lolo
 	lolo
+    [student@room9pc01 linux-]$ echo -e "123\n321" #换行输出
+	123
+    321
+    [student@room9pc01 linux-]$ echo -e "123\t321" #加入tab
+    123     321
 #####################
 vim编辑器
 
@@ -988,8 +993,10 @@ root 不受权限管理
 	6.安装
 	  适用于单个安装(若依赖关系过多的话请使用yum)
 		rpm -q 软件名 查询该软件是否已经安装
-		rpm -ivh 软件名-版本信息.rpm.. #安装 只有在安装的时候才需要完整的路径和包名
-		rpm -e 软件名                  #卸载
+		rpm -ivh 软件名-版本信息.rpm..   ###安装 只有在安装的时候才需要完整的路径和包名
+		rpm -e 软件名                   ###卸载
+		rpm -qc 软件名                  ###查找软件生成的配置文件位置
+		yum provides /etc/hosts        ###查询某个文件所属的软件
 	#######################################	
 	升级Linux内核(rpm包) 虚拟机中操作
 		显示内核版本 : uname -r

@@ -604,7 +604,9 @@
             如果客户端访问服务器提示“Too many open files”如何解决
             如何解决客户端访问头部信息过长的问题
             如何让客户端浏览器缓存数据
-            日志切割
+
+            日志切割(重要)
+
             开启gzip压缩功能，提高数据传输效率
             开启文件缓存功能
             然后客户机访问此Web服务器验证效果：
@@ -1592,6 +1594,10 @@
                     [root@web2 ~]# git clone root@192.168.2.100:/var/git/base_ssh
                     [root@web2 ~]# rm -rf base_ssh
                 3）客户端生成SSH密钥，实现免密码登陆git服务器（web2主机操作）。
+
+                   将客户端生成的公钥 传递给 需要登录的机器, 本机保留私钥, 远程时通过 私钥解密.
+
+
                     [root@web2 ~]# ssh-keygen -f /root/.ssh/id_rsa -N ''
                     [root@web2 ~]# ssh-copy-id  192.168.2.100
                     [root@web2 ~]# git clone root@192.168.2.100:/var/git
@@ -2287,19 +2293,19 @@
                               router_id  web1                        //设置路由ID号（实验需要修改）
                             }
                             vrrp_instance VI_1 {
-                              state MASTER                         //主服务器为MASTER（备服务器需要修改为BACKUP）
+                              state MASTER                         //主服务器为MASTER（备服务器需要修改为BACKUP）, state 是作为 软件开启是临时状态,最终状态会由 priority 的数值决定,当priority 也不能比较 出结果的时候,对 ip 和 mac 进行对比.
                               interface eth0                    //定义网络接口
                               virtual_router_id 51                //主备服务器VRID号必须一致
-                              priority 100                     //服务器优先级,优先级高优先获取VIP（实验需要修改）
+                              priority 100                     //服务器优先级,优先级高优先获取VIP（实验需要修改）,也是最终决定 主副的 方式
                               advert_int 1
                               authentication {
                                 auth_type pass
                                 auth_pass 1111                       //主备服务器密码必须一致
                               }
                               virtual_ipaddress {                   //谁是主服务器谁获得该VIP（实验需要修改）
-                            192.168.4.80
-                            }
-                            }
+                                192.168.4.80
+                              }
+                              }
                         2）修改web2服务器Keepalived配置文件
                             [root@web2 ~]# vim /etc/keepalived/keepalived.conf
                             global_defs {
@@ -2322,7 +2328,7 @@
                                  auth_pass 1111                       //主辅服务器密码必须一致
                               }
                               virtual_ipaddress {                 //谁是主服务器谁配置VIP（实验需要修改）
-                            192.168.4.80
+                              192.168.4.80
                              }
                             }
                         3）启动服务
@@ -2954,7 +2960,7 @@
                     使用Ceph集群的块存储功能:实现
                         创建块存储镜像
                         客户端映射镜像
-                        创建镜像快照
+                        创建镜像快照 #只对块设备有效
                         使用快照还原数据
                         使用快照克隆镜像
                         删除快照与镜像

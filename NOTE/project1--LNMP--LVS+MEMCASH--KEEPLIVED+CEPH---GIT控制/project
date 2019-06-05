@@ -98,7 +98,10 @@ LNMP
                         2)启动服务(nginx、mariadb、php-fpm)
                             [root@centos7 ~]# /usr/local/nginx/sbin/nginx                 #启动Nginx服务
                             [root@centos7 ~]# echo "/usr/local/nginx/sbin/nginx" >> /etc/rc.local
-                            [root@centos7 ~]# chmod +x /etc/rc.local
+                            #########这两个文件都需要添加x权限,似乎在虚拟机中只给 /etc/rc.local x 权限 某些开机自启不会执行
+                            [root@centos7 ~]# chmod +x /etc/rc.local                       #给开机自启文件添加x权限
+                            [root@centos7 ~]# chmod +x /etc/rc.d/rc.local                  #给开机自启文件添加x权限
+
                             [root@centos7 ~]# ss -utnlp | grep :80                        #查看端口信息
                             [root@centos7 ~]# systemctl start   mariadb                   #启动mariadb服务器
                             [root@centos7 ~]# systemctl enable  mariadb
@@ -637,7 +640,7 @@ LNMP
                         ENV{DEVNAME}=="/dev/vdb1",OWNER="ceph",GROUP="ceph"
                         ENV{DEVNAME}=="/dev/vdb2",OWNER="ceph",GROUP="ceph"
                     4）使用ceph-deploy工具初始化数据磁盘（仅node1操作）。
-                        [root@node1 ceph-cluster]# ceph-deploy disk  zap  node1:vdc   node1:vdd
+                        [root@node1 ceph-cluster]# ceph-deploy disk  zap  node1:vdc   node1:vdd   journal磁盘
                         [root@node1 ceph-cluster]# ceph-deploy disk  zap  node2:vdc   node2:vdd
                         [root@node1 ceph-cluster]# ceph-deploy disk  zap  node3:vdc   node3:vdd
                     5）初始化OSD集群。
@@ -711,6 +714,112 @@ LNMP
                         [root@web1 ~]# /usr/local/nginx/sbin/nginx
                         [root@web2 ~]# /usr/local/nginx/sbin/nginx
                         [root@web3 ~]# /usr/local/nginx/sbin/nginx
+
+
+                 ######################################################################################
+                ceph 安装思路
+                    本次不需要共享对象存储
+                    1.环境准备
+                        yum源
+                        /etc/hosts
+                        ssh秘钥 同步给 ceph机器
+                        NTP时间同步
+                        给虚拟机添加磁盘
+                    2.部署ceph
+                        yum -y install ceph-deploy
+                        mkdir ceph-cluster
+                        cd  ceph-cluster
+                        所有主机安装 ceph-mon  ceph-osd ceph- mds
+                        ceph-deploy new node1 node2 node3
+                        ceph-deploy mon create-initial
+                        给磁盘分区格式化 /dev/vdb [手动] ,修改/dev/vdb 权限
+                        chown ceph.ceph /dev/vdb
+                        vim /ete/udev/rules.d/xxx.rules
+                        ceph-deploy disk zap node1:xxx node1:xxx   ###初始化数据磁盘 journal磁盘
+                        每个 xxx 都是 本机中 的缓存磁盘
+                        ceph-deploy osd create node1:journal 数据盘:xxx ###初始化 osd 集群 数据磁盘 : 缓存磁盘(xxx)
+                        ceph-deploy osd create node2:journal 数据盘:xxx
+
+                    创建文件系统
+                        创建两个存储池子
+                            [root@node1 ceph-cluster]# ceph osd pool create cephfs_data 128
+                            [root@node1 ceph-cluster]# ceph osd pool create cephfs_metadata 128
+                            [root@node1 ceph-cluster]# ceph osd lspools
+                            0 rbd,1 cephfs_data,2 cephfs_metadata
+                        创建共享文件系统
+                            [root@node1 ceph-cluster]# ceph fs new myfs1 cephfs_metadata cephfs_data
+                            [root@node1 ceph-cluster]# ceph fs ls
+                            name: myfs1, metadata pool: cephfs_metadata, data pools: [cephfs_data ]
+                        启动服务
+                        ceph-deploy mds creat enode3 ##启动 mds服务
+                        挂载
+                        写入 /etc/rc.local
+                        和写入 /etc/rc.d/rc.local
+                        mount -t ceph 192.168.2.41:6789:/ /usr/local/nginx/html/ -o name=admin,secret=AQCyL/ZcAjqLBRAAxDHl9Hvwlx9ynD92VYR5vw==
+
+                     ##################################################################################################
+
+
+
+
+        project day04
+            生产环境 中 git 是一个独立的服务器
+
+            部署git版本控制
+                要求: 部署git版本控制协议,管理网站代码,
+                     基于ssh协议的服务器
+                     基于git协议的服务器
+                     基于http协议的服务器
+                     上传代码版本仓库
+
+                生产环境 应该有一台独立的git服务器,这里使用数据库主机作为git服务器
+                    数据库 2.21/24
+
+            1.部署SSH协议的版本控制服务器
+
+                1）安装软件包，创建空仓库。
+                [root@database ~]# yum -y install git
+                [root@database ~]# git init --bare /var/git/wordpress.git            #创建空仓库
+                2）登陆web1服务器克隆git仓库，上传网站代码到git服务器。
+                [root@web1 var]# git config --global push.default simple
+                [root@web1 var]# git config --global user.email you@example.com
+                [root@web1 var]# git config --global user.name "Your Name"
+                [root@web1 var]# cd /var/
+                [root@web1 var]# git clone root@192.168.2.21:/var/git/wordpress.git
+                [root@web1 var]# cd /var/wordpress
+                [root@web1 wordpress]# cp -a /usr/local/nginx/html/*  ./
+                [root@web1 wordpress]# git add .
+                [root@web1 wordpress]# git commit -m "wordpress code"
+                [root@web1 wordpress]# git push
+                root@192.168.2.21's password:<输入192.168.2.21主机root的密码>
+            2.部署Git协议的版本控制服务器
+
+                1）安装软件包（192.168.2.21操作）
+                    [root@database ~]# yum -y install git-daemon
+                2）修改配置文件，启动Git服务
+                    [root@database ~]# vim /usr/lib/systemd/system/git@.service
+                    修改前内容如下：
+                    ExecStart=-/usr/libexec/git-core/git-daemon --base-path=/var/lib/git --export-all --user-path=public_git --syslog --inetd –verbose
+                    修改后内容如下：
+                    ExecStart=-/usr/libexec/git-core/git-daemon --base-path=/var/git --export-all --user-path=public_git --syslog --inetd –verbose
+                    [root@database ~]# systemctl start git.socket
+                    [root@database ~]# systemctl status git.socket
+                3)客户端测试（使用web2做完客户端主机，192.168.2.12）
+                    在web2执行clone等同于是把代码又备份了一份。
+                    [root@web2 ~]# cd /var/
+                    [root@web2 var]# git clone git://192.168.2.21/wordpress.git
+            3.部署HTTP协议的版本控制服务器
+
+                1）安装软件包（192.168.2.21操作）
+                    [root@database ~]# yum -y install httpd gitweb
+                2）修改配置文件
+                    [root@database ~]# vim /etc/gitweb.conf
+                    $projectroot = "/var/git";                        #添加一行
+                3）启动服务
+                    [root@database ~]# systemctl start httpd
+                4）客户端验证
+                    [root@room9pc01 ~]# firefox http://192.168.2.21/git
+                    访问测试 是否可以看到 git 仓库
 
 
 
