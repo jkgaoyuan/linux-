@@ -820,6 +820,7 @@ LNMP
                 4）客户端验证
                     [root@room9pc01 ~]# firefox http://192.168.2.21/git
                     访问测试 是否可以看到 git 仓库
+                    看来以后要靠 git 命令来 push了  要么用 手机的网络
 
 
 
