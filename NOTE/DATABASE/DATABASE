@@ -188,10 +188,72 @@ panglj@tedu.cn
                             不能使用关键词 特殊字符
                     6)show tables ; 显示已有的表
                     7)drop database 库名; 删除库
+                    设置表记录可以写中文
 
+
+                    ]# LANG="zh_CN.UTF-8"
+                    mysql> create table db1.学生表(
+                       姓名 char(10),
+                       家庭地址 char(20)
+                       ) DEFAULT CHARSET=utf8;
+
+                    mysql> insert into db1.学生表 values("张三丰","武当山");
+                    mysql> insert into db1.学生表 values("张四丰","武台山");
+                    mysql> select  * from  db1.学生表;
 
 
         Mysql数据类型
+
+            3.1 字符类型  char   varchar
+
+
+            3.2 数值类型
+                整数类型  tinyint  smallint int  bigint
+                浮点类型  float  double
+                mysql> create table db1.t5 (name char(10), level  tinyint );
+                mysql> insert into  db1.t5 values ("zbj",-1);
+                mysql> insert into  db1.t5 values ("zbj",-129);
+                mysql> insert into  db1.t5 values ("zbj",198);
+
+                mysql> create table db1.t6 (name char(10), level  tinyint unsigned);
+                mysql> insert into  db1.t6 values ("zbj",-1);
+                mysql> insert into  db1.t6 values ("zbj",0);
+                mysql> insert into  db1.t6 values ("zbj",256);
+                mysql> insert into  db1.t6 values ("zbj",25);
+                mysql> insert into  db1.t6 values ("zbj",25.22);
+                mysql> insert into  db1.t6 values ("zbj",25.52);
+
+                mysql> create  table db1.t3(pay float , id double);
+                mysql> insert into db1.t3 values(9999.23,9999.77);
+
+                mysql> create  table db1.t4( pay float(5,2) , id double(4,2) );
+                mysql> insert into db1.t4 values(9999.23,9999.77);
+
+                mysql> create table  db1.t7(stu_num int , name char(5) ,
+                       age tinyint ,pay float ,money float(7,2) );
+
+                mysql> desc  db1.t7 ;
+
+
+            3.3 日期时间类型
+                年    日期   时间   日期时间
+                year  date   time   datetime/ timestamp
+
+                create table db1.t8(
+                name  char(15),
+                your_s    year,
+                birthday  date,
+                up_class  time,
+                party  datetime
+                );
+
+                desc  db1.t8 ;
+
+                insert into  db1.t8  values
+                ("bob",1990,20191120,083000,20190607203000);
+
+                当year类型 使用2位数赋值时：
+                0
 
 
 
