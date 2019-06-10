@@ -189,11 +189,12 @@ panglj@tedu.cn
                             不能使用关键词 特殊字符
                     6)show tables ; 显示已有的表
                     7)drop database 库名; 删除库
+                    7)drop table 表名； 删除表
                 表管理命令
                     1)select * from 库名.表名;
                     2)insert into 库名.表名;
                     3)update 库名.表名 set 字段=值;
-                    4)delete from 库名.表名;
+                    4)delete from 库名.表名;  删除表单数据
                     5)create table 库名.表名;
 
 
@@ -615,8 +616,15 @@ panglj@tedu.cn
                                             mysql> select * from gz;
                                             Empty set (0.00 sec)
 
-                                            ##########更新###### 员工id#########
-                                            mysql> update db1.yg set yg_id=6 where yg_id=3;
+                                            mysql> insert into gz values(1,2000);
+                                            mysql> insert into gz values(4,200);
+                                            mysql> insert into gz values(5,200);
+                                            mysql> insert into gz values(6,200);
+                                            mysql> insert into gz values(6,500);
+                                            mysql> insert into gz values(6,5000);
+
+                                            ##########更新###### 员工id#############
+                                            mysql> update db1.yg set yg_id=6 where yg_id=3; ###讲yg_id=3,的换成yg_id=6，两个表中数据自动同步。
                                             Query OK, 1 row affected (0.03 sec)
                                             Rows matched: 1  Changed: 1  Warnings: 0
 
