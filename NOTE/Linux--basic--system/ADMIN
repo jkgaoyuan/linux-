@@ -636,6 +636,8 @@ https://blog.csdn.net/u013948858/article/details/78252409
 ssh-copy-id IP (传输公钥到制定的 ip)
 ###############################################################
 ssh-keygen 产生 公钥和私钥
+产生  id_rsa
+ssh-keygen -f /root/.ssh/id_rsa -N ''
 SSH 安全外壳协议 :在不安全的网络中提供安全远程登录以及其他安全网络   的协议
 ssh配置文件:  	
 ssh远程链接的配置文件 文件位置   sshd_config

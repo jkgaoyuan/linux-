@@ -3,7 +3,8 @@
 邮箱: 有问题可以发邮件
 panglj@tedu.cn
 402er
-
+        SQL语句执顺序
+            执行FROM ---> where--->group by--->聚合函数having--->order by (排序)
 
     关系型数据库-RDBMS        MYSQL       数据库管理员 DBA
     非关系型的数据库-NOsql     Redis       运维工程师  DBA
@@ -85,7 +86,7 @@ panglj@tedu.cn
                     2019-06-06T02:11:52.610948Z 3 [Note] Access denied for user 'root'@'localhost' (using password: NO)
                     [root@DBA mysql]# cd
                     #######第一次登录时只能由 hlocalhost  登入 ########################
-                    [root@DBA ~]# mysql -hlocalhost -uroot -p 'lKpqL5QO4+=:'
+                    [root@DBA ~]# mysql -hlocalhost -uroot -p'lKpqL5QO4+=:'  ###不能有空格
                     ##########设置root的新密码####################################
                     mysql> alter user root@"localhost" identified by "123qqq...A";
                     Query OK, 0 rows affected (0.00 sec)
@@ -125,7 +126,7 @@ panglj@tedu.cn
                     永久修改配置
                     [root@DBA ~]# vim /etc/my.cnf
                     [mysqld]
-                    #
+                    #手动添加 默认没有
                     validate_password_policy=0
                     validate_password_length=6
 
@@ -188,13 +189,499 @@ panglj@tedu.cn
                             不能使用关键词 特殊字符
                     6)show tables ; 显示已有的表
                     7)drop database 库名; 删除库
+                表管理命令
+                    1)select * from 库名.表名;
+                    2)insert into 库名.表名;
+                    3)update 库名.表名 set 字段=值;
+                    4)delete from 库名.表名;
+                    5)create table 库名.表名;
 
 
 
-        Mysql数据类型
+        3.Mysql数据类型
+            字符
+                char varchar
+            数值
+                整型
+                    float  单精度 0-2^32-1
+                    double 双精度 0-2^64-1
+                浮点
+                    tinyint   无整型
+                    unsighted 不能是负数
 
 
 
+
+            日期时间
+                类型 时间函数
+            枚举  enum  单选
+                 set   多选
+
+            插入数据
+            mysql> insert into db1.t21 (name,sex) values("tianmao","m");
+
+
+
+
+    DAY02
+        1.表结构
+            1)约束条件
+                作用:限制给表字段赋值
+                查看字段的约束条件 : desc 库.表;
+                    字段名 | 类型 | 空| 键值 | 默认值 |额外设置|
+                    mysql> desc db2.t10;
+                    +-------+--------------------------------+------+-----+---------+-------+
+                    | Field | Type                           | Null | Key | Default | Extra |
+                    +-------+--------------------------------+------+-----+---------+-------+
+                    | name  | char(10)                       | YES  |     | NULL    |       |
+                    | sex   | enum('boy','girl','no')        | YES  |     | NULL    |       |
+                    | likes | set('eat','game','pi','sleep') | YES  |     | NULL    |       |
+                    +-------+--------------------------------+------+-----+---------+-------+
+
+                约束条件有那些:
+                             是否为空  not null null
+                             键值     key
+                             默认设置 default  缺省 为null
+                             额外设置 extra
+                            mysql>create tabledb1.t7;
+                            ->name char(10) not null,
+                            ->age tinyint unsighted default 19
+                            ->class char(7) not null default "nsd1903"
+                            ->pay float(7,2) default 28000
+                            #######float共7位 两位小数
+                            );
+                           ###################################
+
+                            mysql> create table db1.t21(
+                            -> name char(10) not null,
+                            -> age tinyint unsigned default 25,
+                            -> sex enum("m","w") not null default "w");
+                            Query OK, 0 rows affected (0.38 sec)
+
+                            mysql> desc db1.t21;
+                            +-------+---------------------+------+-----+---------+-------+
+                            | Field | Type                | Null | Key | Default | Extra |
+                            +-------+---------------------+------+-----+---------+-------+
+                            | name  | char(10)            | NO   |     | NULL    |       |
+                            | age   | tinyint(3) unsigned | YES  |     | 25      |       |
+                            | sex   | enum('m','w')       | NO   |     | w       |       |
+                            +-------+---------------------+------+-----+---------+-------+
+                            3 rows in set (0.00 sec)
+                            #################插入数据#########################
+                            mysql> insert into db1.t21 values("dc",null,"w");
+                            Query OK, 1 row affected (0.04 sec)
+
+                            mysql> select * from db1.t21;
+                            +------+------+-----+
+                            | name | age  | sex |
+                            +------+------+-----+
+                            | dc   | NULL | w   |
+                            +------+------+-----+
+                            1 row in set (0.00 sec)
+                            mysql> insert into db1.t21 (name,sex) values("tianmao","m");
+                            Query OK, 1 row affected (0.03 sec)
+
+                            mysql> select * from db1.t21;
+                            +---------+------+-----+
+                            | name    | age  | sex |
+                            +---------+------+-----+
+                            | dc      | NULL | w   |
+                            | tianmao |   25 | m   |
+                            +---------+------+-----+
+                            2 rows in set (0.00 sec)
+
+
+
+
+        2.表结结构
+                1)修改表结构
+                    格式  alter table 库.表 执行动作;
+                    执行动作:
+                        add    添加新字段
+
+                                新字段默认添加在地段的末尾, 添加 first 后可添加至行首 after xxx 在xxx后添加
+                                alter table db1.t10
+                                add
+                                name char(15)frist;
+
+                                alter table db1.t10
+                                add age tinyint unsighted not null default 19 after name ;
+
+
+                        drop   删除已有字段
+
+                                mysql> alter table db1.t10 drop email , drop stu_num;
+                                    Query OK, 0 rows affected (0.62 sec)
+                                    Records: 0  Duplicates: 0  Warnings: 0
+
+                                mysql> select * from db1.t10 ;                                                   +------+-----+------+-------------+
+                                    | name | age | sex  | likes       |
+                                    +------+-----+------+-------------+
+                                    | dc   |  19 | boy  | eat,pi      |
+                                    | dc2  |  19 | boy  | eat,game,pi |
+                                    +------+-----+------+-------------+
+                                    2 rows in set (0.00 sec)
+
+                        modify 修改字段类型 (改类型 调位置)
+                                注意:修改的字段类型与已经存储的数据冲突时,不能修改类型
+
+                                ###################修改类型###################################
+                                mysql> alter table db1.t10 modify name varchar(15) default "";
+                                    Query OK, 2 rows affected (0.73 sec)
+                                    Records: 2  Duplicates: 0  Warnings: 0
+
+                                mysql> desc db1.t10 ;
+                                    +-------+--------------------------------+------+-----+---------+-------+
+                                    | Field | Type                           | Null | Key | Default | Extra |
+                                    +-------+--------------------------------+------+-----+---------+-------+
+                                    | name  | varchar(15)                    | YES  |     |         |       |
+                                    | age   | tinyint(3) unsigned            | NO   |     | 19      |       |
+                                    | sex   | enum('boy','gril','no')        | YES  |     | NULL    |       |
+                                    | likes | set('eat','game','pi','sleep') | YES  |     | NULL    |       |
+                                    +-------+--------------------------------+------+-----+---------+-------+
+                                    4 rows in set (0.00 sec)
+
+                                #############调整位置#######################
+                                mysql> alter table db1.t10 modify age tinyint(3) unsigned not null after sex;
+                                    Query OK, 0 rows affected (0.52 sec)
+                                    Records: 0  Duplicates: 0  Warnings: 0
+
+                                mysql> desc db1.10;
+                                    +-------+--------------------------------+------+-----+---------+-------+
+                                    | Field | Type                           | Null | Key | Default | Extra |
+                                    +-------+--------------------------------+------+-----+---------+-------+
+                                    | name  | varchar(15)                    | YES  |     |         |       |
+                                    | sex   | enum('boy','gril','no')        | YES  |     | NULL    |       |
+                                    | age   | tinyint(3) unsigned            | NO   |     | NULL    |       |
+                                    | loves | set('eat','game','pi','sleep') | YES  |     | NULL    |       |
+                                    +-------+--------------------------------+------+-----+---------+-------+
+
+
+
+                        change 修改字段名
+
+                                mysql> alter table db1.t10 change likes loves set('eat','game','pi','sleep');
+                                Query OK, 0 rows affected (0.08 sec)
+                                Records: 0  Duplicates: 0  Warnings: 0
+
+                                mysql> desc db1.t10 ;                                                            +-------+--------------------------------+------+-----+---------+-------+
+                                    | Field | Type                           | Null | Key | Default | Extra |
+                                    +-------+--------------------------------+------+-----+---------+-------+
+                                    | name  | varchar(15)                    | YES  |     |         |       |
+                                    | age   | tinyint(3) unsigned            | NO   |     | 19      |       |
+                                    | sex   | enum('boy','gril','no')        | YES  |     | NULL    |       |
+                                    | loves | set('eat','game','pi','sleep') | YES  |     | NULL    |       |
+                                    +-------+--------------------------------+------+-----+---------+-------+
+                                    4 rows in set (0.00 sec)
+
+
+                        rename 修改表名
+
+                                mysql> alter table db1.t10 rename db1.classinfo;
+                                Query OK, 0 rows affected (0.12 sec)
+
+                                mysql> show tables;
+                                +---------------+
+                                | Tables_in_db1 |
+                                +---------------+
+                                | classinfo     |
+                                | t21           |
+                                +---------------+
+
+
+        3.mysql键值
+                1)键值类型:
+                        普通索引 index
+                        唯一索引 unique
+                        主键  primary key
+                        外键  foreign key
+                        全文索引 fulltext
+                作用: 约束如何给字段赋值
+                        索引:
+                            类似于书中的目录
+                            对表中的字段值进行排序
+                            索引类型包括Btree B+tree hash
+                        索引优缺点:
+                            优点:
+                            通过创建唯一性索引,可以保证数据库表中 每一行数据的唯一性
+                            加快数据查询速度,数据库总是查询多
+                            缺点:
+                            当对表中数据进行增加 删除 和修改 的时候 索引要动态调整 降低数据维护速度
+                            索引需要占物理空间
+                            存储在数据库根目录下
+
+                2)mysql键值使用
+                        2.1普通索引 index
+                            使用规则:
+                                -一个表中有多个index字段
+                                -字段的只允许重复,且可以赋值null
+                                -通常把查询条件的字段设置为index字段
+                                -index字段 标志为 mul
+                            查看:
+                                show index from 表名\G; \G表示 竖着显示
+                            创建索引:
+
+                                在创建表时创建索引:
+                                    create table db1.t22(
+                                    class char(9),
+                                    name char(15),
+                                    age int,
+                                    index(name),index(age));
+                                查看:
+                                    mysql> show index from db1.t22\G;
+                                删除索引:
+                                     mysql> drop index aaa on classinfo;
+                                在已有的表中创建索引:
+                                    create index 索引名 on 表名(字段名);
+                                    mysql> create index aaa on classinfo(name);
+                                    drop index 索引名 on 表名;
+                        2.2 主键
+                                作用:限制字段赋值
+                                使用规则:
+                                    字段值不能从重复,且不能赋null(核心作用)
+                                    一个表中只能有一个primary key 字段
+                                    多个字段都作为主键,称为符合主键,必须一起创建
+                                    主键通常与 auto increment(自增长) 连用
+                                    主键字段标志是pri
+                                    通常把表中唯一表示的字段设置为主键
+                                    [纪录字段编号]
+                                创建主键
+
+                                    mysql> create table db1.t23(
+                                    -> name char(10) primary key, ###设定主键
+                                    -> age int,
+                                    -> pay float(7,2)
+                                    -> );
+
+                                    mysql> insert into db1.t23 values("bob","25","2000");
+                                         ERROR 1062 (23000): Duplicate entry 'bob' for key 'PRIMARY'
+
+                                    mysql> insert into db1.t23 values("aaa","25","2000");
+                                        Query OK, 1 row affected (0.09 sec)
+
+                                    mysql> select * from t23;
+                                        +------+------+---------+
+                                        | name | age  | pay     |
+                                        +------+------+---------+
+                                        | aaa  |   25 | 2000.00 |
+                                        | bob  |   25 | 2565.00 |
+                                        +------+------+---------+
+
+                                    在已有表中创建主键:
+                                        创建主键
+                                        alter table 表名 add primary key(name);
+
+                                        mysql> desc db1.classinfo;
+                                        +-------+--------------------------------+------+-----+---------+-------+
+                                        | Field | Type                           | Null | Key | Default | Extra |
+                                        +-------+--------------------------------+------+-----+---------+-------+
+                                        | name  | varchar(15)                    | NO   | PRI |         |       |
+
+
+
+                                创建复合主键
+                                    约束方式: 主键字段的值不可以同时重复
+                                    创建主键
+                                    在已有表中添加复合主键
+
+                                        alter table db1.t25 add primary key(id,name);
+
+                                        mysql> create table db1.t24(                                                         -> clientip char(15),
+                                        -> serport int,
+                                        -> clientip char(15),
+                                        -> status enum("yes","no"),
+                                        #########要创建多少 就在这里添加多少###########
+                                        -> primary key(clientip,serport)
+                                        -> );
+                                        Query OK, 0 rows affected (0.21 sec)
+
+                                    mysql> desc db1.t24;
+                                        +----------+------------------+------+-----+---------+-------+
+                                        | Field    | Type             | Null | Key | Default | Extra |
+                                        +----------+------------------+------+-----+---------+-------+
+                                        | clientip | char(15)         | NO   | PRI | NULL    |       |
+                                        | serport  | int(11)          | NO   | PRI | NULL    |       |
+                                        | status   | enum('yes','no') | YES  |     | NULL    |       |
+                                        +----------+------------------+------+-----+---------+-------+
+
+                                    mysql> insert into db1.t24 values ("1.1.1.1",22,"no");
+                                    mysql> insert into db1.t24 values ("1.1.1.1",22,"yes");
+                                    ERROR 1062 (23000): Duplicate entry '1.1.1.1-22' for key 'PRIMARY'
+                                    mysql> insert into db1.t24 values ("1.1.1.1",80,"no");
+                                    mysql> insert into db1.t24 values ("1.1.1.2",80,"yes");
+                                    mysql> insert into db1.t24 values ("1.1.1.2",22,"no");
+
+                                    mysql> select * from t24;
+                                        +----------+---------+--------+
+                                        | clientip | serport | status |
+                                        +----------+---------+--------+
+                                        | 1.1.1.1  |      22 | no     |
+                                        | 1.1.1.1  |      80 | no     |
+                                        | 1.1.1.2  |      22 | yes    |
+                                        | 1.1.1.2  |      80 | yes    |
+                                        +----------+---------+--------+
+
+
+                                主键通常与 auto increment(自增长) 连用
+                                    mysql> create table db1.t25(
+                                    -> id int primary key auto_increment,
+                                    -> name char(15),
+                                    -> age tinyint,
+                                    -> sex enum("boy","girl")
+                                    -> );
+                                    mysql> desc db1.t25;
+                                        +-------+--------------------+------+-----+---------+----------------+
+                                        | Field | Type               | Null | Key | Default | Extra          |
+                                        +-------+--------------------+------+-----+---------+----------------+
+                                        | id    | int(11)            | NO   | PRI | NULL    | auto_increment |
+                                        | name  | char(15)           | YES  |     | NULL    |                |
+                                        | age   | tinyint(4)         | YES  |     | NULL    |                |
+                                        | sex   | enum('boy','girl') | YES  |     | NULL    |                |
+                                        +-------+--------------------+------+-----+---------+----------------+
+
+                                    mysql> insert into db1.t25(name,age,sex)values("tencen","25","boy");
+                                    mysql> insert into db1.t25(name,age,sex)values("bbbb","25","boy");
+                                    mysql> insert into db1.t25(name,age,sex)values("aaa","25","boy");
+
+                                    mysql> select * from t25;
+                                        +----+----------+------+------+
+                                        | id | name     | age  | sex  |
+                                        +----+----------+------+------+
+                                        |  1 | tencen   |   25 | boy  |
+                                        |  2 | bilibili |   25 | boy  |
+                                        |  3 | bilibili |   25 | girl |
+                                        |  4 | luceey   |   16 | girl |
+                                        +----+----------+------+------+
+                                        4 rows in set (0.00 sec)
+                                        删除表中的数据,生产环境不能这么干 不然跑路啊.
+                                    mysql> delete from t25;
+                                            Query OK, 6 rows affected (0.12 sec)
+
+                                    mysql> insert into t25(name,age,sex)values("1080","120","girl");
+                                           Query OK, 1 row affected (0.03 sec)
+                                           除非给id从新设定为1 ,否则依然按照以前的值自加一s
+                                    mysql> select * from t25;
+                                        +----+------+------+------+
+                                        | id | name | age  | sex  |
+                                        +----+------+------+------+
+                                        |  7 | 1080 |  120 | girl |
+                                        +----+------+------+------+
+                        2.3 外键
+                                作用:限制给字段赋值
+                                    字段值在另一个表字段值范围内选择
+                                规则:
+                                     表的存储引擎必须是innodb (之后会讲)
+                                     字段类型要一致
+                                     被参考字段必须要是索引类型的一种(通常为primary key)
+
+                                命令格式:
+                                        create table 库.表(
+                                            字段列表,
+                                            foreign key(字段名) references表名(字段名)  ###指定外键
+                                            on update cascade  ###同步增加
+                                            on delete cascade  ###同步删除
+                                            )engine=innodb;
+                                        创建外键
+                                eg:
+                                            create table db1.yg(
+                                            yg_id int primary key auto_increment,
+                                            name char(15)
+                                            )engine=innodb;
+
+                                            insert into db1.yg(name)values("bob");
+                                            insert into db1.yg(name)values("luci");
+                                            insert into db1.yg(name)values("cd");
+
+
+                                            mysql> select * from yg;
+                                                    +-------+------+
+                                                    | yg_id | name |
+                                                    +-------+------+
+                                                    |     1 | bob  |
+                                                    |     2 | luci |
+                                                    |     3 | cd   |
+                                                    |     4 | cd   |
+                                                    |     5 | bob  |
+                                                    +-------+------+
+
+                                            create table db1.gz(
+                                            gz_id int,
+                                            pay float(7,2),
+                                            foreign key(gz_id) references yg(yg_id)  ####创建外键######
+                                            on update cascade  ###同步删除
+                                            on delete cascade  ###同步增加
+                                            )engine=innodb;
+
+                                            mysql> select * from gz;
+                                            Empty set (0.00 sec)
+
+                                            ##########更新###### 员工id#########
+                                            mysql> update db1.yg set yg_id=6 where yg_id=3;
+                                            Query OK, 1 row affected (0.03 sec)
+                                            Rows matched: 1  Changed: 1  Warnings: 0
+
+                                            mysql> select * from gz;
+                                            +-------+---------+
+                                            | gz_id | pay     |
+                                            +-------+---------+
+                                            |     4 |  200.00 |
+                                            |     5 |  200.00 |
+                                            |     6 |  200.00 |
+                                            |     6 |  500.00 |
+                                            |     6 | 5000.00 |
+                                            |     1 | 2000.00 |
+                                            +-------+---------+
+                                            6 rows in set (0.00 sec)
+
+                                            #########删除id=6 的 员工  gz 表中 也会消失 ##########
+
+                                            mysql> delete from db1.yg where yg_id=6;
+                                            Query OK, 1 row affected (0.05 sec)
+
+                                            mysql> select * from gz;
+                                            +-------+---------+
+                                            | gz_id | pay     |
+                                            +-------+---------+
+                                            |     4 |  200.00 |
+                                            |     5 |  200.00 |
+                                            |     1 | 2000.00 |
+                                            +-------+---------+
+                                            3 rows in set (0.00 sec)
+
+                                    mysql> delete from gz;
+
+                                    mysql> alter table gz add primary key(gz_id);
+                                        Query OK, 0 rows affected (0.43 sec)
+                                        Records: 0  Duplicates: 0  Warnings: 0
+
+                                        mysql> desc gz;
+                                        +-------+------------+------+-----+---------+-------+
+                                        | Field | Type       | Null | Key | Default | Extra |
+                                        +-------+------------+------+-----+---------+-------+
+                                        | gz_id | int(11)    | NO   | PRI | NULL    |       |
+                                        | pay   | float(7,2) | YES  |     | NULL    |       |
+                                        +-------+------------+------+-----+---------+-------+
+                                        2 rows in set (0.00 sec)
+
+                                    mysql> insert into gz values(5,200);
+                                        ERROR 1062 (23000): Duplicate entry '5' for key 'PRIMARY'
+                                    mysql> insert into gz values(null,200);
+                                        ERROR 1048 (23000): Column 'gz_id' cannot be null
+                                    mysql> insert into gz values(1,20z00);
+                                        ERROR 1054 (42S22): Unknown column '20z00' in 'field list'
+                                    mysql> insert into gz values(1,2000);
+                                        Query OK, 1 row affected (0.02 sec)
+                                        mysql> select * from gz;
+                                        +-------+---------+
+                                        | gz_id | pay     |
+                                        +-------+---------+
+                                        |     1 | 2000.00 |
+                                        |     5 |  200.00 |
+                                        +-------+---------+
+
+                                删除外键:
+                                        show create table db1.gz\G;
+                                        alter alter db1.gz drop foreign key gz_ibfk_1;
 
 
 

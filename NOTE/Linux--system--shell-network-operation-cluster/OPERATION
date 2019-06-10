@@ -1618,7 +1618,7 @@
 
                    将客户端生成的公钥 传递给 需要登录的机器, 本机保留私钥, 远程时通过 私钥解密.
 
-
+                    -f 指定 id_rsa 文件位置
                     [root@web2 ~]# ssh-keygen -f /root/.ssh/id_rsa -N ''
                     [root@web2 ~]# ssh-copy-id  192.168.2.100
                     [root@web2 ~]# git clone root@192.168.2.100:/var/git
