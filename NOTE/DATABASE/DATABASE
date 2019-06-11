@@ -180,7 +180,7 @@ panglj@tedu.cn
                         DTL  数据事物语言  commit  rollback
 
                 2.mysql管理环境
-                    1)show database; 显示已有的库
+                    1)show databases; 显示已有的库
                         不要删除,修改已有的库 ,新建库存放数据
                     2)select user(); 显示链接用户
                     3)use 库名;       切换库
@@ -202,13 +202,13 @@ panglj@tedu.cn
 
                     6)show tables ; 显示已有的表
                     7)drop database 库名; 删除库
-                    7)drop table 表名； 删除表
                 表管理命令
                     1)select * from 库名.表名;
                     2)insert into 库名.表名;
                     3)update 库名.表名 set 字段=值;
                     4)delete from 库名.表名;  删除表单中的所有数据,但不删除表
                     5)create table 库名.表名;
+                    7)drop table 表名； 删除表
 
 
 
