@@ -97,6 +97,9 @@ panglj@tedu.cn
                     1 or MEDIUM    长度;数字,小写/大写 和特殊字符
                     2 or STRONG    长度;数字,小写/大写 和特殊字符 ;字典文件
             查看变量
+                    模糊查找:(只要包含这个字段就行)
+                        使用两个%将需要匹配的字段包起来.
+                    去掉  两个% 是精确匹配
                     mysql> show variables like "%password%";
                     +---------------------------------------+--------+
                     | Variable_name                         | Value  |
@@ -536,6 +539,16 @@ panglj@tedu.cn
                                         | name  | varchar(15)                    | NO   | PRI |         |       |
 
 
+                                    删除主键
+                                        使用drop 删除
+                                          mysql> desc t3;
+                                          mysql> alter  table  t3 drop  primary key;
+                                          mysql> desc t3;
+                                          mysql> insert into t3  values("nsd181101","tom",19);
+                                          mysql> insert into t3  values(null,"jerry",19);
+                                            ERROR 1048 (23000): Column 'stu_num' cannot be null
+                                          mysql> select  * from  t3;
+
 
                                 创建复合主键
                                     约束方式: 主键字段的值不可以同时重复
@@ -747,6 +760,225 @@ panglj@tedu.cn
                                 删除外键:
                                         show create table db1.gz\G;
                                         alter alter db1.gz drop foreign key gz_ibfk_1;
+
+                        在已有的表中添加外键 主键  自加(auto_increment)都是可以的 但是建立外键时需要数据匹配.
+
+                                ####向已有的表中添加外键#####
+                               alter table db1.gz
+                               add
+                               foreign key(gz_id) references db1.yg(yg_id)
+                               on update cascade on delete cascade
+                               engine=innodb;
+                               ####向已有表的中添加主键####
+                               alter table db1.yg
+                               modify
+                               yg_id int primary key auto_increment;
+    DAY03
+        修改搜索路径
+            mysql> show variables like "secure_file_priv";
+             默认路径 : /var/lib/mysql-files/
+             修改配置文件 :
+                        [root@DBA ~]# mkdir /myload
+                        [root@DBA ~]# chown mysql /myload
+                        [root@DBA ~]# vim /etc/my.cnf
+
+                            secure_file_priv="/myload"
+
+             重启服务:    systemctl restart mysqld
+             进入数据库查询位置是否修改:
+                        mysql> show variables like "secure_file_priv";
+        数据导入
+                默认只有root才能导入数据
+                建表
+                导入
+              注意事项:
+                    字段分隔符要和文件一致
+                    表字段类型和字段个数要和文件匹配
+                    导入数据时指定文件的绝对路径
+              步骤:命令格式
+
+                    mysql>load data infile "目录/文件"
+                    into table库名.表名
+                    fields terminated by "分隔符" #### 列
+                    lines terminated by "\n";    #### 行
+
+
+              eg:
+                    前面还要 创建文件夹 修改配置文件 重启服务
+                mysql> load data infile "/myload/passwd" into table db3.usr fields terminated by ":" lines terminated by "\n";
+
+        数据导出
+               作用:把表纪录存储到系统文件里
+               注意:导出数据有sql语句决定
+                    导出的是表记录,不包括字段名
+                    自动创建存储数据文件
+                    存储数据文件,具有唯一性
+                    注意导出文件是目录必须与secure_file_priv 目录一致(也就是说只能在这里导出)
+               命令:
+                   1)select命令 into outfile "目录名/文件名";  ### 不指定 分隔符时 默认 分别为 \t  \n
+                   2)select命令 into outfile "目录名/文件名"
+                     fields terminated by "分割符"; ####指定列分隔符
+                   3)select命令 into outfile "目录名/文件名"
+                     fields terminated by "分割符"
+                     lines terminated by "\n"  ####指定行分割符号
+               eg:
+                   select * from db1.t23 into outfile "/myload/t23";
+                   select * from db3.usr where id<=3 into outfile "/myload/user2.txt";
+
+        表管理记录 (db3.usr)
+                注意事项:
+                        字段值与字段类型匹配
+                        字符类型的字段 要用 ""括起来
+                        依次给所有字段赋值时,字段名可省略
+                        只给部分字段赋值时,必须明确对应字段名称
+                        没有赋值的字段使用默认值,或自增长
+
+            1.添加记录
+                命令格式
+                   添加一条记录给所有字段可以省略
+                   insert into 表名 values(字段值列表);
+
+                   mysql> insert into usr values(22,"lc","x",2000,2000,"test user","/home/bob","/bin/bash")
+
+                   添加n行给所有列赋值
+                   insert into 表名 values(字段值列表1),(字段值列表2);
+
+                   添加一条记录,给指定字段赋值
+                   insert into 表名(字段名列表) values(字段值列表);
+                   添加N条记录,给指定字段赋值
+                   insert into 表名(字段名列表) values(字段值列表1),(字段值列表2),(字段值列表3);
+
+            查看记录
+                注意:
+                    * 表示查询所有字段
+                    查看当前库表记录时库名可省略
+                    字段列表决定显示列个数
+                    条件决定显示行的个数
+                查看所有
+                        select * from 库名.表名;
+                条件查询
+                       select 字段1,字段N from 库名.表名 where 条件表达式;
+            修改记录
+                注意:字段值与字段类型匹配
+                    对于字符类型,值使用""起来
+                    若不使用where限定条件,会更新所有记录字段值
+                    限定条件,只更新匹配条件的记录字段的值
+                条件修改
+                   update 表名 set 字段名=值,字段名=值,字段名=值,... where 条件;
+                修改所有
+                   update 表名 set 字段名=值,字段名=值,字段名=值,... ;
+
+
+            删除记录
+                注意: 不添加条件删除表中所有
+                条件删除
+                    delete  from 库名.表名 where 条件表达式;
+                删除所有
+                    delete  from 库名.表名 ;
+
+   DAY03
+        修改搜索路径
+            mysql> show variables like "secure_file_priv";
+             默认路径 : /var/lib/mysql-files/
+             修改配置文件 :
+                        [root@DBA ~]# mkdir /myload
+                        [root@DBA ~]# chown mysql /myload
+                        [root@DBA ~]# vim /etc/my.cnf
+
+                            secure_file_priv="/myload"
+
+             重启服务:    systemctl restart mysqld
+             进入数据库查询位置是否修改:
+                        mysql> show variables like "secure_file_priv";
+        数据导入
+                默认只有root才能导入数据
+                建表
+                导入
+              注意事项:
+                    字段分隔符要和文件一致
+                    表字段类型和字段个数要和文件匹配
+                    导入数据时指定文件的绝对路径
+              步骤:命令格式
+
+                    mysql>load data infile "目录/文件"
+                    into table库名.表名
+                    fields terminated by "分隔符" #### 列
+                    lines terminated by "\n";    #### 行
+
+
+              eg:
+                    前面还要 创建文件夹 修改配置文件 重启服务
+                mysql> load data infile "/myload/passwd" into table db3.usr fields terminated by ":" lines terminated by "\n";
+
+        数据导出
+               作用:把表纪录存储到系统文件里
+               注意:导出数据有sql语句决定
+                    导出的是表记录,不包括字段名
+                    自动创建存储数据文件
+                    存储数据文件,具有唯一性
+                    注意导出文件是目录必须与secure_file_priv 目录一致(也就是说只能在这里导出)
+               命令:
+                   1)select命令 into outfile "目录名/文件名";  ### 不指定 分隔符时 默认 分别为 \t  \n
+                   2)select命令 into outfile "目录名/文件名"
+                     fields terminated by "分割符"; ####指定列分隔符
+                   3)select命令 into outfile "目录名/文件名"
+                     fields terminated by "分割符"
+                     lines terminated by "\n"  ####指定行分割符号
+               eg:
+                   select * from db1.t23 into outfile "/myload/t23";
+                   select * from db3.usr where id<=3 into outfile "/myload/user2.txt";
+
+        表管理记录 (db3.usr)
+                注意事项:
+                        字段值与字段类型匹配
+                        字符类型的字段 要用 ""括起来
+                        依次给所有字段赋值时,字段名可省略
+                        只给部分字段赋值时,必须明确对应字段名称
+                        没有赋值的字段使用默认值,或自增长
+
+            1.添加记录
+                命令格式
+                   添加一条记录给所有字段可以省略
+                   insert into 表名 values(字段值列表);
+
+                   mysql> insert into usr values(22,"lc","x",2000,2000,"test user","/home/bob","/bin/bash")
+
+                   添加n行给所有列赋值
+                   insert into 表名 values(字段值列表1),(字段值列表2);
+
+                   添加一条记录,给指定字段赋值
+                   insert into 表名(字段名列表) values(字段值列表);
+                   添加N条记录,给指定字段赋值
+                   insert into 表名(字段名列表) values(字段值列表1),(字段值列表2),(字段值列表3);
+
+            查看记录
+                注意:
+                    * 表示查询所有字段
+                    查看当前库表记录时库名可省略
+                    字段列表决定显示列个数
+                    条件决定显示行的个数
+                查看所有
+                        select * from 库名.表名;
+                条件查询
+                       select 字段1,字段N from 库名.表名 where 条件表达式;
+            修改记录
+                注意:字段值与字段类型匹配
+                    对于字符类型,值使用""起来
+                    若不使用where限定条件,会更新所有记录字段值
+                    限定条件,只更新匹配条件的记录字段的值
+                条件修改
+                   update 表名 set 字段名=值,字段名=值,字段名=值,... where 条件;
+                修改所有
+                   update 表名 set 字段名=值,字段名=值,字段名=值,... ;
+
+
+            删除记录
+                注意: 不添加条件删除表中所有
+                条件删除
+                    delete  from 库名.表名 where 条件表达式;
+                删除所有
+                    delete  from 库名.表名 ;
+
 
 
 
