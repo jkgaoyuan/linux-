@@ -207,7 +207,7 @@ panglj@tedu.cn
                     1)select * from 库名.表名;
                     2)insert into 库名.表名;
                     3)update 库名.表名 set 字段=值;
-                    4)delete from 库名.表名;  删除表单数据
+                    4)delete from 库名.表名;  删除表单中的所有数据,但不删除表
                     5)create table 库名.表名;
 
 
@@ -420,6 +420,8 @@ panglj@tedu.cn
 
 
                         change 修改字段名
+
+                                    .....chenge likes .....
 
                                 mysql> alter table db1.t10 change likes loves set('eat','game','pi','sleep');
                                 Query OK, 0 rows affected (0.08 sec)
@@ -943,11 +945,12 @@ panglj@tedu.cn
 
                    mysql> insert into usr values(22,"lc","x",2000,2000,"test user","/home/bob","/bin/bash")
 
-                   添加n行给所有列赋值
+                   添加n行,给所有列赋值
                    insert into 表名 values(字段值列表1),(字段值列表2);
 
                    添加一条记录,给指定字段赋值
                    insert into 表名(字段名列表) values(字段值列表);
+
                    添加N条记录,给指定字段赋值
                    insert into 表名(字段名列表) values(字段值列表1),(字段值列表2),(字段值列表3);
 
@@ -968,6 +971,7 @@ panglj@tedu.cn
                     限定条件,只更新匹配条件的记录字段的值
                 条件修改
                    update 表名 set 字段名=值,字段名=值,字段名=值,... where 条件;
+
                 修改所有
                    update 表名 set 字段名=值,字段名=值,字段名=值,... ;
 
@@ -978,6 +982,183 @@ panglj@tedu.cn
                     delete  from 库名.表名 where 条件表达式;
                 删除所有
                     delete  from 库名.表名 ;
+
+
+        匹配条件
+           基本匹配条件(适用于select \ update \ delete)
+
+                数值比较   > < >= <= = !=
+                    符号两边要求是数值类型
+                    eg
+                        select * from usr where id<=6;
+                        select * from usr where uid=gid;
+
+                字符比较
+                    =   !=  is null  is not null
+                    eg:
+                        select name,uid,gid from usr where uid=gid;
+                        select from usr where name is null;
+
+                范围内比较
+                     in       not in      between
+                     eg:
+                        select name from usr where name in ("root","adm","mysql");
+                        select name,uid from user where uid in (3,5,7,9);
+                        select name,shell from usr where shell not in ("/bin/bash","/sbin/nologin");
+                        select name uid from usr where uid between 50 and 100;
+                逻辑比较
+                    逻辑与  and  && (多个判断条件同时成立)
+                    逻辑或  or   || (多个判断条件,某个条件成立 )
+                    逻辑非  not   !
+                    eg:
+                        select * from usr where name="root" and uid=1 and shell="abc";
+                        select * from usr where name="root" && uid=1 && shell="abc";
+
+                空\非空
+                    is null / is not null
+
+                去掉重复数据
+                        distinct
+                        select distinct shell from usr where uid>10;
+                        select distinct shell from usr where uid>=10;
+                        select distinct shell from usr;
+           高级匹配条件(适用于select \ update \ delete)
+                模糊匹配
+                    where 字段名 like  '通配符'
+                                          _ 表示一个
+                                          % 表示0-n个字符
+
+                    select name from usr where name like "____";
+                    select name from usr where name like "_%_";
+                    select name from usr where name like "a%";  ##以a开头
+                    select name from usr where name like "%a%"; ##必须包含a
+
+
+                正则匹配
+                    语法: where 字段号 regexp '正则表达式';
+                    正则符号:^ $ [] | *
+                    select name from usr where name regexp  '^r|y$'; ### r开头 或者 y 结尾
+                    select name from usr where name regexp  '^r.*y$';  ### .* 任意字符的任意次数, .任意字符 *前一个字符的任意次数
+                    select name,uid from usr where uid regexp  '^....$'; ###四位数字
+                    insert into usr(name)values("yaya9"),("7yaya"),("ya8ya");
+                    select name,uid from usr where uid regexp  '[0-9]';
+                四则计算
+                 + - * /
+                 select name,uid,gid,uid+gid sum from usr where name="bin";
+                 select name,uid,gid, uid+gid sum from usr; ###将所有的uid和gid相加
+                 select name,uid,gid,(uid+gid)/2 ava from usr where name="root";
+                     +------+------+------+--------+
+                    | name | uid  | gid  | ava    |
+                    +------+------+------+--------+
+                    | root |    0 |    1 | 0.5000 |
+                    +------+------+------+--------+
+
+                 update usr set gid=gid+1; ### 每一个gid+1
+
+                 alter table usr add age tinyint unsigned default 19 after name;
+                 select name,age, 2019-age your_age from usr where name="root";
+                    +------+------+----------+
+                    | name | age  | your_age |
+                    +------+------+----------+
+                    | root |   19 |     2000 |
+                    +------+------+----------+
+
+           操作查询结果(适用于select)
+
+                 select count(字段名) from usr; 求字段值的个数
+                 select min(字段名) from usr;   求字段值的最小值
+                 select avg(字段名) from usr;   求字段值的平均值
+                 select sum(字段名) from usr;   求字段值的总和
+                 select max(字段名) from usr;   求字段值的最大值
+                 eg:
+                     统计表中所有的行数
+                     select count(*) from usr;
+                     统计uid的 平均数
+                     select avg(uid) from usr;
+
+                 查询结果排序
+
+                     SQL查询 order by 字段名 [asc|desc];
+                     -asc 升序列 小--->大  ###默认
+                     -desc 降序列 大-->小
+                     eg:
+
+                        升序排
+                        select name,uid from usr where uid>=10 and uid<=500 order by uid; ##默认省略asc
+                                +-----------------+------+
+                                | name            | uid  |
+                                +-----------------+------+
+                                | operator        |   11 |
+                                | games           |   12 |
+                                | ftp             |   14 |
+
+                        降序排
+                        select name,uid from usr where uid>=10 and uid<=500 order by uid desc;
+                                +-----------------+------+
+                                | name            | uid  |
+                                +-----------------+------+
+                                | systemd-network |  192 |
+                                | nobody          |   99 |
+                                | dbus            |   81 |
+                                | sshd            |   74 |
+
+                 查询分组
+                    SQL查询 group by 字段名;
+                    eg:
+                        select shell from usr group by shell;
+                        select shell from usr where uid<=1000 group by shell;
+                        select gid from usr group by gid;
+                        mysql> select shell,count(shell)from usr group by shell;
+                        +----------------+--------------+
+                        | shell          | count(shell) |
+                        +----------------+--------------+
+                        | NULL           |            0 |
+                        | /bin/bash      |            5 |
+                        | /bin/false     |            1 |
+
+                 查询结果过滤
+                        SQL查询 having 条件;
+                   eg:
+                    select name from usr where id<20 having name="adm";
+                    +------+
+                    | name |
+                    +------+
+                    | adm  |
+                    +------+
+                 限制查询结果的查询行数
+                        SQL查询 limit 数字; ##显示查询结果前多少条记录
+                        SQL查询 limit 数字1,数字2; ###显示指定范围内的查询记录
+                        数字1 起始行(0表示第一行)
+                        数字2 总行数
+
+                        eg:
+                            select id,name,password from usr where id<=20; ###默认全部输出
+                            select id,name,password from usr where id<=20 limit 10;
+                            select id,name,password from usr where id<=20 limit 5;
+                            select id,name,password from usr where id<=20 limit 0,2; ###从第一行开始输出 共输出两行
+                            select id,name,password from usr where id<=20 limit 1,3; ###从第二行开始输出 共输出三行
+
+        常见的mysql 管理工具
+                 phpMyAdmin  浏览器端      需要LNMP支持  开源 免费
+                 yum -y install httpd php-mysql php
+                 systemctl restart httpd.service
+                 systemctl enable httpd.service
+                 tar -xf phpMyAdmin-2.11.11-all-languages.tar.gz
+                 ls
+                 mv phpMyAdmin-2.11.11-all-languages phpMyAdmin
+                 cp phpMyAdmin /var/www/html/
+                 cd /var/www/html/phpMyAdmin
+                 cp config.sample.inc.php config.inc.php
+                 vim config.inc.php
+                 31  $cfg['blowfish_secret'] = 'plj123';  /* YOU MUST FILL IN THIS FOR COOKIE AUTH! */      ### cookie 认证  随便修改为什么
+                 17  $cfg['Servers'][$i]['host'] = 'localhost'; ###数据库服务器地址
+                 systemctl restart httpd.service
+
+
+
+
+
+
 
 
 
