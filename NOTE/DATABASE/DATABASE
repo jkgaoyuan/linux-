@@ -979,6 +979,7 @@ panglj@tedu.cn
                      统计uid的 平均数
                      select avg(uid) from usr;
 
+
                  查询结果排序
 
                      SQL查询 order by 字段名 [asc|desc];

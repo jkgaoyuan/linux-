@@ -1,0 +1,189 @@
++++++++++++++++++++++++++++++++++++++++++++++++++++
+1 把/etc/passwd文件的内容存储到userdb库下的user表里，并做如下配置：
+mysql> create table user(
+    -> name char(15),
+    -> passwd char(15),
+    -> uid int,
+    -> gid int,
+    -> comment char(150),
+    -> home char(    ->
+
+    -> home char(50),
+    -> shell char(30)
+    -> );
+load data infile "/myload/passwd" into table db3.user fields terminated by ":" lines terminated by "\n";
+
+2 在用户名字段下方添加s_year字段 存放出生年份 默认值是1990
+
+alter table user add s_year int default "1990" after name;
+
+3 在用户名字段下方添加字段名sex 字段值只能是gril 或boy 默认值是 boy
+
+alter table user add sex enum("girl","boy") not null default "boy" after name;
+
+4 在sex字段下方添加 age字段  存放年龄 不允许输入负数。默认值 是 21
+alter table user add age int unsigned not null default "21" after sex;
+
+5 把uid字段值是10到50之间的用户的性别修改为 girl
+alter table user add id int primary key auto_increment first;
+update user set sex="girl" where uid between 10 and 50;
+6 统计性别是girl的用户有多少个。
+
+mysql> select count(sex) from user where sex="girl";
++------------+
+| count(sex) |
++------------+
+|          4 |
++------------+
+
+7 查看性别是girl用户里 uid号 最大的用户名 叫什么。
+
+mysql> select name from user  where sex="girl"  order by uid desc limit 1 ;
+
+8 添加一条新记录只给name、uid 字段赋值 值为rtestd  1000
+
+mysql> insert into user(name,uid) values("rtestd",1000);
+9 添加一条新记录只给name、uid 字段赋值 值为rtest2d   2000
+
+mysql> insert into user(name,uid) values("rtestd",1000);
+
+10 显示uid 是四位数的用户的用户名和uid值。
+
+mysql> select name,uid from user where uid like "____";
++---------+------+
+
+
+11 显示名字是以字母r 开头 且是以字母d结尾的用户名和uid。
+mysql> select name,uid from user where name like "^r.*d$";
+
+
+12 查看是否有 名字以字母a开头 并且是 以字母c结尾的用户。
+
+mysql> select name,uid from user where name like "^a.*c$";
+
+13 把gid  在100到500间用户的家目录修改为/root
+mysql> update user set home="/root" where uid between 100 and 500;
+
+
+14 把用户是  root 、 bin 、  sync 用户的shell 修改为  /sbin/nologin
+
+mysql> update user set shell="/sbin/nologin" where name in ("root","bin","sync");
+
+
+15 查看  gid 小于10的用户 都使用那些shell
+
+mysql> select shell,name from user where gid<=10;
+
+16 删除  名字以字母d开头的用户。
+mysql> delete from user where name like "r%";
+
+17 查询  gid 最大的前5个用户 使用的 shell
+
+mysql> select name,shell,gid from user order by gid desc limit 0,5;
+
+18 查看那些用户没有家目录
+select name from user where home is null;
+19 把gid号最小的前5个用户信息保存到/mybak/min5.txt文件里。
+
+mysql> select gid,name from user order by gid limit 0,5 into outfile "/myload/selein5.txt";
+
+20 使用系统命令useradd 命令添加登录系统的用户 名为lucy 
+
+useradd lucy
+
+21 把lucy用户的信息 添加到user1表里
+
+
+
+22 删除表中的 comment 字段
+
+mysql> alter table user drop comment;
+
+23 设置表中所有字段值不允许为空
+
+24 删除root 用户家目录字段的值
+update user set home="" where name="root";
+delete home from user where home="/root";
+25 显示 gid 大于500的用户的用户名 家目录和使用的shell
+
+mysql> select name,home,shell from user where gid>500;
+
+
+26 删除uid大于100的用户记录
+
+delete from usertab where uid>100;
+27 显示uid号在10到30区间的用户有多少个。
+
+mysql> select count(name) from user where uid between 10 and 30;
+
+
+28 显示uid号是100以内的用户使用的shell。
+mysql> select shell from user where uid<100;
+
+29 显示uid号最小的前10个用户的信息。
+
+mysql> select * from user where uid<100 limit 0,10;
+
+
+30 显示表中第10条到第15条记录
+
+mysql> select * from user  limit 9,6;
+
+
+31 显示uid号小于50且名字里有字母a  用户的详细信息
+
+mysql> select * from user  where uid<50 and name regexp ".*a.*";
+mysql> select * from user  where uid<50 and name like "%a%";
+
+32 只显示用户 root   bin   daemon  3个用户的详细信息。
+
+mysql> select * from user  where name in ("root","bin","daemon");
+
+
+33 显示除root用户之外所有用户的详细信息。
+
+mysql> select * from user  where name not like "root";
+
+34 统计username 字段有多少条记录
+
+select count(username) from user;
+
+35 显示名字里含字母c  用户的详细信息
+
+mysql> select * from user  where name like "%c%";
+
+36 在sex字段下方添加名为pay的字段，用来存储工资，默认值15000.00
+
+mysql> alter table user add pay  float not null  default "15000.00" after sex;
+
+37 把所有女孩的工资修改为10000
+
+update user set pay="1000" where sex="girl";
+
+38 把root用户的工资修改为30000
+
+mysql> update user set pay="3000" where name="root";
+
+
+39 给adm用户涨500元工资
+
+mysql> update user set pay=pay+500 where name="adm";
+
+40 查看所有用户的名字和工资
+
+mysql> select name,pay from user;
+41  查看工资字段的平均值
+mysql> select avg(pay) from user;
+
+42  显示工资字段值小于平均工资的用户名。
+mysql> select name from user where pay<(select avg(pay) from user);
+
+43  查看女生里uid号最大用户名
+mysql> select name from user where sex="girl" order by uid desc limit 1;
+
+44  查看bin用户的uid gid 字段的值 及 这2个字段相加的和
+
+mysql> select uid,gid,sum(uid+gid) as sum from usertab where username="bin" group by uid,gid;
+or
+mysql> select uid,gid,uid+gid sum from user where name="bin";
+
