@@ -503,7 +503,7 @@ panglj@tedu.cn
                                 使用规则:
                                     字段值不能从重复,且不能赋null(核心作用)
                                     一个表中只能有一个primary key 字段
-                                    多个字段都作为主键,称为符合主键,必须一起创建
+                                    多个字段都作为主键,称为复合主键,必须一起创建
                                     主键通常与 auto increment(自增长) 连用
                                     主键字段标志是pri
                                     通常把表中唯一表示的字段设置为主键
@@ -532,7 +532,7 @@ panglj@tedu.cn
 
                                     在已有表中创建主键:
                                         创建主键
-                                        alter table 表名 add primary key(name);
+                                        alter table 表名 add primary key(字段名);
 
                                         mysql> desc db1.classinfo;
                                         +-------+--------------------------------+------+-----+---------+-------+
@@ -641,16 +641,18 @@ panglj@tedu.cn
                                         +----+------+------+------+
                         2.3 外键
                                 作用:限制给字段赋值
-                                    字段值在另一个表字段值范围内选择
+                                    使得字段值在另一个表字段值范围内选择
                                 规则:
                                      表的存储引擎必须是innodb (之后会讲)
                                      字段类型要一致
                                      被参考字段必须要是索引类型的一种(通常为primary key)
 
                                 命令格式:
-                                        create table 库.表(
+                                        create table 库.表1(
                                             字段列表,
-                                            foreign key(字段名) references表名(字段名)  ###指定外键
+                                            foreign key(字段名) references 表名2(字段名)
+                                            ###指定外键 ,,,reference 后的表2代表被参考的表
+                                            ###foreign 后的是需要参考表中的字段;;;;   也就是表1中字段   参考  表2中字段
                                             on update cascade  ###同步增加
                                             on delete cascade  ###同步删除
                                             )engine=innodb;
@@ -761,7 +763,7 @@ panglj@tedu.cn
 
                                 删除外键:
                                         show create table db1.gz\G;
-                                        alter alter db1.gz drop foreign key gz_ibfk_1;
+                                        alter table db1.gz drop foreign key gz_ibfk_1;
 
                         在已有的表中添加外键 主键  自加(auto_increment)都是可以的 但是建立外键时需要数据匹配.
 
@@ -775,7 +777,10 @@ panglj@tedu.cn
                                alter table db1.yg
                                modify
                                yg_id int primary key auto_increment;
-    DAY03
+
+
+
+   DAY03 数据导入导出
         修改搜索路径
             mysql> show variables like "secure_file_priv";
              默认路径 : /var/lib/mysql-files/
@@ -828,118 +833,15 @@ panglj@tedu.cn
                    select * from db3.usr where id<=3 into outfile "/myload/user2.txt";
 
         表管理记录 (db3.usr)
+
+            1.添加记录
+                命令格式
                 注意事项:
                         字段值与字段类型匹配
                         字符类型的字段 要用 ""括起来
                         依次给所有字段赋值时,字段名可省略
                         只给部分字段赋值时,必须明确对应字段名称
                         没有赋值的字段使用默认值,或自增长
-
-            1.添加记录
-                命令格式
-                   添加一条记录给所有字段可以省略
-                   insert into 表名 values(字段值列表);
-
-                   mysql> insert into usr values(22,"lc","x",2000,2000,"test user","/home/bob","/bin/bash")
-
-                   添加n行给所有列赋值
-                   insert into 表名 values(字段值列表1),(字段值列表2);
-
-                   添加一条记录,给指定字段赋值
-                   insert into 表名(字段名列表) values(字段值列表);
-                   添加N条记录,给指定字段赋值
-                   insert into 表名(字段名列表) values(字段值列表1),(字段值列表2),(字段值列表3);
-
-            查看记录
-                注意:
-                    * 表示查询所有字段
-                    查看当前库表记录时库名可省略
-                    字段列表决定显示列个数
-                    条件决定显示行的个数
-                查看所有
-                        select * from 库名.表名;
-                条件查询
-                       select 字段1,字段N from 库名.表名 where 条件表达式;
-            修改记录
-                注意:字段值与字段类型匹配
-                    对于字符类型,值使用""起来
-                    若不使用where限定条件,会更新所有记录字段值
-                    限定条件,只更新匹配条件的记录字段的值
-                条件修改
-                   update 表名 set 字段名=值,字段名=值,字段名=值,... where 条件;
-                修改所有
-                   update 表名 set 字段名=值,字段名=值,字段名=值,... ;
-
-
-            删除记录
-                注意: 不添加条件删除表中所有
-                条件删除
-                    delete  from 库名.表名 where 条件表达式;
-                删除所有
-                    delete  from 库名.表名 ;
-
-   DAY03
-        修改搜索路径
-            mysql> show variables like "secure_file_priv";
-             默认路径 : /var/lib/mysql-files/
-             修改配置文件 :
-                        [root@DBA ~]# mkdir /myload
-                        [root@DBA ~]# chown mysql /myload
-                        [root@DBA ~]# vim /etc/my.cnf
-
-                            secure_file_priv="/myload"
-
-             重启服务:    systemctl restart mysqld
-             进入数据库查询位置是否修改:
-                        mysql> show variables like "secure_file_priv";
-        数据导入
-                默认只有root才能导入数据
-                建表
-                导入
-              注意事项:
-                    字段分隔符要和文件一致
-                    表字段类型和字段个数要和文件匹配
-                    导入数据时指定文件的绝对路径
-              步骤:命令格式
-
-                    mysql>load data infile "目录/文件"
-                    into table库名.表名
-                    fields terminated by "分隔符" #### 列
-                    lines terminated by "\n";    #### 行
-
-
-              eg:
-                    前面还要 创建文件夹 修改配置文件 重启服务
-                mysql> load data infile "/myload/passwd" into table db3.usr fields terminated by ":" lines terminated by "\n";
-
-        数据导出
-               作用:把表纪录存储到系统文件里
-               注意:导出数据有sql语句决定
-                    导出的是表记录,不包括字段名
-                    自动创建存储数据文件
-                    存储数据文件,具有唯一性
-                    注意导出文件是目录必须与secure_file_priv 目录一致(也就是说只能在这里导出)
-               命令:
-                   1)select命令 into outfile "目录名/文件名";  ### 不指定 分隔符时 默认 分别为 \t  \n
-                   2)select命令 into outfile "目录名/文件名"
-                     fields terminated by "分割符"; ####指定列分隔符
-                   3)select命令 into outfile "目录名/文件名"
-                     fields terminated by "分割符"
-                     lines terminated by "\n"  ####指定行分割符号
-               eg:
-                   select * from db1.t23 into outfile "/myload/t23";
-                   select * from db3.usr where id<=3 into outfile "/myload/user2.txt";
-
-        表管理记录 (db3.usr)
-                注意事项:
-                        字段值与字段类型匹配
-                        字符类型的字段 要用 ""括起来
-                        依次给所有字段赋值时,字段名可省略
-                        只给部分字段赋值时,必须明确对应字段名称
-                        没有赋值的字段使用默认值,或自增长
-
-            1.添加记录
-                命令格式
                    添加一条记录给所有字段可以省略
                    insert into 表名 values(字段值列表);
 
@@ -955,7 +857,7 @@ panglj@tedu.cn
                    insert into 表名(字段名列表) values(字段值列表1),(字段值列表2),(字段值列表3);
 
             查看记录
-                注意:
+                查看记录注意:
                     * 表示查询所有字段
                     查看当前库表记录时库名可省略
                     字段列表决定显示列个数
@@ -1000,7 +902,7 @@ panglj@tedu.cn
                         select from usr where name is null;
 
                 范围内比较
-                     in       not in      between
+                     in       not in      between ...  and ....
                      eg:
                         select name from usr where name in ("root","adm","mysql");
                         select name,uid from user where uid in (3,5,7,9);
@@ -1016,20 +918,21 @@ panglj@tedu.cn
 
                 空\非空
                     is null / is not null
-
+                    eg:
+                        select id from user where shell is null;
+                        select name from usr where shell is not null;
                 去掉重复数据
                         distinct
                         select distinct shell from usr where uid>10;
                         select distinct shell from usr where uid>=10;
                         select distinct shell from usr;
            高级匹配条件(适用于select \ update \ delete)
-                模糊匹配
-                    where 字段名 like  '通配符'
+                模糊查询
                                           _ 表示一个
                                           % 表示0-n个字符
 
-                    select name from usr where name like "____";
-                    select name from usr where name like "_%_";
+                    select name from usr where name like "____"; ##匹配任意四个字符 ,这里起始是四个_
+                    select name from usr where name like "_%_"; ##匹配任意字符
                     select name from usr where name like "a%";  ##以a开头
                     select name from usr where name like "%a%"; ##必须包含a
 
@@ -1139,7 +1042,9 @@ panglj@tedu.cn
                             select id,name,password from usr where id<=20 limit 1,3; ###从第二行开始输出 共输出三行
 
         常见的mysql 管理工具
+
                  phpMyAdmin  浏览器端      需要LNMP支持  开源 免费
+
                  yum -y install httpd php-mysql php
                  systemctl restart httpd.service
                  systemctl enable httpd.service
@@ -1150,9 +1055,15 @@ panglj@tedu.cn
                  cd /var/www/html/phpMyAdmin
                  cp config.sample.inc.php config.inc.php
                  vim config.inc.php
-                 31  $cfg['blowfish_secret'] = 'plj123';  /* YOU MUST FILL IN THIS FOR COOKIE AUTH! */      ### cookie 认证  随便修改为什么
+                 31  $cfg['blowfish_secret'] = 'plj123';  /* YOU MUST FILL IN THIS FOR COOKIE AUTH! */      ### cookie 认证参数  随便修改为什么
                  17  $cfg['Servers'][$i]['host'] = 'localhost'; ###数据库服务器地址
                  systemctl restart httpd.service
+
+                 访问软件管理数据库服务
+                 http://192.168.4.50/phpmyadmin
+                 用户名 root
+                 密  码 tarena (之前设置的数据可密码)
+
 
 
 
