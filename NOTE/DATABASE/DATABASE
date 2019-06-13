@@ -1153,6 +1153,7 @@ panglj@tedu.cn
                     erro
                     update db3.user set passwd="H";
                     SELECT * FROM db3.user;
+
             1.5 撤销权限
                 回收授权用户的权限
                 命令:
@@ -1176,11 +1177,12 @@ panglj@tedu.cn
                         2.跳过授权启动mysql服务程序
                             vim /etc/my.cnf
                             skip-grant-tables
-                            #validate_password_policy=0
+                            #validate_password_policy=0   ####密码策略
 
-                            #validate_password_length=6
-                            ]# mysql
+                            #validate_password_length=6   ####密码长度
+                            ]# mysql  ###跳过了密码验证,不输入密码 直接进入数据库
                         3.修改数据库ROOT密码
+                            authentication_string 为mysql.user 中的字段;作用是储存 用户密码(授权用户)
                             mysql> update mysql.user set authentication_string=password("123qqq...A") where user="root" and host="localhost";
                             Query OK, 1 row affected, 1 warning (0.02 sec)
                             Rows matched: 1  Changed: 1  Warnings: 1
@@ -1262,7 +1264,7 @@ panglj@tedu.cn
                                 mysql> purge master logs to "DBA-bin.000004";  ###这里 DBA 是主机名 000004 是文件数(这里是指第四个文件)
                     差异备份
                         备份完全备份后,所有新产生的数据 ###只能和上次完全备份,比较
-                增量备份
+
 
 
 
