@@ -1067,6 +1067,205 @@ panglj@tedu.cn
 
 
 
+                 ##########数据库管理员必备知识 (必须会)4, 5################
+   DAY04
+
+        用户授权
+            1.1 用户授权: 在数据库服务器上添加新用户授权 默认允许数据库管理员本机登录
+                远程访问数据库服务器
+                mysql -h192.168.4.50 -ubob -p123aaa...
+            1.2 命令
+                grant 权限列表 on 库名 to 用户名@"客户端地址" identified by "密码"
+                with grant option; ###有授权权限(使该用户可以使用授权命令).可选项
+
+                权限列表:
+                    all //所有权限
+                    usage //无权限
+                    select,update,insert  //个别权限
+                    select,update(字段1,....字段N)  //指定字段权限,只对指定字段有权限
+                库名:
+                    *.* //所有数据库
+                    库名.* //一个库
+                    库名.表名 //一张表
+                用户名:
+                    授权时自定义,有标示性
+                    存储在mysql库中的user中
+                客户端地址:
+                    %           //表示 全部主机
+                    192.168.4.% //一个网段
+                    192.168.4.253 //一个ip
+                    localhost  //数据库服务器主机
+
+                    授权用户
+                eg: mysql> grant all on db4.* to yaya@"%" identified by "123aaa.."
+
+            1.3 相关命令
+
+                登录用户使用:
+                    select user();  ####显示登录用户以及客户端地址
+
+                    show grants;    #####用户显示自身访问权限
+
+                    show grants for #####管理员查看已有授权用户权限, 注意这里 grants 里的s 不要漏写
+                    用户名@"客户端地址";
+
+                    set password=   #####授权用户修改连接密码
+                    password("密码");
+
+                    set password for #####管理员重置用户连接密码
+                    用户名@"客户端地址"=
+                    password("密码");
+
+                    drop user
+                    用户名@"客户端地址";  删除授权用户(必须有管理员权限)
+            1.4 授权库
+
+                mysql库              记录授权信息
+				user表               记录已有的授权用户
+				db表	                 记录已有的授权用户对数据库的访问权限
+				tables_priv          记录已有的授权用户对表的访问权限
+				columns_priv         记录已有的授权用户对字段的访问权限
+
+                    desc mysql.user; 关注 Host(主机地址) User(用户名) 字段
+                    select hosts,name from mysql.user;
+                    show grants for user@"host";
+
+                    desc mysql.db;   关注 db字段
+                    select host,user,db from mysql.db;
+                    select * from mysql.db where db="db3" and user="admin2" and host="localhost" \G;
+                    show grants for admin2@"localhost"; ###这条命令结果是上条命令结果的另一种表示
+                    ####修改表字段
+                    update mysql.db set Drop_priv="Y" where host="localhost" and db="db3" and user="admin2";
+                    flush privileges; ####重新加载表记录
+
+                    desc tables_priv;
+                    select * from mysql.tables_priv;
+                    select host,user,db,Table_name from tables_priv;
+                    select * from tables_priv where Table_name="user" and db="db3"\G;  ###查看用户对表有什么权限
+
+                    desc columns_priv;
+                    select * from columns_priv;
+                    select * from columns_priv;
+                    [root@DBA ~]# mysql -uadmin3 -p123qqq...A
+                    show grants;
+                    select * from db3.user
+                    update db3.user set age=18;
+                    erro
+                    update db3.user set passwd="H";
+                    SELECT * FROM db3.user;
+            1.5 撤销权限
+                回收授权用户的权限
+                命令:
+                    revoke 权限列表 on 库名.表名 from 用户名@"客户端地址";
+                eg:
+                    revoke insert,drop on db3.user from admin3@"localhost";
+                    show grants for admin3@"localhost";
+                    revoke all on *.* fromnts for mydba@"%"; ##撤销所有权限
+                    select user,host from mysql.user ##查看所有的授权用户
+                    show grants for mydba@"%";       ##查看指定用户的权限
+                    revoke grant  option on *.* from mydba@"%"; ##撤销权限
+                    show grants for mydba@"%";     ##查看权限
+
+            1.6 数据库root密码
+                恢复数据库root密码
+                    你需要知道 系统的root 密码
+                    方法:
+                        1.停止mysql服务程序
+                            systemctl stop mysqld.service
+
+                        2.跳过授权启动mysql服务程序
+                            vim /etc/my.cnf
+                            skip-grant-tables
+                            #validate_password_policy=0
+
+                            #validate_password_length=6
+                            ]# mysql
+                        3.修改数据库ROOT密码
+                            mysql> update mysql.user set authentication_string=password("123qqq...A") where user="root" and host="localhost";
+                            Query OK, 1 row affected, 1 warning (0.02 sec)
+                            Rows matched: 1  Changed: 1  Warnings: 1
+
+                            mysql> flush privileges; ###刷新配置文件
+                             #skip-grant-tables
+                             validate_password_policy=0
+
+                             validate_password_length=6
+                        4.以正常的方式重启mysql
+                            systemctl restart mysqld.service
+                            mysql -uroot -p123qqq...A
+
+                重置数据库root密码
+                mysqladmin -uroot -p password "tarena" ###新密码
+                Enter password:                        ###旧密码
+        完整备份
+            2.1数据备份方式
+                物理备份
+                    冷备份  cp tar...
+                        先停止mysql服务,恢复后重启
+                    备份    eg:
+                             cp -r /var/lib/mysql 备份目录/mysql.bak  ### -r 包含文件夹复制
+                             tar -zcvf /root/mysql.tar.gz  /var/lib/mysql
+                    恢复    eg:
+                             rm -rf/var/lib/mysql
+                             cp -r 备份目录/mysql.bak /var/lib/mysql
+                             tar -zxvf /root/mysql.tar.gz -C /var/lib/mysql/
+                             chown -R mysql:mysql /var/lib/mysql   ###修改属主属组,由于cp命令 由root执行,所以拷贝过来后属主 为root(不修改属主,属组) ,mysql无法读取
+                逻辑备份
+                    完全备份
+                        完全备份备份所有数据
+                        备份命令:
+                             mysqldump //备份命令
+                             ]# mysqldump -uroot -p密码 库名 > 目录/xxx.sql(目录自己创建)
+
+                                备份时库名的表示方式  --all-database 或 -A //所有库
+                                数据库名                                 //单个
+                                数据库名.表名                             //单张表
+                                -B 数据库1 数据库2                        //多个库
+                             scp 给其他服务器
+                        恢复命令
+                            完全恢复
+                            ]# mysql -uroot -p 密码 [库名] < 目录/xxx.sql
+
+                    增量备份
+                        备份上次备份后产生的所有数据  ###和上一次备份比较
+                        核心: 使用mysql的binlog日志 进行恢复(重要)
+                        1.使用binlog日志恢复数据
+                            binlog日志是什么:
+                                    1)二进制文件
+                                    2)mysql服务日志文件的一种
+                                    3)记录出查询之外的sql命令
+                                    4)可用于数据备份和恢复
+                                    5)配置mysql主从同步的必要条件
+                            启用日志:
+                                    文件类型:
+                                    server_id=数字 1-255
+                                     log-bin[=目录/文件名]
+                                     max_binlog_size=数值m ##默认1G,超过1G后生成新文件
+                                     主机名-bin.index 索引文件
+                                     主机名-bin.00000001 第一个二进制文件
+                                     主机名-bin.00000002 第二个二进制文件
+                                    ###############################
+                            启用:    vim /etc/my.cnf
+                                    [mysql]
+                                    log-bin     //启用binlo日志
+                                    server_id   //指定id值 唯一
+                            手动生成 binlog文件
+                                执行后不管文件是否达到设定的默认值,都会生成新的binlog文件
+                                1.systemctl restart mysqld  ###生产环境 不要用第一个.用2,3
+                                2.mysql> flush logs;
+                                    或 ]# mysql -uroot -p密码 -e 'flush logs'
+                                3.mysqldump -uroot -p密码 --flush-logs 库 > /xxx.sql
+                            清除日志
+                                清除所有
+                                mysql> reset master;
+                                清除指定编号之前的binlog文件
+                                mysql> purge master logs to "DBA-bin.000004";  ###这里 DBA 是主机名 000004 是文件数(这里是指第四个文件)
+                    差异备份
+                        备份完全备份后,所有新产生的数据 ###只能和上次完全备份,比较
+                增量备份
+
+
+
 
 
 
