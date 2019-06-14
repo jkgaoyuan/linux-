@@ -647,6 +647,7 @@ panglj@tedu.cn
                                      字段类型要一致
                                      被参考字段必须要是索引类型的一种(通常为primary key)
 
+                                     mysql> show create table db3.user \G; 可以查看到表引擎
                                 命令格式:
                                         create table 库.表1(
                                             字段列表,
@@ -1199,7 +1200,7 @@ panglj@tedu.cn
                 重置数据库root密码
                 mysqladmin -uroot -p password "tarena" ###新密码
                 Enter password:                        ###旧密码
-        完整备份
+        备份
             2.1数据备份方式
                 物理备份
                     冷备份  cp tar...
@@ -1219,9 +1220,10 @@ panglj@tedu.cn
                              mysqldump //备份命令
                              ]# mysqldump -uroot -p密码 库名 > 目录/xxx.sql(目录自己创建)
 
+
                                 备份时库名的表示方式  --all-database 或 -A //所有库
                                 数据库名                                 //单个
-                                数据库名.表名                             //单张表
+                                数据库名 表名                             //单张表, 注意这里没有 .  只是空格
                                 -B 数据库1 数据库2                        //多个库
                              scp 给其他服务器
                         恢复命令
@@ -1238,6 +1240,11 @@ panglj@tedu.cn
                                     3)记录出查询之外的sql命令
                                     4)可用于数据备份和恢复
                                     5)配置mysql主从同步的必要条件
+                            查看日志格式
+
+                                mysql> show variables like "%binlog%";
+				                mysql>show variables like "binlog_format";
+
                             启用日志:
                                     文件类型:
                                     server_id=数字 1-255
@@ -1249,26 +1256,176 @@ panglj@tedu.cn
                                     ###############################
                             启用:    vim /etc/my.cnf
                                     [mysql]
-                                    log-bin     //启用binlo日志
+                                    log-bin     //启用binlog日志
                                     server_id   //指定id值 唯一
                             手动生成 binlog文件
                                 执行后不管文件是否达到设定的默认值,都会生成新的binlog文件
                                 1.systemctl restart mysqld  ###生产环境 不要用第一个.用2,3
                                 2.mysql> flush logs;
                                     或 ]# mysql -uroot -p密码 -e 'flush logs'
+                                    备份数据库时 也可以 重新生成 日志文件
                                 3.mysqldump -uroot -p密码 --flush-logs 库 > /xxx.sql
                             清除日志
                                 清除所有
                                 mysql> reset master;
                                 清除指定编号之前的binlog文件
                                 mysql> purge master logs to "DBA-bin.000004";  ###这里 DBA 是主机名 000004 是文件数(这里是指第四个文件)
+                            启用日志时自定义日志文件存储目录和文件名
+                                vim /etc/my.cnf
+                                #############将log_bin 修改为如下 dba50 为文件名###########
+
+                                log_bin=/mylog/dba50
+                                [root@DBA ~]# mkdir /mylog/
+                                ###################将属主修改为mysql,否则mysql无法读取############3
+
+                                [root@DBA ~]# chown mysql /mylog
+                                [root@DBA ~]# systemctl restart mysqld
+                                [root@DBA ~]# ls /mylog/*
+                                /mylog/dba50.000001  /mylog/dba50.index
+                                ############显示日志信息##########
+                                mysql>show master status;
+
+                        2.恢复数据 (使用binlog日志恢复)
+                            日志格式 (日志如何记录多条命令)
+                                查看日志当前就格式
+                                mysql> show variables like "binlog_format";
+                                ######修改日志格式
+
+                                [root@DBA ~]# vim /etc/my.cnf
+                                ####添加如下
+
+                                binlog_format="mixed"   三种记录方式 :statement 报表模式
+                                                                    row       行模式
+                                                                    mixed     混合模式
+                            分析日志
+                                日志如何区分记录多条SQL命令
+                                    偏移量
+                                    时间点
+
+                                查看日志内容:
+                                   ]# mysqlbinlog [选项] binlog文件
+                                    选项:
+                                    --start-datetime="yyyy-mm-dd hh:mm:ss"   ###起始时间
+                                    --stop-datetime="yyyy-mm-dd hh:mm:ss"    ###结束时间
+                                    --start-position=数字                     ###起始偏移量
+                                    --stop-position=数字                      ###结束偏移量
+                                基本思路: 使用mysqlbinlog 提取历史mysql 操作日志
+                                         通过mysql 命令执行
+                                命令格式:
+                                        mysqlbinlog 日志文件 | mysql -uroot -p密码
+
+                                        日志文件默认位置 : /var/lib/mysql/  但文件位置可以在mysql配置文件修改 /etc/my.cnf 中log_bin=/mylog 字段
+
+                            eg:使用编号为1的日志恢复数据
+                               mysqlbinlog /tmp/dba50.000001 |mysql -uroot -ptarena
+                               select * from usr;
+
+
                     差异备份
                         备份完全备份后,所有新产生的数据 ###只能和上次完全备份,比较
 
 
 
+   DAY05
+        查看创建信息
+        mysql> show create table db3.user \G; 可以查看到表引擎
+        查看软件支持的数据引擎
+        mysql> show engines; 注意这里的 s
+        常用的mysql备份工具
+            物理备份的缺点:
+                跨平台差
+                备份时间长.冗余备份 浪费存储空间
+            mysqldump 备份缺点
+                效率低 备份还原慢 锁标
+                备份中,数据插入和更新操作被阻塞
+        PERCONA
+            Xtra Back
+                在线热备份工具
+                备份过程不锁表 适合生产环境
+                专业组织PERCONA 提供 (盖井mysql分支)
+            主要包含两个组件
+                xtrabackup: c程序支持Innodb/Xtradb
+                innobackupex:以per脚本封装的xtrabackup.支持myISAM
+
+            install
+                需要依赖包:libev-4.15-1.el6.rf.x86_64.rpm
+                安装:
+                    yum -y install /root/percona-xtrabackup-24-2.4.7-1.el7.x86_64.rpm
+                查看安装列表
+                    [root@DBA ~]# rpm -ql percona-xtrabackup-24
+                    /usr/bin/innobackupex   //备份innodb \ xtradb \ myisam 引擎表
+                    /usr/bin/xtrabackup     //备份innodb \ xtradb 引擎表
+                    常用选项:
+                            --host        主机名
+                            --user        用户名
+                            --port        端口
+                            --password
+                            --databases   --databases="库1 库2" / ---databases="库.表" 不加库则备份全部
+                            --no-timestamp  不使用日期时间命名备份文件储存的子目录
+                            --redo-only     日志合并
+                            --apply-log     准备恢复数据
+                            --copy-back     拷贝数据
+                            --incremental 目录名               增量备份
+                            --incremental-basedir=目录名       增量备份时,指定上一次备份书记的存储目录名
+                            --incremental-dir=目录名           准备恢复数据时,指定增量备份数据存储的目录名
+                            --export         导出表信息
+                            import           导入表空间
+                命令:
+                    完全备份
+                        ]# innobackupex --user 用户名 --password 密码 备份目录名 --no-timestamp
+                    完全恢复
+                        ]# innobackupex --apply-log 目录名 //准备恢复数据
+                        ]# innobackupex --copy-bak 目录名  //恢复数据
+                    增量备份
+                        ]# innobackupex  --user 用户名 --password 密码 --incremental 增量目录 --incremental-basedir=目录名 --no-timestamp
+                    增量恢复
+                        ]# innobackupex  --apply-log --redo-only 目录名 --incremental-dir=目录名 //准备恢复
+                        ]# innobackupex --copy-back 目录 //恢复数据
 
 
+        innobackupex 备份与恢复
+            完全备份
+                   192.168.4.50
+                   ]# innobackupex --user root --password tarena /allback
+                   ]# ls /allback/
+                   ]# scp -r /allback/ root@192.168.4.51:/root/
+            完全恢复
+                    4.51
+                    安装 软件
+                    ]# innobackupex --apply-log allback/2019-06-14_14-56-25/
+                    ]# innobackupex --copy-back allback/2019-06-14_14-56-25/
+                    ]# chown -R mysql:mysql /var/lib/mysql  #### 由于是root执行的 命令所以 需要修改整个文件夹 属主 属组
+                    ]# systemctl restart mysqld
+
+
+            部分恢复
+                删除表空间
+                    mysql> alter table 库.表 discard tablespace;
+                导出表信息
+                    ]# innobackupex --apply-log --export /allback/2019-06-14_14-56-25/
+                拷贝表信息文件到数据库目录
+                    ]# cp /allback/2019-06-14_14-56-25/db3/usr.{cfg,ibd,exp} /var/lib/mysql/db3
+                修改表信息文件所有者改为mysql
+                    ]# chown mysql:mysql /var/lib/mysql/db3/usr.*
+                导入表空间
+                    mysql> alter table 库.表 import tablespace;
+                删除数据库目录下的表信息文件
+                      308  rm -rf /var/lib/mysql/db3/usr.exp
+                      309  rm -rf /var/lib/mysql/db3/usr.cfg
+
+                查看表记录
+                    mysql>select * from 库.表;
+
+            增量备份
+                192.168.4.50
+
+
+
+
+            增量恢复
+                192.168.4.51
+
+                    innobackupex
 
 
 

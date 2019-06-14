@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-read -p 'ipaddress'\t ip
+read -p 'ipaddress  ' ip
 
 #if [ $ip -z  ];then
  #  echo 'ipaddress erro, enter ipaddress '
@@ -7,7 +7,7 @@ read -p 'ipaddress'\t ip
   # else
         for i in $ip ;
         do
-            ssh -X root@192.168.2.$i "LANG=en growpart /dev/vda 1
+            ssh -X root@$i "LANG=en growpart /dev/vda 1
                             xfs_growfs /dev/vda1"
 
 
