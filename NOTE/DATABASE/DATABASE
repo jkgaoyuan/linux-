@@ -11,6 +11,7 @@ panglj@tedu.cn
 
     学完后可以 做 监控与安全
 
+    基础
     DAY01
             解包
             安装软件包
@@ -1309,12 +1310,15 @@ panglj@tedu.cn
                                     --stop-datetime="yyyy-mm-dd hh:mm:ss"    ###结束时间
                                     --start-position=数字                     ###起始偏移量
                                     --stop-position=数字                      ###结束偏移量
-                                基本思路: 使用mysqlbinlog 提取历史mysql 操作日志
-                                         通过mysql 命令执行
+                                    基本思路: 使用mysqlbinlog 提取历史mysql 操作日志
+                                             通过mysql 命令执行
                                 命令格式:
                                         mysqlbinlog 日志文件 | mysql -uroot -p密码
 
                                         日志文件默认位置 : /var/lib/mysql/  但文件位置可以在mysql配置文件修改 /etc/my.cnf 中log_bin=/mylog 字段
+
+                                        //仅执行指定范围内记录的sql命令
+			                            ]# mysqlbinlog --start-position=293  --stop-position=958  \
 
                             eg:使用编号为1的日志恢复数据
                                mysqlbinlog /tmp/dba50.000001 |mysql -uroot -ptarena
@@ -1327,6 +1331,8 @@ panglj@tedu.cn
 
 
    DAY05
+        innobackupex
+
         查看创建信息
         mysql> show create table db3.user \G; 可以查看到表引擎
         查看软件支持的数据引擎
@@ -1419,13 +1425,194 @@ panglj@tedu.cn
             增量备份
                 192.168.4.50
 
+                增量备份前需要一个全备份,在做增量
+                ]# innobackupex --user root --password tarena /fullback  //全备份
+                                                                         //创建增量备份
+                ]# innobackupex  --user root --password tarena --incremental newdi1 --incremental-basedir=/fullback --no-timestamp
+                ]# innobackupex  --user root --password tarena --incremental newdi2 --incremental-basedir=/fullback --no-timestamp
+
 
 
 
             增量恢复
                 192.168.4.51
 
-                    innobackupex
+                将fullback 和 newdir1 newdir2 拷贝到 51
+
+                ]# systemctl stop mysqld.service
+                ]# rm -rf /var/lib/mysql/*
+                ]# innobackupex --apply-log --redo-only /root/fullback/  //准备备份
+                ]# innobackupex --apply-log --redo-only /root/fullback/ --incremental-dir=/root/newdir1   //合并备份
+                ]# innobackupex --apply-log --redo-only /root/fullback/ --incremental-dir=/root/newdir2   //合并备份
+                ]# innobackupex --copy-back /root/fullback/   //恢复数据
+                ]# chown -R mysql:mysql /var/lib/mysql    //赋予权限
+                ]# systemctl restart mysqld //重启服务
+
+                ]# mysql -uroot -ptarena
+
+
+   进阶
+   DAY06
+
+        mysql 主从同步
+            什么是: 实现数据自动同步
+                主服务器:接受客户端访问链接
+                从服务器:自动同步主服务器数据
+
+
+            拓扑: 主: 192.168.4.51
+                 从:  4.52
+                 客户端: 4.50
+            原理:
+                Master
+                      必须开启 binlog日志
+                Slave
+                      i/o 线程 : 负责读取master的binlog,存储到relay-log(中继日志文件 )
+                      sql 线程 : 执行relay-log 中的 sql语句 保证 数据与主服务器一致
+                      线程是进程的最小运行单位
+
+            构建方案:
+                配置主库
+                      51
+                    启动binlog日志\授权用户\查看binlog日志
+                        启动binlog日志
+                            vim /etc/my.cnf
+                                添加如下
+                                log-bin=db51 //启动binlog
+                                server_id=51 //指定server id
+                        授权用户
+                            不需要给予全部权限 只需要给予 replication slave 就好
+                            mysql> grant replication slave on *.* to repluser@'%' identified by "123qqq...A";
+
+                    确保与主服数据库一致
+                        4.51
+                            生成 备份文件
+                            ]#  mysqldump -uroot -ptarena --master-data -A > /a.sql
+                            将文件传递给52
+                            ]# scp /db3.sql /a.sql  root@192.168.4.52:/root/
+                        4.52
+                            给52中导入51的数据
+                            ]# mysql -uroot -ptarena < /root/a.sql
+
+                配置从服务器
+                    设置server_id\指定主库信息\启动slave程序
+                        设置server_id
+                            4.52
+                            server id 区分主从
+                                vim /etc/my.cnf
+                                    添加如下
+                                    server_id=52
+                        指定主库信息
+                            需要先确认 主从数据库文件是否一致
+                            vim a.sql
+                                找到 `CHANGE MASTER TO MASTER_LOG_FILE='db51.000001', MASTER_LOG_POS=441;`
+                                填入 master|_log_file(binlog日志) 和 master_log_pos(偏移量)
+                                如果期间 主库重启会导致主库的binlog日志改变,那么这里填的数据将会按照新的binlog日志数据填写
+                            mysql> change master to master_host="192.168.4.51",
+                                    -> master_user="repluser",master_password="123qqq...A",
+                                    -> master_log_file="db51.000001",master_log_pos=441;
+
+                                    核心:从库链接到主库,按照主库的binlog日志执行,完成后两个数据库就同步完成了.
+                        启动slave程序
+
+                            mysql> start slave; //启动slave
+                            mysql> show slave status\G;  //查看状态
+                                检查如下是否为yes, host 是否正确
+                                主要抓住两个线程 io线程 sql线程
+                                    Slave_IO_Running: Yes
+                                    Slave_SQL_Running: Yes
+
+                                stop slave 停止slave服务
+
+                        从服务器的配置文件
+                            位置 /var/lib/mysql/
+                            master.info                   主库信息
+                            relay-log.info                中继日志信息
+                            主机名-relay-bin.xxxx          中继日志
+                            主机名-relay-bin.index         索引文件
+
+                        启动slave失败解决方法
+                            最简单的方法:
+                                把从库数据可恢复为独立的数据服务器,重新配置
+                                rm -rf master.info relay-log.info host52-relay-bin.*c
+                                systemctl restart mysqld
+                                重新配置主库信息
+                                 查看上面笔记
+
+
+
+                        测试配置:
+                            51的数据库管理员在本机创建新的数据库和表
+
+                                mysql> create table user4(name char(15));
+                                mysql> insert into user4 values("chihiro");
+                                Query OK, 1 row affected (0.10 sec)
+
+                                mysql> insert into user4 values("chihiro2");
+                                Query OK, 1 row affected (0.12 sec)
+
+                                mysql> insert into user4 values("chihiro22");
+                            52数据库管理员在本机查看
+                                mysql> select * from db3.user4;
+        主从同步模式
+            结构类型:
+                一主多从
+                主从从
+                主主
+
+            配置一主多从结构
+                要求把4.53配置为51的从服务器
+
+                53配置如下:
+                        1.验证主服务器授权用户
+                        2.指定server id
+                        3.与主库数据一致
+                        4.配置slave,指定主服务器信息
+                        5.启动slave,查看slave信息
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
