@@ -11,1326 +11,1326 @@ panglj@tedu.cn
 
     学完后可以 做 监控与安全
 
-    基础
-    DAY01
-            解包
-            安装软件包
-            启动mysql服务
-            查看服务进程和端口
-            查看初始登录密码
-            使用初始密码登录
-            修改登录密码
-            断开链接
-            使用修改后密码登录
-            根据新密码策略设置密码
-            使用新密码登录
+    基础阶段
+        DAY01
+                解包
+                安装软件包
+                启动mysql服务
+                查看服务进程和端口
+                查看初始登录密码
+                使用初始密码登录
+                修改登录密码
+                断开链接
+                使用修改后密码登录
+                根据新密码策略设置密码
+                使用新密码登录
 
-        1.搭建数据库
-            1.1 相关概念
-                DB---database
-                数据库
-                依照某种数据模型进行组织并存放到存储器的数据合集
-                DBMS---database management system
-                数据库管理系统
-                用来操作和管理数据库的服务软件
-                DBS---database system
-                数据库系统
-                指带有数据库并整合了数据库管理软件的计算机系统
-
-
-                    软件名      开源 跨平台
-                --- Oracle      n   y
-                |   mysql       y   y
-              RDBMS sqlserver   n   y
-                |- -db2         n   y
-                    redis       y   y
-                    memcache    y   y
-                    mongodb     y   y
-
-                MYSQL 特点:
-                            中小型规模,关系型数据库
-                            跨平台
-                            支持 Python Java perl php 等编程语言
-
-                应用环境:
-                            LAMP 与Apache HTTP Server 组合
-                            LNMP 与Nginx 组合
-
-                相关参数
-                       文件               说明
-                       /etc/my.conf      主配置文件
-                       /var/lib/mysql    数据库主目录
-                       默认端口号          3306
-                       进程名              mysqld
-                       传输协议             tcp
-                       进程所有者           mysql
-                       进程所属组           mysql
-                       错误日志             /var/log/mysqld.log
-                装包
-
-                    tar -xvf mysql-5.7.17.tar
-                    yum -y install mysql-community-*.rpm
-                    rpm -qa | grep -i mysql
-
-                起服务
-                    systemctl restart mysqld
-                    mysql
-                    ls /var/lib/mysql/
-                开机自启
-                    systemctl enable mysqld
-                查看服务启动
-                    ss -antulp | grep mysqld
-            1.2 初始密码登录
-                    ################用户密码默认由软件生成###########################
-                    [root@DBA mysql]# grep 'password' /var/log/mysqld.log
-                    2019-06-06T02:11:08.044931Z 1 [Note] A temporary password is generated for root@localhost: lKpqL5QO4+=:
-                    2019-06-06T02:11:52.610948Z 3 [Note] Access denied for user 'root'@'localhost' (using password: NO)
-                    [root@DBA mysql]# cd
-                    #######第一次登录时只能由 hlocalhost  登入 ########################
-                    [root@DBA ~]# mysql -hlocalhost -uroot -p'lKpqL5QO4+=:'  ###不能有空格
-                    ##########设置root的新密码####################################
-                    mysql> alter user root@"localhost" identified by "123qqq...A";
-                    Query OK, 0 rows affected (0.00 sec)
-                    ###############使用 root 新密码登录, 在本机登录时 -hlocalhost 可以;省略##########
-                    [root@DBA ~]# mysql -uroot -p123qqq...A
-            1.3 修改密码策略 (可选项)
-                    0 or LOW       长度
-                    1 or MEDIUM    长度;数字,小写/大写 和特殊字符
-                    2 or STRONG    长度;数字,小写/大写 和特殊字符 ;字典文件
-            查看变量
-                    模糊查找:(只要包含这个字段就行)
-                        使用两个%将需要匹配的字段包起来.
-                    去掉  两个% 是精确匹配
-                    mysql> show variables like "%password%";
-                    +---------------------------------------+--------+
-                    | Variable_name                         | Value  |
-                    +---------------------------------------+--------+
-                    | default_password_lifetime             | 0      |
-                    | disconnect_on_expired_password        | ON     |
-                    | log_builtin_as_identified_by_password | OFF    |
-                    | mysql_native_password_proxy_users     | OFF    |
-                    | old_passwords                         | 0      |
-                    | report_password                       |        |
-                    | sha256_password_proxy_users           | OFF    |
-                    | validate_password_check_user_name     | OFF    |
-                    | validate_password_dictionary_file     |        |
-                    | validate_password_length              | 8      |
-                    | validate_password_mixed_case_count    | 1      |
-                    | validate_password_number_count        | 1      |
-                    | validate_password_policy              | MEDIUM |
-                    | validate_password_special_char_count  | 1      |
-                    +---------------------------------------+--------+
-                    14 rows in set (0.01 sec)
-                   修改密码策略
-                    mysql> set global validate_password_policy=0;
-                    Query OK, 0 rows affected (0.00 sec)
-                    修改`密码长度
-                    mysql> set global validate_password_length=6;
-                    Query OK, 0 rows affected (0.00 sec)
-                    永久修改配置
-                    [root@DBA ~]# vim /etc/my.cnf
-                    [mysqld]
-                    #手动添加 默认没有
-                    validate_password_policy=0
-                    validate_password_length=6
-
-                   设置新密码
-                    mysql> alter user root@"localhost" identified by "tarena";  Query OK, 0 rows affected (0.00 sec)
-                    mysql> exit
-                    Bye
-                   使用新密码登录
-                    [root@DBA ~]# mysql -uroot -ptarena
+            1.搭建数据库
+                1.1 相关概念
+                    DB---database
+                    数据库
+                    依照某种数据模型进行组织并存放到存储器的数据合集
+                    DBMS---database management system
+                    数据库管理系统
+                    用来操作和管理数据库的服务软件
+                    DBS---database system
+                    数据库系统
+                    指带有数据库并整合了数据库管理软件的计算机系统
 
 
-        2.数据库服务的基本使用
-            2.1链接mysql服务
-                1.链接方式
-                    1)命令行
+                        软件名      开源 跨平台
+                    --- Oracle      n   y
+                    |   mysql       y   y
+                  RDBMS sqlserver   n   y
+                    |- -db2         n   y
+                        redis       y   y
+                        memcache    y   y
+                        mongodb     y   y
 
-                        访问数据库
-                        mysql -h服务器ip -u用户名 -p密码[数据库名选填]
-                        显示目前位置(我在哪里)
-                        mysql> select database();
-                        +------------+
-                        | database() |
-                        +------------+
-                        | NULL       |
-                        +------------+
-                        1 row in set (0.00 sec)
+                    MYSQL 特点:
+                                中小型规模,关系型数据库
+                                跨平台
+                                支持 Python Java perl php 等编程语言
 
-                    2)web界面
-                    3)安装图形软件
-                    4)编写脚本(php java Python)
+                    应用环境:
+                                LAMP 与Apache HTTP Server 组合
+                                LNMP 与Nginx 组合
 
-                2.数据存储流程
-                     连接数据库服务器
-                     建库               库类似于文件夹
-                     建表               表类似于文件
-                     插入数据
-                     断开连接 TCP
+                    相关参数
+                           文件               说明
+                           /etc/my.conf      主配置文件
+                           /var/lib/mysql    数据库主目录
+                           默认端口号          3306
+                           进程名              mysqld
+                           传输协议             tcp
+                           进程所有者           mysql
+                           进程所属组           mysql
+                           错误日志             /var/log/mysqld.log
+                    装包
 
-                     SQL 结构化查询语句
-                        sql语句不区分大小写 (密码,变量除外)
-                        语句以 ; 结束 只有少数 不用加 ;
-                        只有少数;命令可以tab
-                        \c ;之前 或者ctrl + c 结束命令
-                     SQL命令分类
-                        DDL  数据定义语言  create alter drop
-                        DML  数据操作语言  insert update delete
-                        DCL  数据控制语言  grant revoke
-                        DTL  数据事物语言  commit  rollback
+                        tar -xvf mysql-5.7.17.tar
+                        yum -y install mysql-community-*.rpm
+                        rpm -qa | grep -i mysql
 
-                2.mysql管理环境
-                    1)show databases; 显示已有的库
-                        不要删除,修改已有的库 ,新建库存放数据
-                    2)select user(); 显示链接用户
-                    3)use 库名;       切换库
-                    4)select database(); 显示当前所在的库
-                    5)create database 库名; 创建新库
-                        库名 命名规则
-                            只能 用数字 字母 下划线不能纯数字
-                            区分字母大小写 具有唯一性
-                            不能使用关键词 特殊字符
+                    起服务
+                        systemctl restart mysqld
+                        mysql
+                        ls /var/lib/mysql/
+                    开机自启
+                        systemctl enable mysqld
+                    查看服务启动
+                        ss -antulp | grep mysqld
+                1.2 初始密码登录
+                        ################用户密码默认由软件生成###########################
+                        [root@DBA mysql]# grep 'password' /var/log/mysqld.log
+                        2019-06-06T02:11:08.044931Z 1 [Note] A temporary password is generated for root@localhost: lKpqL5QO4+=:
+                        2019-06-06T02:11:52.610948Z 3 [Note] Access denied for user 'root'@'localhost' (using password: NO)
+                        [root@DBA mysql]# cd
+                        #######第一次登录时只能由 hlocalhost  登入 ########################
+                        [root@DBA ~]# mysql -hlocalhost -uroot -p'lKpqL5QO4+=:'  ###不能有空格
+                        ##########设置root的新密码####################################
+                        mysql> alter user root@"localhost" identified by "123qqq...A";
+                        Query OK, 0 rows affected (0.00 sec)
+                        ###############使用 root 新密码登录, 在本机登录时 -hlocalhost 可以;省略##########
+                        [root@DBA ~]# mysql -uroot -p123qqq...A
+                1.3 修改密码策略 (可选项)
+                        0 or LOW       长度
+                        1 or MEDIUM    长度;数字,小写/大写 和特殊字符
+                        2 or STRONG    长度;数字,小写/大写 和特殊字符 ;字典文件
+                查看变量
+                        模糊查找:(只要包含这个字段就行)
+                            使用两个%将需要匹配的字段包起来.
+                        去掉  两个% 是精确匹配
+                        mysql> show variables like "%password%";
+                        +---------------------------------------+--------+
+                        | Variable_name                         | Value  |
+                        +---------------------------------------+--------+
+                        | default_password_lifetime             | 0      |
+                        | disconnect_on_expired_password        | ON     |
+                        | log_builtin_as_identified_by_password | OFF    |
+                        | mysql_native_password_proxy_users     | OFF    |
+                        | old_passwords                         | 0      |
+                        | report_password                       |        |
+                        | sha256_password_proxy_users           | OFF    |
+                        | validate_password_check_user_name     | OFF    |
+                        | validate_password_dictionary_file     |        |
+                        | validate_password_length              | 8      |
+                        | validate_password_mixed_case_count    | 1      |
+                        | validate_password_number_count        | 1      |
+                        | validate_password_policy              | MEDIUM |
+                        | validate_password_special_char_count  | 1      |
+                        +---------------------------------------+--------+
+                        14 rows in set (0.01 sec)
+                       修改密码策略
+                        mysql> set global validate_password_policy=0;
+                        Query OK, 0 rows affected (0.00 sec)
+                        修改`密码长度
+                        mysql> set global validate_password_length=6;
+                        Query OK, 0 rows affected (0.00 sec)
+                        永久修改配置
+                        [root@DBA ~]# vim /etc/my.cnf
+                        [mysqld]
+                        #手动添加 默认没有
+                        validate_password_policy=0
+                        validate_password_length=6
 
-                            mysql> create table db1.学生表(
-                           姓名 char(10),
-                           家庭地址 char(20)
-                           ) DEFAULT CHARSET=utf8; ####添加参数支持中文
-
-                            mysql> insert into db1.学生表 values("张三丰","武当山");
-                            mysql> insert into db1.学生表 values("张四丰","武台山");
-                            mysql> select  * from  db1.学生表;
-
-                    6)show tables ; 显示已有的表
-                    7)drop database 库名; 删除库
-                表管理命令
-                    1)select * from 库名.表名;
-                    2)insert into 库名.表名;
-                    3)update 库名.表名 set 字段=值;
-                    4)delete from 库名.表名;  删除表单中的所有数据,但不删除表
-                    5)create table 库名.表名;
-                    7)drop table 表名； 删除表
-
-
-
-        3.Mysql数据类型
-            字符
-                char varchar
-            数值
-                整型
-
-                    tinyint smallint int bigint
-                浮点
-                     float  单精度 0-2^32-1
-                     double 双精度 0-2^64-1
-                     mysql> create table db1.t5 (name char(10), level  tinyint );
-                mysql> insert into  db1.t5 values ("zbj",-1);
-                mysql> insert into  db1.t5 values ("zbj",-129);
-                mysql> insert into  db1.t5 values ("zbj",198);
-
-                mysql> create table db1.t6 (name char(10), level  tinyint unsigned);
-                mysql> insert into  db1.t6 values ("zbj",-1);
-                mysql> insert into  db1.t6 values ("zbj",0);
-                mysql> insert into  db1.t6 values ("zbj",256);
-                mysql> insert into  db1.t6 values ("zbj",25);
-                mysql> insert into  db1.t6 values ("zbj",25.22);
-                mysql> insert into  db1.t6 values ("zbj",25.52);
-
-                mysql> create  table db1.t3(pay float , id double);
-                mysql> insert into db1.t3 values(9999.23,9999.77);
-
-                mysql> create  table db1.t4( pay float(5,2) , id double(4,2) );
-                mysql> insert into db1.t4 values(9999.23,9999.77);
-
-                mysql> create table  db1.t7(stu_num int , name char(5) ,
-                       age tinyint ,pay float ,money float(7,2) );
-
-                mysql> desc  db1.t7 ;
+                       设置新密码
+                        mysql> alter user root@"localhost" identified by "tarena";  Query OK, 0 rows affected (0.00 sec)
+                        mysql> exit
+                        Bye
+                       使用新密码登录
+                        [root@DBA ~]# mysql -uroot -ptarena
 
 
+            2.数据库服务的基本使用
+                2.1链接mysql服务
+                    1.链接方式
+                        1)命令行
 
-
-
-
-
-
-
-            日期时间
-                类型 时间函数
-                年    日期   时间   日期时间
-                year  date   time   datetime/ timestamp
-
-                create table db1.t8(
-                name  char(15),
-                your_s    year,
-                birthday  date,
-                up_class  time,
-                party  datetime
-                );
-
-                desc  db1.t8 ;
-
-                insert into  db1.t8  values
-                ("bob",1990,20191120,083000,20190607203000);
-
-                当year类型 使用2位数赋值时：
-                0
-
-            枚举  enum  单选
-                 set   多选
-
-            插入数据
-            mysql> insert into db1.t21 (name,sex) values("tianmao","m");
-
-
-
-
-    DAY02
-        1.表结构
-            1)约束条件
-                作用:限制给表字段赋值
-                查看字段的约束条件 : desc 库.表;
-                    字段名 | 类型 | 空| 键值 | 默认值 |额外设置|
-                    mysql> desc db2.t10;
-                    +-------+--------------------------------+------+-----+---------+-------+
-                    | Field | Type                           | Null | Key | Default | Extra |
-                    +-------+--------------------------------+------+-----+---------+-------+
-                    | name  | char(10)                       | YES  |     | NULL    |       |
-                    | sex   | enum('boy','girl','no')        | YES  |     | NULL    |       |
-                    | likes | set('eat','game','pi','sleep') | YES  |     | NULL    |       |
-                    +-------+--------------------------------+------+-----+---------+-------+
-
-                约束条件有那些:
-                             是否为空  not null null
-                             键值     key
-                             默认设置 default  缺省 为null
-                             额外设置 extra
-                            mysql>create tabledb1.t7;
-                            ->name char(10) not null,
-                            ->age tinyint unsighted default 19
-                            ->class char(7) not null default "nsd1903"
-                            ->pay float(7,2) default 28000
-                            #######float共7位 两位小数
-                            );
-                           ###################################
-
-                            mysql> create table db1.t21(
-                            -> name char(10) not null,
-                            -> age tinyint unsigned default 25,
-                            -> sex enum("m","w") not null default "w");
-                            Query OK, 0 rows affected (0.38 sec)
-
-                            mysql> desc db1.t21;
-                            +-------+---------------------+------+-----+---------+-------+
-                            | Field | Type                | Null | Key | Default | Extra |
-                            +-------+---------------------+------+-----+---------+-------+
-                            | name  | char(10)            | NO   |     | NULL    |       |
-                            | age   | tinyint(3) unsigned | YES  |     | 25      |       |
-                            | sex   | enum('m','w')       | NO   |     | w       |       |
-                            +-------+---------------------+------+-----+---------+-------+
-                            3 rows in set (0.00 sec)
-                            #################插入数据#########################
-                            mysql> insert into db1.t21 values("dc",null,"w");
-                            Query OK, 1 row affected (0.04 sec)
-
-                            mysql> select * from db1.t21;
-                            +------+------+-----+
-                            | name | age  | sex |
-                            +------+------+-----+
-                            | dc   | NULL | w   |
-                            +------+------+-----+
+                            访问数据库
+                            mysql -h服务器ip -u用户名 -p密码[数据库名选填]
+                            显示目前位置(我在哪里)
+                            mysql> select database();
+                            +------------+
+                            | database() |
+                            +------------+
+                            | NULL       |
+                            +------------+
                             1 row in set (0.00 sec)
-                            mysql> insert into db1.t21 (name,sex) values("tianmao","m");
-                            Query OK, 1 row affected (0.03 sec)
 
-                            mysql> select * from db1.t21;
-                            +---------+------+-----+
-                            | name    | age  | sex |
-                            +---------+------+-----+
-                            | dc      | NULL | w   |
-                            | tianmao |   25 | m   |
-                            +---------+------+-----+
-                            2 rows in set (0.00 sec)
+                        2)web界面
+                        3)安装图形软件
+                        4)编写脚本(php java Python)
 
+                    2.数据存储流程
+                         连接数据库服务器
+                         建库               库类似于文件夹
+                         建表               表类似于文件
+                         插入数据
+                         断开连接 TCP
 
+                         SQL 结构化查询语句
+                            sql语句不区分大小写 (密码,变量除外)
+                            语句以 ; 结束 只有少数 不用加 ;
+                            只有少数;命令可以tab
+                            \c ;之前 或者ctrl + c 结束命令
+                         SQL命令分类
+                            DDL  数据定义语言  create alter drop
+                            DML  数据操作语言  insert update delete
+                            DCL  数据控制语言  grant revoke
+                            DTL  数据事物语言  commit  rollback
 
+                    2.mysql管理环境
+                        1)show databases; 显示已有的库
+                            不要删除,修改已有的库 ,新建库存放数据
+                        2)select user(); 显示链接用户
+                        3)use 库名;       切换库
+                        4)select database(); 显示当前所在的库
+                        5)create database 库名; 创建新库
+                            库名 命名规则
+                                只能 用数字 字母 下划线不能纯数字
+                                区分字母大小写 具有唯一性
+                                不能使用关键词 特殊字符
 
-        2.表结结构
-                1)修改表结构
-                    格式  alter table 库.表 执行动作;
-                    执行动作:
-                        add    添加新字段
+                                mysql> create table db1.学生表(
+                               姓名 char(10),
+                               家庭地址 char(20)
+                               ) DEFAULT CHARSET=utf8; ####添加参数支持中文
 
-                                新字段默认添加在地段的末尾, 添加 first 后可添加至行首 after xxx 在xxx后添加
-                                alter table db1.t10
-                                add
-                                name char(15)frist;
+                                mysql> insert into db1.学生表 values("张三丰","武当山");
+                                mysql> insert into db1.学生表 values("张四丰","武台山");
+                                mysql> select  * from  db1.学生表;
 
-                                alter table db1.t10
-                                add age tinyint unsighted not null default 19 after name ;
+                        6)show tables ; 显示已有的表
+                        7)drop database 库名; 删除库
+                    表管理命令
+                        1)select * from 库名.表名;
+                        2)insert into 库名.表名;
+                        3)update 库名.表名 set 字段=值;
+                        4)delete from 库名.表名;  删除表单中的所有数据,但不删除表
+                        5)create table 库名.表名;
+                        7)drop table 表名； 删除表
 
+                        mysql服务提交方式mysql服务提交方式autocommit
 
-                        drop   删除已有字段
+            3.Mysql数据类型
+                字符
+                    char varchar
+                数值
+                    整型
 
-                                mysql> alter table db1.t10 drop email , drop stu_num;
-                                    Query OK, 0 rows affected (0.62 sec)
-                                    Records: 0  Duplicates: 0  Warnings: 0
+                        tinyint smallint int bigint
+                    浮点
+                         float  单精度 0-2^32-1
+                         double 双精度 0-2^64-1
+                         mysql> create table db1.t5 (name char(10), level  tinyint );
+                    mysql> insert into  db1.t5 values ("zbj",-1);
+                    mysql> insert into  db1.t5 values ("zbj",-129);
+                    mysql> insert into  db1.t5 values ("zbj",198);
 
-                                mysql> select * from db1.t10 ;                                                   +------+-----+------+-------------+
-                                    | name | age | sex  | likes       |
-                                    +------+-----+------+-------------+
-                                    | dc   |  19 | boy  | eat,pi      |
-                                    | dc2  |  19 | boy  | eat,game,pi |
-                                    +------+-----+------+-------------+
-                                    2 rows in set (0.00 sec)
+                    mysql> create table db1.t6 (name char(10), level  tinyint unsigned);
+                    mysql> insert into  db1.t6 values ("zbj",-1);
+                    mysql> insert into  db1.t6 values ("zbj",0);
+                    mysql> insert into  db1.t6 values ("zbj",256);
+                    mysql> insert into  db1.t6 values ("zbj",25);
+                    mysql> insert into  db1.t6 values ("zbj",25.22);
+                    mysql> insert into  db1.t6 values ("zbj",25.52);
 
-                        modify 修改字段类型 (改类型 调位置)
-                                注意:修改的字段类型与已经存储的数据冲突时,不能修改类型
+                    mysql> create  table db1.t3(pay float , id double);
+                    mysql> insert into db1.t3 values(9999.23,9999.77);
 
-                                ###################修改类型###################################
-                                mysql> alter table db1.t10 modify name varchar(15) default "";
-                                    Query OK, 2 rows affected (0.73 sec)
-                                    Records: 2  Duplicates: 0  Warnings: 0
+                    mysql> create  table db1.t4( pay float(5,2) , id double(4,2) );
+                    mysql> insert into db1.t4 values(9999.23,9999.77);
 
-                                mysql> desc db1.t10 ;
-                                    +-------+--------------------------------+------+-----+---------+-------+
-                                    | Field | Type                           | Null | Key | Default | Extra |
-                                    +-------+--------------------------------+------+-----+---------+-------+
-                                    | name  | varchar(15)                    | YES  |     |         |       |
-                                    | age   | tinyint(3) unsigned            | NO   |     | 19      |       |
-                                    | sex   | enum('boy','gril','no')        | YES  |     | NULL    |       |
-                                    | likes | set('eat','game','pi','sleep') | YES  |     | NULL    |       |
-                                    +-------+--------------------------------+------+-----+---------+-------+
-                                    4 rows in set (0.00 sec)
+                    mysql> create table  db1.t7(stu_num int , name char(5) ,
+                           age tinyint ,pay float ,money float(7,2) );
 
-                                #############调整位置#######################
-                                mysql> alter table db1.t10 modify age tinyint(3) unsigned not null after sex;
-                                    Query OK, 0 rows affected (0.52 sec)
-                                    Records: 0  Duplicates: 0  Warnings: 0
-
-                                mysql> desc db1.10;
-                                    +-------+--------------------------------+------+-----+---------+-------+
-                                    | Field | Type                           | Null | Key | Default | Extra |
-                                    +-------+--------------------------------+------+-----+---------+-------+
-                                    | name  | varchar(15)                    | YES  |     |         |       |
-                                    | sex   | enum('boy','gril','no')        | YES  |     | NULL    |       |
-                                    | age   | tinyint(3) unsigned            | NO   |     | NULL    |       |
-                                    | loves | set('eat','game','pi','sleep') | YES  |     | NULL    |       |
-                                    +-------+--------------------------------+------+-----+---------+-------+
-
-
-
-                        change 修改字段名
-
-                                    .....chenge likes .....
-
-                                mysql> alter table db1.t10 change likes loves set('eat','game','pi','sleep');
-                                Query OK, 0 rows affected (0.08 sec)
-                                Records: 0  Duplicates: 0  Warnings: 0
-
-                                mysql> desc db1.t10 ;                                                            +-------+--------------------------------+------+-----+---------+-------+
-                                    | Field | Type                           | Null | Key | Default | Extra |
-                                    +-------+--------------------------------+------+-----+---------+-------+
-                                    | name  | varchar(15)                    | YES  |     |         |       |
-                                    | age   | tinyint(3) unsigned            | NO   |     | 19      |       |
-                                    | sex   | enum('boy','gril','no')        | YES  |     | NULL    |       |
-                                    | loves | set('eat','game','pi','sleep') | YES  |     | NULL    |       |
-                                    +-------+--------------------------------+------+-----+---------+-------+
-                                    4 rows in set (0.00 sec)
+                    mysql> desc  db1.t7 ;
 
 
-                        rename 修改表名
-
-                                mysql> alter table db1.t10 rename db1.classinfo;
-                                Query OK, 0 rows affected (0.12 sec)
-
-                                mysql> show tables;
-                                +---------------+
-                                | Tables_in_db1 |
-                                +---------------+
-                                | classinfo     |
-                                | t21           |
-                                +---------------+
 
 
-        3.mysql键值
-                1)键值类型:
-                        普通索引 index
-                        唯一索引 unique
-                        主键  primary key
-                        外键  foreign key
-                        全文索引 fulltext
-                作用: 约束如何给字段赋值
-                        索引:
-                            类似于书中的目录
-                            对表中的字段值进行排序
-                            索引类型包括Btree B+tree hash
-                        索引优缺点:
-                            优点:
-                            通过创建唯一性索引,可以保证数据库表中 每一行数据的唯一性
-                            加快数据查询速度,数据库总是查询多
-                            缺点:
-                            当对表中数据进行增加 删除 和修改 的时候 索引要动态调整 降低数据维护速度
-                            索引需要占物理空间
-                            存储在数据库根目录下
 
-                2)mysql键值使用
-                        2.1普通索引 index
-                            使用规则:
-                                -一个表中有多个index字段
-                                -字段的只允许重复,且可以赋值null
-                                -通常把查询条件的字段设置为index字段
-                                -index字段 标志为 mul
-                            查看:
-                                show index from 表名\G; \G表示 竖着显示
-                            创建索引:
 
-                                在创建表时创建索引:
-                                    create table db1.t22(
-                                    class char(9),
-                                    name char(15),
-                                    age int,
-                                    index(name),index(age));
-                                查看:
-                                    mysql> show index from db1.t22\G;
-                                删除索引:
-                                     mysql> drop index aaa on classinfo;
-                                在已有的表中创建索引:
-                                    create index 索引名 on 表名(字段名);
-                                    mysql> create index aaa on classinfo(name);
-                                    drop index 索引名 on 表名;
-                        2.2 主键
-                                作用:限制字段赋值
-                                使用规则:
-                                    字段值不能从重复,且不能赋null(核心作用)
-                                    一个表中只能有一个primary key 字段
-                                    多个字段都作为主键,称为复合主键,必须一起创建
-                                    主键通常与 auto increment(自增长) 连用
-                                    主键字段标志是pri
-                                    通常把表中唯一表示的字段设置为主键
-                                    [纪录字段编号]
-                                创建主键
 
-                                    mysql> create table db1.t23(
-                                    -> name char(10) primary key, ###设定主键
-                                    -> age int,
-                                    -> pay float(7,2)
-                                    -> );
 
-                                    mysql> insert into db1.t23 values("bob","25","2000");
-                                         ERROR 1062 (23000): Duplicate entry 'bob' for key 'PRIMARY'
 
-                                    mysql> insert into db1.t23 values("aaa","25","2000");
-                                        Query OK, 1 row affected (0.09 sec)
+                日期时间
+                    类型 时间函数
+                    年    日期   时间   日期时间
+                    year  date   time   datetime/ timestamp
 
-                                    mysql> select * from t23;
-                                        +------+------+---------+
-                                        | name | age  | pay     |
-                                        +------+------+---------+
-                                        | aaa  |   25 | 2000.00 |
-                                        | bob  |   25 | 2565.00 |
-                                        +------+------+---------+
+                    create table db1.t8(
+                    name  char(15),
+                    your_s    year,
+                    birthday  date,
+                    up_class  time,
+                    party  datetime
+                    );
 
-                                    在已有表中创建主键:
-                                        创建主键
-                                        alter table 表名 add primary key(字段名);
+                    desc  db1.t8 ;
 
-                                        mysql> desc db1.classinfo;
+                    insert into  db1.t8  values
+                    ("bob",1990,20191120,083000,20190607203000);
+
+                    当year类型 使用2位数赋值时：
+                    0
+
+                枚举  enum  单选
+                     set   多选
+
+                插入数据
+                mysql> insert into db1.t21 (name,sex) values("tianmao","m");
+
+
+
+
+        DAY02
+            1.表结构
+                1)约束条件
+                    作用:限制给表字段赋值
+                    查看字段的约束条件 : desc 库.表;
+                        字段名 | 类型 | 空| 键值 | 默认值 |额外设置|
+                        mysql> desc db2.t10;
+                        +-------+--------------------------------+------+-----+---------+-------+
+                        | Field | Type                           | Null | Key | Default | Extra |
+                        +-------+--------------------------------+------+-----+---------+-------+
+                        | name  | char(10)                       | YES  |     | NULL    |       |
+                        | sex   | enum('boy','girl','no')        | YES  |     | NULL    |       |
+                        | likes | set('eat','game','pi','sleep') | YES  |     | NULL    |       |
+                        +-------+--------------------------------+------+-----+---------+-------+
+
+                    约束条件有那些:
+                                 是否为空  not null null
+                                 键值     key
+                                 默认设置 default  缺省 为null
+                                 额外设置 extra
+                                mysql>create tabledb1.t7;
+                                ->name char(10) not null,
+                                ->age tinyint unsighted default 19
+                                ->class char(7) not null default "nsd1903"
+                                ->pay float(7,2) default 28000
+                                #######float共7位 两位小数
+                                );
+                               ###################################
+
+                                mysql> create table db1.t21(
+                                -> name char(10) not null,
+                                -> age tinyint unsigned default 25,
+                                -> sex enum("m","w") not null default "w");
+                                Query OK, 0 rows affected (0.38 sec)
+
+                                mysql> desc db1.t21;
+                                +-------+---------------------+------+-----+---------+-------+
+                                | Field | Type                | Null | Key | Default | Extra |
+                                +-------+---------------------+------+-----+---------+-------+
+                                | name  | char(10)            | NO   |     | NULL    |       |
+                                | age   | tinyint(3) unsigned | YES  |     | 25      |       |
+                                | sex   | enum('m','w')       | NO   |     | w       |       |
+                                +-------+---------------------+------+-----+---------+-------+
+                                3 rows in set (0.00 sec)
+                                #################插入数据#########################
+                                mysql> insert into db1.t21 values("dc",null,"w");
+                                Query OK, 1 row affected (0.04 sec)
+
+                                mysql> select * from db1.t21;
+                                +------+------+-----+
+                                | name | age  | sex |
+                                +------+------+-----+
+                                | dc   | NULL | w   |
+                                +------+------+-----+
+                                1 row in set (0.00 sec)
+                                mysql> insert into db1.t21 (name,sex) values("tianmao","m");
+                                Query OK, 1 row affected (0.03 sec)
+
+                                mysql> select * from db1.t21;
+                                +---------+------+-----+
+                                | name    | age  | sex |
+                                +---------+------+-----+
+                                | dc      | NULL | w   |
+                                | tianmao |   25 | m   |
+                                +---------+------+-----+
+                                2 rows in set (0.00 sec)
+
+
+
+
+            2.表结结构
+                    1)修改表结构
+                        格式  alter table 库.表 执行动作;
+                        执行动作:
+                            add    添加新字段
+
+                                    新字段默认添加在地段的末尾, 添加 first 后可添加至行首 after xxx 在xxx后添加
+                                    alter table db1.t10
+                                    add
+                                    name char(15)frist;
+
+                                    alter table db1.t10
+                                    add age tinyint unsighted not null default 19 after name ;
+
+
+                            drop   删除已有字段
+
+                                    mysql> alter table db1.t10 drop email , drop stu_num;
+                                        Query OK, 0 rows affected (0.62 sec)
+                                        Records: 0  Duplicates: 0  Warnings: 0
+
+                                    mysql> select * from db1.t10 ;                                                   +------+-----+------+-------------+
+                                        | name | age | sex  | likes       |
+                                        +------+-----+------+-------------+
+                                        | dc   |  19 | boy  | eat,pi      |
+                                        | dc2  |  19 | boy  | eat,game,pi |
+                                        +------+-----+------+-------------+
+                                        2 rows in set (0.00 sec)
+
+                            modify 修改字段类型 (改类型 调位置)
+                                    注意:修改的字段类型与已经存储的数据冲突时,不能修改类型
+
+                                    ###################修改类型###################################
+                                    mysql> alter table db1.t10 modify name varchar(15) default "";
+                                        Query OK, 2 rows affected (0.73 sec)
+                                        Records: 2  Duplicates: 0  Warnings: 0
+
+                                    mysql> desc db1.t10 ;
                                         +-------+--------------------------------+------+-----+---------+-------+
                                         | Field | Type                           | Null | Key | Default | Extra |
                                         +-------+--------------------------------+------+-----+---------+-------+
-                                        | name  | varchar(15)                    | NO   | PRI |         |       |
-
-
-                                    删除主键
-                                        使用drop 删除
-                                          mysql> desc t3;
-                                          mysql> alter  table  t3 drop  primary key;
-                                          mysql> desc t3;
-                                          mysql> insert into t3  values("nsd181101","tom",19);
-                                          mysql> insert into t3  values(null,"jerry",19);
-                                            ERROR 1048 (23000): Column 'stu_num' cannot be null
-                                          mysql> select  * from  t3;
-
-
-                                创建复合主键
-                                    约束方式: 主键字段的值不可以同时重复
-                                    创建主键
-                                    在已有表中添加复合主键
-
-                                        alter table db1.t25 add primary key(id,name);
-
-                                        mysql> create table db1.t24(                                                         -> clientip char(15),
-                                        -> serport int,
-                                        -> clientip char(15),
-                                        -> status enum("yes","no"),
-                                        #########要创建多少 就在这里添加多少###########
-                                        -> primary key(clientip,serport)
-                                        -> );
-                                        Query OK, 0 rows affected (0.21 sec)
-
-                                    mysql> desc db1.t24;
-                                        +----------+------------------+------+-----+---------+-------+
-                                        | Field    | Type             | Null | Key | Default | Extra |
-                                        +----------+------------------+------+-----+---------+-------+
-                                        | clientip | char(15)         | NO   | PRI | NULL    |       |
-                                        | serport  | int(11)          | NO   | PRI | NULL    |       |
-                                        | status   | enum('yes','no') | YES  |     | NULL    |       |
-                                        +----------+------------------+------+-----+---------+-------+
-
-                                    mysql> insert into db1.t24 values ("1.1.1.1",22,"no");
-                                    mysql> insert into db1.t24 values ("1.1.1.1",22,"yes");
-                                    ERROR 1062 (23000): Duplicate entry '1.1.1.1-22' for key 'PRIMARY'
-                                    mysql> insert into db1.t24 values ("1.1.1.1",80,"no");
-                                    mysql> insert into db1.t24 values ("1.1.1.2",80,"yes");
-                                    mysql> insert into db1.t24 values ("1.1.1.2",22,"no");
-
-                                    mysql> select * from t24;
-                                        +----------+---------+--------+
-                                        | clientip | serport | status |
-                                        +----------+---------+--------+
-                                        | 1.1.1.1  |      22 | no     |
-                                        | 1.1.1.1  |      80 | no     |
-                                        | 1.1.1.2  |      22 | yes    |
-                                        | 1.1.1.2  |      80 | yes    |
-                                        +----------+---------+--------+
-
-
-                                主键通常与 auto increment(自增长) 连用
-                                    mysql> create table db1.t25(
-                                    -> id int primary key auto_increment,
-                                    -> name char(15),
-                                    -> age tinyint,
-                                    -> sex enum("boy","girl")
-                                    -> );
-                                    mysql> desc db1.t25;
-                                        +-------+--------------------+------+-----+---------+----------------+
-                                        | Field | Type               | Null | Key | Default | Extra          |
-                                        +-------+--------------------+------+-----+---------+----------------+
-                                        | id    | int(11)            | NO   | PRI | NULL    | auto_increment |
-                                        | name  | char(15)           | YES  |     | NULL    |                |
-                                        | age   | tinyint(4)         | YES  |     | NULL    |                |
-                                        | sex   | enum('boy','girl') | YES  |     | NULL    |                |
-                                        +-------+--------------------+------+-----+---------+----------------+
-
-                                    mysql> insert into db1.t25(name,age,sex)values("tencen","25","boy");
-                                    mysql> insert into db1.t25(name,age,sex)values("bbbb","25","boy");
-                                    mysql> insert into db1.t25(name,age,sex)values("aaa","25","boy");
-
-                                    mysql> select * from t25;
-                                        +----+----------+------+------+
-                                        | id | name     | age  | sex  |
-                                        +----+----------+------+------+
-                                        |  1 | tencen   |   25 | boy  |
-                                        |  2 | bilibili |   25 | boy  |
-                                        |  3 | bilibili |   25 | girl |
-                                        |  4 | luceey   |   16 | girl |
-                                        +----+----------+------+------+
+                                        | name  | varchar(15)                    | YES  |     |         |       |
+                                        | age   | tinyint(3) unsigned            | NO   |     | 19      |       |
+                                        | sex   | enum('boy','gril','no')        | YES  |     | NULL    |       |
+                                        | likes | set('eat','game','pi','sleep') | YES  |     | NULL    |       |
+                                        +-------+--------------------------------+------+-----+---------+-------+
                                         4 rows in set (0.00 sec)
-                                        删除表中的数据,生产环境不能这么干 不然跑路啊.
-                                    mysql> delete from t25;
-                                            Query OK, 6 rows affected (0.12 sec)
 
-                                    mysql> insert into t25(name,age,sex)values("1080","120","girl");
-                                           Query OK, 1 row affected (0.03 sec)
-                                           除非给id从新设定为1 ,否则依然按照以前的值自加一s
-                                    mysql> select * from t25;
-                                        +----+------+------+------+
-                                        | id | name | age  | sex  |
-                                        +----+------+------+------+
-                                        |  7 | 1080 |  120 | girl |
-                                        +----+------+------+------+
-                        2.3 外键
-                                作用:限制给字段赋值
-                                    使得字段值在另一个表字段值范围内选择
-                                规则:
-                                     表的存储引擎必须是innodb (之后会讲)
-                                     字段类型要一致
-                                     被参考字段必须要是索引类型的一种(通常为primary key)
-
-                                     mysql> show create table db3.user \G; 可以查看到表引擎
-                                命令格式:
-                                        create table 库.表1(
-                                            字段列表,
-                                            foreign key(字段名) references 表名2(字段名)
-                                            ###指定外键 ,,,reference 后的表2代表被参考的表
-                                            ###foreign 后的是需要参考表中的字段;;;;   也就是表1中字段   参考  表2中字段
-                                            on update cascade  ###同步增加
-                                            on delete cascade  ###同步删除
-                                            )engine=innodb;
-                                        创建外键
-                                eg:
-                                            create table db1.yg(
-                                            yg_id int primary key auto_increment,
-                                            name char(15)
-                                            )engine=innodb;
-
-                                            insert into db1.yg(name)values("bob");
-                                            insert into db1.yg(name)values("luci");
-                                            insert into db1.yg(name)values("cd");
-
-
-                                            mysql> select * from yg;
-                                                    +-------+------+
-                                                    | yg_id | name |
-                                                    +-------+------+
-                                                    |     1 | bob  |
-                                                    |     2 | luci |
-                                                    |     3 | cd   |
-                                                    |     4 | cd   |
-                                                    |     5 | bob  |
-                                                    +-------+------+
-
-                                            create table db1.gz(
-                                            gz_id int,
-                                            pay float(7,2),
-                                            foreign key(gz_id) references yg(yg_id)  ####创建外键######
-                                            on update cascade  ###同步删除
-                                            on delete cascade  ###同步增加
-                                            )engine=innodb;
-
-                                            mysql> select * from gz;
-                                            Empty set (0.00 sec)
-
-                                            mysql> insert into gz values(1,2000);
-                                            mysql> insert into gz values(4,200);
-                                            mysql> insert into gz values(5,200);
-                                            mysql> insert into gz values(6,200);
-                                            mysql> insert into gz values(6,500);
-                                            mysql> insert into gz values(6,5000);
-
-                                            ##########更新###### 员工id#############
-                                            mysql> update db1.yg set yg_id=6 where yg_id=3; ###讲yg_id=3,的换成yg_id=6，两个表中数据自动同步。
-                                            Query OK, 1 row affected (0.03 sec)
-                                            Rows matched: 1  Changed: 1  Warnings: 0
-
-                                            mysql> select * from gz;
-                                            +-------+---------+
-                                            | gz_id | pay     |
-                                            +-------+---------+
-                                            |     4 |  200.00 |
-                                            |     5 |  200.00 |
-                                            |     6 |  200.00 |
-                                            |     6 |  500.00 |
-                                            |     6 | 5000.00 |
-                                            |     1 | 2000.00 |
-                                            +-------+---------+
-                                            6 rows in set (0.00 sec)
-
-                                            #########删除id=6 的 员工  gz 表中 也会消失 ##########
-
-                                            mysql> delete from db1.yg where yg_id=6;
-                                            Query OK, 1 row affected (0.05 sec)
-
-                                            mysql> select * from gz;
-                                            +-------+---------+
-                                            | gz_id | pay     |
-                                            +-------+---------+
-                                            |     4 |  200.00 |
-                                            |     5 |  200.00 |
-                                            |     1 | 2000.00 |
-                                            +-------+---------+
-                                            3 rows in set (0.00 sec)
-
-                                    mysql> delete from gz;
-
-                                    mysql> alter table gz add primary key(gz_id);
-                                        Query OK, 0 rows affected (0.43 sec)
+                                    #############调整位置#######################
+                                    mysql> alter table db1.t10 modify age tinyint(3) unsigned not null after sex;
+                                        Query OK, 0 rows affected (0.52 sec)
                                         Records: 0  Duplicates: 0  Warnings: 0
 
-                                        mysql> desc gz;
-                                        +-------+------------+------+-----+---------+-------+
-                                        | Field | Type       | Null | Key | Default | Extra |
-                                        +-------+------------+------+-----+---------+-------+
-                                        | gz_id | int(11)    | NO   | PRI | NULL    |       |
-                                        | pay   | float(7,2) | YES  |     | NULL    |       |
-                                        +-------+------------+------+-----+---------+-------+
-                                        2 rows in set (0.00 sec)
-
-                                    mysql> insert into gz values(5,200);
-                                        ERROR 1062 (23000): Duplicate entry '5' for key 'PRIMARY'
-                                    mysql> insert into gz values(null,200);
-                                        ERROR 1048 (23000): Column 'gz_id' cannot be null
-                                    mysql> insert into gz values(1,20z00);
-                                        ERROR 1054 (42S22): Unknown column '20z00' in 'field list'
-                                    mysql> insert into gz values(1,2000);
-                                        Query OK, 1 row affected (0.02 sec)
-                                        mysql> select * from gz;
-                                        +-------+---------+
-                                        | gz_id | pay     |
-                                        +-------+---------+
-                                        |     1 | 2000.00 |
-                                        |     5 |  200.00 |
-                                        +-------+---------+
-
-                                删除外键:
-                                        show create table db1.gz\G;
-                                        alter table db1.gz drop foreign key gz_ibfk_1;
-
-                        在已有的表中添加外键 主键  自加(auto_increment)都是可以的 但是建立外键时需要数据匹配.
-
-                                ####向已有的表中添加外键#####
-                               alter table db1.gz
-                               add
-                               foreign key(gz_id) references db1.yg(yg_id)
-                               on update cascade on delete cascade
-                               engine=innodb;
-                               ####向已有表的中添加主键####
-                               alter table db1.yg
-                               modify
-                               yg_id int primary key auto_increment;
+                                    mysql> desc db1.10;
+                                        +-------+--------------------------------+------+-----+---------+-------+
+                                        | Field | Type                           | Null | Key | Default | Extra |
+                                        +-------+--------------------------------+------+-----+---------+-------+
+                                        | name  | varchar(15)                    | YES  |     |         |       |
+                                        | sex   | enum('boy','gril','no')        | YES  |     | NULL    |       |
+                                        | age   | tinyint(3) unsigned            | NO   |     | NULL    |       |
+                                        | loves | set('eat','game','pi','sleep') | YES  |     | NULL    |       |
+                                        +-------+--------------------------------+------+-----+---------+-------+
 
 
 
-   DAY03 数据导入导出
-        修改搜索路径
-            mysql> show variables like "secure_file_priv";
-             默认路径 : /var/lib/mysql-files/
-             修改配置文件 :
-                        [root@DBA ~]# mkdir /myload
-                        [root@DBA ~]# chown mysql /myload
-                        [root@DBA ~]# vim /etc/my.cnf
+                            change 修改字段名/修改字段名类型
 
-                            secure_file_priv="/myload"
+                                        .....chenge likes .....
 
-             重启服务:    systemctl restart mysqld
-             进入数据库查询位置是否修改:
-                        mysql> show variables like "secure_file_priv";
-        数据导入
-                默认只有root才能导入数据
-                建表
-                导入
-              注意事项:
-                    字段分隔符要和文件一致
-                    表字段类型和字段个数要和文件匹配
-                    导入数据时指定文件的绝对路径
-              步骤:命令格式
+                                    mysql> alter table db1.t10 change likes loves set('eat','game','pi','sleep');
+                                    Query OK, 0 rows affected (0.08 sec)
+                                    Records: 0  Duplicates: 0  Warnings: 0
 
-                    mysql>load data infile "目录/文件"
-                    into table库名.表名
-                    fields terminated by "分隔符" #### 列
-                    lines terminated by "\n";    #### 行
+                                    mysql> desc db1.t10 ;                                                            +-------+--------------------------------+------+-----+---------+-------+
+                                        | Field | Type                           | Null | Key | Default | Extra |
+                                        +-------+--------------------------------+------+-----+---------+-------+
+                                        | name  | varchar(15)                    | YES  |     |         |       |
+                                        | age   | tinyint(3) unsigned            | NO   |     | 19      |       |
+                                        | sex   | enum('boy','gril','no')        | YES  |     | NULL    |       |
+                                        | loves | set('eat','game','pi','sleep') | YES  |     | NULL    |       |
+                                        +-------+--------------------------------+------+-----+---------+-------+
+                                        4 rows in set (0.00 sec)
 
 
-              eg:
-                    前面还要 创建文件夹 修改配置文件 重启服务
-                mysql> load data infile "/myload/passwd" into table db3.usr fields terminated by ":" lines terminated by "\n";
+                            rename 修改表名
 
-        数据导出
-               作用:把表纪录存储到系统文件里
-               注意:导出数据有sql语句决定
-                    导出的是表记录,不包括字段名
-                    自动创建存储数据文件
-                    存储数据文件,具有唯一性
-                    注意导出文件是目录必须与secure_file_priv 目录一致(也就是说只能在这里导出)
-               命令:
-                   1)select命令 into outfile "目录名/文件名";  ### 不指定 分隔符时 默认 分别为 \t  \n
-                   2)select命令 into outfile "目录名/文件名"
-                     fields terminated by "分割符"; ####指定列分隔符
-                   3)select命令 into outfile "目录名/文件名"
-                     fields terminated by "分割符"
-                     lines terminated by "\n"  ####指定行分割符号
-               eg:
-                   select * from db1.t23 into outfile "/myload/t23";
-                   select * from db3.usr where id<=3 into outfile "/myload/user2.txt";
+                                    mysql> alter table db1.t10 rename db1.classinfo;
+                                    Query OK, 0 rows affected (0.12 sec)
 
-        表管理记录 (db3.usr)
-
-            1.添加记录
-                命令格式
-                注意事项:
-                        字段值与字段类型匹配
-                        字符类型的字段 要用 ""括起来
-                        依次给所有字段赋值时,字段名可省略
-                        只给部分字段赋值时,必须明确对应字段名称
-                        没有赋值的字段使用默认值,或自增长
-                   添加一条记录给所有字段可以省略
-                   insert into 表名 values(字段值列表);
-
-                   mysql> insert into usr values(22,"lc","x",2000,2000,"test user","/home/bob","/bin/bash")
-
-                   添加n行,给所有列赋值
-                   insert into 表名 values(字段值列表1),(字段值列表2);
-
-                   添加一条记录,给指定字段赋值
-                   insert into 表名(字段名列表) values(字段值列表);
-
-                   添加N条记录,给指定字段赋值
-                   insert into 表名(字段名列表) values(字段值列表1),(字段值列表2),(字段值列表3);
-
-            查看记录
-                查看记录注意:
-                    * 表示查询所有字段
-                    查看当前库表记录时库名可省略
-                    字段列表决定显示列个数
-                    条件决定显示行的个数
-                查看所有
-                        select * from 库名.表名;
-                条件查询
-                       select 字段1,字段N from 库名.表名 where 条件表达式;
-            修改记录
-                注意:字段值与字段类型匹配
-                    对于字符类型,值使用""起来
-                    若不使用where限定条件,会更新所有记录字段值
-                    限定条件,只更新匹配条件的记录字段的值
-                条件修改
-                   update 表名 set 字段名=值,字段名=值,字段名=值,... where 条件;
-
-                修改所有
-                   update 表名 set 字段名=值,字段名=值,字段名=值,... ;
+                                    mysql> show tables;
+                                    +---------------+
+                                    | Tables_in_db1 |
+                                    +---------------+
+                                    | classinfo     |
+                                    | t21           |
+                                    +---------------+
 
 
-            删除记录
-                注意: 不添加条件删除表中所有
-                条件删除
-                    delete  from 库名.表名 where 条件表达式;
-                删除所有
-                    delete  from 库名.表名 ;
+            3.mysql键值
+                    1)键值类型:
+                            普通索引 index
+                            唯一索引 unique
+                            主键  primary key
+                            外键  foreign key
+                            全文索引 fulltext
+                    作用: 约束如何给字段赋值
+                            索引:
+                                类似于书中的目录
+                                对表中的字段值进行排序
+                                索引类型包括Btree B+tree hash
+                            索引优缺点:
+                                优点:
+                                通过创建唯一性索引,可以保证数据库表中 每一行数据的唯一性
+                                加快数据查询速度,数据库总是查询多
+                                缺点:
+                                当对表中数据进行增加 删除 和修改 的时候 索引要动态调整 降低数据维护速度
+                                索引需要占物理空间
+                                存储在数据库根目录下
+
+                    2)mysql键值使用
+                            2.1普通索引 index
+                                使用规则:
+                                    -一个表中有多个index字段
+                                    -字段的只允许重复,且可以赋值null
+                                    -通常把查询条件的字段设置为index字段
+                                    -index字段 标志为 mul
+                                查看:
+                                    show index from 表名\G; \G表示 竖着显示
+                                创建索引:
+
+                                    在创建表时创建索引:
+                                        create table db1.t22(
+                                        class char(9),
+                                        name char(15),
+                                        age int,
+                                        index(name),index(age));
+                                    查看:
+                                        mysql> show index from db1.t22\G;
+                                    删除索引:
+                                         mysql> drop index aaa on classinfo;
+                                    在已有的表中创建索引:
+                                        create index 索引名 on 表名(字段名);
+                                        mysql> create index aaa on classinfo(name);
+                                        drop index 索引名 on 表名;
+                            2.2 主键
+                                    作用:限制字段赋值
+                                    使用规则:
+                                        字段值不能从重复,且不能赋null(核心作用)
+                                        一个表中只能有一个primary key 字段
+                                        多个字段都作为主键,称为复合主键,必须一起创建
+                                        主键通常与 auto increment(自增长) 连用
+                                        主键字段标志是pri
+                                        通常把表中唯一表示的字段设置为主键
+                                        [纪录字段编号]
+                                    创建主键
+
+                                        mysql> create table db1.t23(
+                                        -> name char(10) primary key, ###设定主键
+                                        -> age int,
+                                        -> pay float(7,2)
+                                        -> );
+
+                                        mysql> insert into db1.t23 values("bob","25","2000");
+                                             ERROR 1062 (23000): Duplicate entry 'bob' for key 'PRIMARY'
+
+                                        mysql> insert into db1.t23 values("aaa","25","2000");
+                                            Query OK, 1 row affected (0.09 sec)
+
+                                        mysql> select * from t23;
+                                            +------+------+---------+
+                                            | name | age  | pay     |
+                                            +------+------+---------+
+                                            | aaa  |   25 | 2000.00 |
+                                            | bob  |   25 | 2565.00 |
+                                            +------+------+---------+
+
+                                        在已有表中创建主键:
+                                            创建主键
+                                            alter table 表名 add primary key(字段名);
+
+                                            mysql> desc db1.classinfo;
+                                            +-------+--------------------------------+------+-----+---------+-------+
+                                            | Field | Type                           | Null | Key | Default | Extra |
+                                            +-------+--------------------------------+------+-----+---------+-------+
+                                            | name  | varchar(15)                    | NO   | PRI |         |       |
 
 
-        匹配条件
-           基本匹配条件(适用于select \ update \ delete)
-
-                数值比较   > < >= <= = !=
-                    符号两边要求是数值类型
-                    eg
-                        select * from usr where id<=6;
-                        select * from usr where uid=gid;
-
-                字符比较
-                    =   !=  is null  is not null
-                    eg:
-                        select name,uid,gid from usr where uid=gid;
-                        select from usr where name is null;
-
-                范围内比较
-                     in       not in      between ...  and ....
-                     eg:
-                        select name from usr where name in ("root","adm","mysql");
-                        select name,uid from user where uid in (3,5,7,9);
-                        select name,shell from usr where shell not in ("/bin/bash","/sbin/nologin");
-                        select name uid from usr where uid between 50 and 100;
-                逻辑比较
-                    逻辑与  and  && (多个判断条件同时成立)
-                    逻辑或  or   || (多个判断条件,某个条件成立 )
-                    逻辑非  not   !
-                    eg:
-                        select * from usr where name="root" and uid=1 and shell="abc";
-                        select * from usr where name="root" && uid=1 && shell="abc";
-
-                空\非空
-                    is null / is not null
-                    eg:
-                        select id from user where shell is null;
-                        select name from usr where shell is not null;
-                去掉重复数据
-                        distinct
-                        select distinct shell from usr where uid>10;
-                        select distinct shell from usr where uid>=10;
-                        select distinct shell from usr;
-           高级匹配条件(适用于select \ update \ delete)
-                模糊查询
-                                          _ 表示一个
-                                          % 表示0-n个字符
-
-                    select name from usr where name like "____"; ##匹配任意四个字符 ,这里起始是四个_
-                    select name from usr where name like "_%_"; ##匹配任意字符
-                    select name from usr where name like "a%";  ##以a开头
-                    select name from usr where name like "%a%"; ##必须包含a
+                                        删除主键
+                                            使用drop 删除
+                                              mysql> desc t3;
+                                              mysql> alter  table  t3 drop  primary key;
+                                              mysql> desc t3;
+                                              mysql> insert into t3  values("nsd181101","tom",19);
+                                              mysql> insert into t3  values(null,"jerry",19);
+                                                ERROR 1048 (23000): Column 'stu_num' cannot be null
+                                              mysql> select  * from  t3;
 
 
-                正则匹配
-                    语法: where 字段号 regexp '正则表达式';
-                    正则符号:^ $ [] | *
-                    select name from usr where name regexp  '^r|y$'; ### r开头 或者 y 结尾
-                    select name from usr where name regexp  '^r.*y$';  ### .* 任意字符的任意次数, .任意字符 *前一个字符的任意次数
-                    select name,uid from usr where uid regexp  '^....$'; ###四位数字
-                    insert into usr(name)values("yaya9"),("7yaya"),("ya8ya");
-                    select name,uid from usr where uid regexp  '[0-9]';
-                四则计算
-                 + - * /
-                 select name,uid,gid,uid+gid sum from usr where name="bin";
-                 select name,uid,gid, uid+gid sum from usr; ###将所有的uid和gid相加
-                 select name,uid,gid,(uid+gid)/2 ava from usr where name="root";
-                     +------+------+------+--------+
-                    | name | uid  | gid  | ava    |
-                    +------+------+------+--------+
-                    | root |    0 |    1 | 0.5000 |
-                    +------+------+------+--------+
+                                    创建复合主键
+                                        约束方式: 主键字段的值不可以同时重复
+                                        创建主键
+                                        在已有表中添加复合主键
 
-                 update usr set gid=gid+1; ### 每一个gid+1
+                                            alter table db1.t25 add primary key(id,name);
 
-                 alter table usr add age tinyint unsigned default 19 after name;
-                 select name,age, 2019-age your_age from usr where name="root";
-                    +------+------+----------+
-                    | name | age  | your_age |
-                    +------+------+----------+
-                    | root |   19 |     2000 |
-                    +------+------+----------+
+                                            mysql> create table db1.t24(                                                         -> clientip char(15),
+                                            -> serport int,
+                                            -> clientip char(15),
+                                            -> status enum("yes","no"),
+                                            #########要创建多少 就在这里添加多少###########
+                                            -> primary key(clientip,serport)
+                                            -> );
+                                            Query OK, 0 rows affected (0.21 sec)
 
-           操作查询结果(适用于select)
+                                        mysql> desc db1.t24;
+                                            +----------+------------------+------+-----+---------+-------+
+                                            | Field    | Type             | Null | Key | Default | Extra |
+                                            +----------+------------------+------+-----+---------+-------+
+                                            | clientip | char(15)         | NO   | PRI | NULL    |       |
+                                            | serport  | int(11)          | NO   | PRI | NULL    |       |
+                                            | status   | enum('yes','no') | YES  |     | NULL    |       |
+                                            +----------+------------------+------+-----+---------+-------+
 
-                 select count(字段名) from usr; 求字段值的个数
-                 select min(字段名) from usr;   求字段值的最小值
-                 select avg(字段名) from usr;   求字段值的平均值
-                 select sum(字段名) from usr;   求字段值的总和
-                 select max(字段名) from usr;   求字段值的最大值
-                 eg:
-                     统计表中所有的行数
-                     select count(*) from usr;
-                     统计uid的 平均数
-                     select avg(uid) from usr;
+                                        mysql> insert into db1.t24 values ("1.1.1.1",22,"no");
+                                        mysql> insert into db1.t24 values ("1.1.1.1",22,"yes");
+                                        ERROR 1062 (23000): Duplicate entry '1.1.1.1-22' for key 'PRIMARY'
+                                        mysql> insert into db1.t24 values ("1.1.1.1",80,"no");
+                                        mysql> insert into db1.t24 values ("1.1.1.2",80,"yes");
+                                        mysql> insert into db1.t24 values ("1.1.1.2",22,"no");
+
+                                        mysql> select * from t24;
+                                            +----------+---------+--------+
+                                            | clientip | serport | status |
+                                            +----------+---------+--------+
+                                            | 1.1.1.1  |      22 | no     |
+                                            | 1.1.1.1  |      80 | no     |
+                                            | 1.1.1.2  |      22 | yes    |
+                                            | 1.1.1.2  |      80 | yes    |
+                                            +----------+---------+--------+
 
 
-                 查询结果排序
+                                    主键通常与 auto increment(自增长) 连用
+                                        mysql> create table db1.t25(
+                                        -> id int primary key auto_increment,
+                                        -> name char(15),
+                                        -> age tinyint,
+                                        -> sex enum("boy","girl")
+                                        -> );
+                                        mysql> desc db1.t25;
+                                            +-------+--------------------+------+-----+---------+----------------+
+                                            | Field | Type               | Null | Key | Default | Extra          |
+                                            +-------+--------------------+------+-----+---------+----------------+
+                                            | id    | int(11)            | NO   | PRI | NULL    | auto_increment |
+                                            | name  | char(15)           | YES  |     | NULL    |                |
+                                            | age   | tinyint(4)         | YES  |     | NULL    |                |
+                                            | sex   | enum('boy','girl') | YES  |     | NULL    |                |
+                                            +-------+--------------------+------+-----+---------+----------------+
 
-                     SQL查询 order by 字段名 [asc|desc];
-                     -asc 升序列 小--->大  ###默认
-                     -desc 降序列 大-->小
-                     eg:
+                                        mysql> insert into db1.t25(name,age,sex)values("tencen","25","boy");
+                                        mysql> insert into db1.t25(name,age,sex)values("bbbb","25","boy");
+                                        mysql> insert into db1.t25(name,age,sex)values("aaa","25","boy");
 
-                        升序排
-                        select name,uid from usr where uid>=10 and uid<=500 order by uid; ##默认省略asc
-                                +-----------------+------+
-                                | name            | uid  |
-                                +-----------------+------+
-                                | operator        |   11 |
-                                | games           |   12 |
-                                | ftp             |   14 |
+                                        mysql> select * from t25;
+                                            +----+----------+------+------+
+                                            | id | name     | age  | sex  |
+                                            +----+----------+------+------+
+                                            |  1 | tencen   |   25 | boy  |
+                                            |  2 | bilibili |   25 | boy  |
+                                            |  3 | bilibili |   25 | girl |
+                                            |  4 | luceey   |   16 | girl |
+                                            +----+----------+------+------+
+                                            4 rows in set (0.00 sec)
+                                            删除表中的数据,生产环境不能这么干 不然跑路啊.
+                                        mysql> delete from t25;
+                                                Query OK, 6 rows affected (0.12 sec)
 
-                        降序排
-                        select name,uid from usr where uid>=10 and uid<=500 order by uid desc;
-                                +-----------------+------+
-                                | name            | uid  |
-                                +-----------------+------+
-                                | systemd-network |  192 |
-                                | nobody          |   99 |
-                                | dbus            |   81 |
-                                | sshd            |   74 |
+                                        mysql> insert into t25(name,age,sex)values("1080","120","girl");
+                                               Query OK, 1 row affected (0.03 sec)
+                                               除非给id从新设定为1 ,否则依然按照以前的值自加一s
+                                        mysql> select * from t25;
+                                            +----+------+------+------+
+                                            | id | name | age  | sex  |
+                                            +----+------+------+------+
+                                            |  7 | 1080 |  120 | girl |
+                                            +----+------+------+------+
+                            2.3 外键
+                                    作用:限制给字段赋值
+                                        使得字段值在另一个表字段值范围内选择
+                                    规则:
+                                         表的存储引擎必须是innodb (之后会讲)
+                                         字段类型要一致
+                                         被参考字段必须要是索引类型的一种(通常为primary key)
 
-                 查询分组
-                    SQL查询 group by 字段名;
-                    eg:
-                        select shell from usr group by shell;
-                        select shell from usr where uid<=1000 group by shell;
-                        select gid from usr group by gid;
-                        mysql> select shell,count(shell)from usr group by shell;
-                        +----------------+--------------+
-                        | shell          | count(shell) |
-                        +----------------+--------------+
-                        | NULL           |            0 |
-                        | /bin/bash      |            5 |
-                        | /bin/false     |            1 |
+                                         mysql> show create table db3.user \G; 可以查看到表引擎
+                                    命令格式:
+                                            create table 库.表1(
+                                                字段列表,
+                                                foreign key(字段名) references 表名2(字段名)
+                                                ###指定外键 ,,,reference 后的表2代表被参考的表
+                                                ###foreign 后的是需要参考表中的字段;;;;   也就是表1中字段   参考  表2中字段
+                                                on update cascade  ###同步增加
+                                                on delete cascade  ###同步删除
+                                                )engine=innodb;
+                                            创建外键
+                                    eg:
+                                                create table db1.yg(
+                                                yg_id int primary key auto_increment,
+                                                name char(15)
+                                                )engine=innodb;
 
-                 查询结果过滤
-                        SQL查询 having 条件;
+                                                insert into db1.yg(name)values("bob");
+                                                insert into db1.yg(name)values("luci");
+                                                insert into db1.yg(name)values("cd");
+
+
+                                                mysql> select * from yg;
+                                                        +-------+------+
+                                                        | yg_id | name |
+                                                        +-------+------+
+                                                        |     1 | bob  |
+                                                        |     2 | luci |
+                                                        |     3 | cd   |
+                                                        |     4 | cd   |
+                                                        |     5 | bob  |
+                                                        +-------+------+
+
+                                                create table db1.gz(
+                                                gz_id int,
+                                                pay float(7,2),
+                                                foreign key(gz_id) references yg(yg_id)  ####创建外键######
+                                                on update cascade  ###同步删除
+                                                on delete cascade  ###同步增加
+                                                )engine=innodb;
+
+                                                mysql> select * from gz;
+                                                Empty set (0.00 sec)
+
+                                                mysql> insert into gz values(1,2000);
+                                                mysql> insert into gz values(4,200);
+                                                mysql> insert into gz values(5,200);
+                                                mysql> insert into gz values(6,200);
+                                                mysql> insert into gz values(6,500);
+                                                mysql> insert into gz values(6,5000);
+
+                                                ##########更新###### 员工id#############
+                                                mysql> update db1.yg set yg_id=6 where yg_id=3; ###讲yg_id=3,的换成yg_id=6，两个表中数据自动同步。
+                                                Query OK, 1 row affected (0.03 sec)
+                                                Rows matched: 1  Changed: 1  Warnings: 0
+
+                                                mysql> select * from gz;
+                                                +-------+---------+
+                                                | gz_id | pay     |
+                                                +-------+---------+
+                                                |     4 |  200.00 |
+                                                |     5 |  200.00 |
+                                                |     6 |  200.00 |
+                                                |     6 |  500.00 |
+                                                |     6 | 5000.00 |
+                                                |     1 | 2000.00 |
+                                                +-------+---------+
+                                                6 rows in set (0.00 sec)
+
+                                                #########删除id=6 的 员工  gz 表中 也会消失 ##########
+
+                                                mysql> delete from db1.yg where yg_id=6;
+                                                Query OK, 1 row affected (0.05 sec)
+
+                                                mysql> select * from gz;
+                                                +-------+---------+
+                                                | gz_id | pay     |
+                                                +-------+---------+
+                                                |     4 |  200.00 |
+                                                |     5 |  200.00 |
+                                                |     1 | 2000.00 |
+                                                +-------+---------+
+                                                3 rows in set (0.00 sec)
+
+                                        mysql> delete from gz;
+
+                                        mysql> alter table gz add primary key(gz_id);
+                                            Query OK, 0 rows affected (0.43 sec)
+                                            Records: 0  Duplicates: 0  Warnings: 0
+
+                                            mysql> desc gz;
+                                            +-------+------------+------+-----+---------+-------+
+                                            | Field | Type       | Null | Key | Default | Extra |
+                                            +-------+------------+------+-----+---------+-------+
+                                            | gz_id | int(11)    | NO   | PRI | NULL    |       |
+                                            | pay   | float(7,2) | YES  |     | NULL    |       |
+                                            +-------+------------+------+-----+---------+-------+
+                                            2 rows in set (0.00 sec)
+
+                                        mysql> insert into gz values(5,200);
+                                            ERROR 1062 (23000): Duplicate entry '5' for key 'PRIMARY'
+                                        mysql> insert into gz values(null,200);
+                                            ERROR 1048 (23000): Column 'gz_id' cannot be null
+                                        mysql> insert into gz values(1,20z00);
+                                            ERROR 1054 (42S22): Unknown column '20z00' in 'field list'
+                                        mysql> insert into gz values(1,2000);
+                                            Query OK, 1 row affected (0.02 sec)
+                                            mysql> select * from gz;
+                                            +-------+---------+
+                                            | gz_id | pay     |
+                                            +-------+---------+
+                                            |     1 | 2000.00 |
+                                            |     5 |  200.00 |
+                                            +-------+---------+
+
+                                    删除外键:
+                                            show create table db1.gz\G;
+                                            alter table db1.gz drop foreign key gz_ibfk_1;
+
+                            在已有的表中添加外键 主键  自加(auto_increment)都是可以的 但是建立外键时需要数据匹配.
+
+                                    ####向已有的表中添加外键#####
+                                   alter table db1.gz
+                                   add
+                                   foreign key(gz_id) references db1.yg(yg_id)
+                                   on update cascade on delete cascade
+                                   engine=innodb;
+                                   ####向已有表的中添加主键####
+                                   alter table db1.yg
+                                   modify
+                                   yg_id int primary key auto_increment;
+
+
+
+       DAY03 数据导入导出
+            修改搜索路径
+                mysql> show variables like "secure_file_priv";
+                 默认路径 : /var/lib/mysql-files/
+                 修改配置文件 :
+                            [root@DBA ~]# mkdir /myload
+                            [root@DBA ~]# chown mysql /myload
+                            [root@DBA ~]# vim /etc/my.cnf
+
+                                secure_file_priv="/myload"
+
+                 重启服务:    systemctl restart mysqld
+                 进入数据库查询位置是否修改:
+                            mysql> show variables like "secure_file_priv";
+            数据导入
+                    默认只有root才能导入数据
+                    建表
+                    导入
+                  注意事项:
+                        字段分隔符要和文件一致
+                        表字段类型和字段个数要和文件匹配
+                        导入数据时指定文件的绝对路径
+                  步骤:命令格式
+
+                        mysql>load data infile "目录/文件"
+                        into table库名.表名
+                        fields terminated by "分隔符" #### 列
+                        lines terminated by "\n";    #### 行
+
+
+                  eg:
+                        前面还要 创建文件夹 修改配置文件 重启服务
+                    mysql   > load data infile "/myload/passwd" into table db3.usr fields terminated by ":" lines terminated by "\n";
+
+            数据导出
+                   作用:把表纪录存储到系统文件里
+                   注意:导出数据有sql语句决定
+                        导出的是表记录,不包括字段名
+                        自动创建存储数据文件
+                        存储数据文件,具有唯一性
+                        注意导出文件是目录必须与secure_file_priv 目录一致(也就是说只能在这里导出)
+                   命令:
+                       1)select命令 into outfile "目录名/文件名";  ### 不指定 分隔符时 默认 分别为 \t  \n
+                       2)select命令 into outfile "目录名/文件名"
+                         fields terminated by "分割符"; ####指定列分隔符
+                       3)select命令 into outfile "目录名/文件名"
+                         fields terminated by "分割符"
+                         lines terminated by "\n"  ####指定行分割符号
                    eg:
-                    select name from usr where id<20 having name="adm";
-                    +------+
-                    | name |
-                    +------+
-                    | adm  |
-                    +------+
-                 限制查询结果的查询行数
-                        SQL查询 limit 数字; ##显示查询结果前多少条记录
-                        SQL查询 limit 数字1,数字2; ###显示指定范围内的查询记录
-                        数字1 起始行(0表示第一行)
-                        数字2 总行数
+                       select * from db1.t23 into outfile "/myload/t23";
+                       select * from db3.usr where id<=3 into outfile "/myload/user2.txt";
 
+            表管理记录 (db3.usr)
+
+                1.添加记录
+                    命令格式
+                    注意事项:
+                            字段值与字段类型匹配
+                            字符类型的字段 要用 ""括起来
+                            依次给所有字段赋值时,字段名可省略
+                            只给部分字段赋值时,必须明确对应字段名称
+                            没有赋值的字段使用默认值,或自增长
+                       添加一条记录给所有字段可以省略
+                       insert into 表名 values(字段值列表);
+
+                       mysql> insert into usr values(22,"lc","x",2000,2000,"test user","/home/bob","/bin/bash")
+
+                       添加n行,给所有列赋值
+                       insert into 表名 values(字段值列表1),(字段值列表2);
+
+                       添加一条记录,给指定字段赋值
+                       insert into 表名(字段名列表) values(字段值列表);
+
+                       添加N条记录,给指定字段赋值
+                       insert into 表名(字段名列表) values(字段值列表1),(字段值列表2),(字段值列表3);
+
+                查看记录
+                    查看记录注意:
+                        * 表示查询所有字段
+                        查看当前库表记录时库名可省略
+                        字段列表决定显示列个数
+                        条件决定显示行的个数
+                    查看所有
+                            select * from 库名.表名;
+                    条件查询
+                           select 字段1,字段N from 库名.表名 where 条件表达式;
+                修改记录
+                    注意:字段值与字段类型匹配
+                        对于字符类型,值使用""起来
+                        若不使用where限定条件,会更新所有记录字段值
+                        限定条件,只更新匹配条件的记录字段的值
+                    条件修改
+                       update 表名 set 字段名=值,字段名=值,字段名=值,... where 条件;
+
+                    修改所有
+                       update 表名 set 字段名=值,字段名=值,字段名=值,... ;
+
+
+                删除记录
+                    注意: 不添加条件删除表中所有
+                    条件删除
+                        delete  from 库名.表名 where 条件表达式;
+                    删除所有
+                        delete  from 库名.表名 ;
+
+
+            匹配条件
+               基本匹配条件(适用于select \ update \ delete)
+
+                    数值比较   > < >= <= = !=
+                        符号两边要求是数值类型
+                        eg
+                            select * from usr where id<=6;
+                            select * from usr where uid=gid;
+
+                    字符比较
+                        =   !=  is null  is not null
                         eg:
-                            select id,name,password from usr where id<=20; ###默认全部输出
-                            select id,name,password from usr where id<=20 limit 10;
-                            select id,name,password from usr where id<=20 limit 5;
-                            select id,name,password from usr where id<=20 limit 0,2; ###从第一行开始输出 共输出两行
-                            select id,name,password from usr where id<=20 limit 1,3; ###从第二行开始输出 共输出三行
+                            select name,uid,gid from usr where uid=gid;
+                            select from usr where name is null;
 
-        常见的mysql 管理工具
+                    范围内比较
+                         in       not in      between ...  and ....
+                         eg:
+                            select name from usr where name in ("root","adm","mysql");
+                            select name,uid from user where uid in (3,5,7,9);
+                            select name,shell from usr where shell not in ("/bin/bash","/sbin/nologin");
+                            select name uid from usr where uid between 50 and 100;
+                    逻辑比较
+                        逻辑与  and  && (多个判断条件同时成立)
+                        逻辑或  or   || (多个判断条件,某个条件成立 )
+                        逻辑非  not   !
+                        eg:
+                            select * from usr where name="root" and uid=1 and shell="abc";
+                            select * from usr where name="root" && uid=1 && shell="abc";
 
-                 phpMyAdmin  浏览器端      需要LNMP支持  开源 免费
+                    空\非空
+                        is null / is not null
+                        eg:
+                            select id from user where shell is null;
+                            select name from usr where shell is not null;
+                    去掉重复数据
+                            distinct
+                            select distinct shell from usr where uid>10;
+                            select distinct shell from usr where uid>=10;
+                            select distinct shell from usr;
+               高级匹配条件(适用于select \ update \ delete)
+                    模糊查询
+                                              _ 表示一个
+                                              % 表示0-n个字符
 
-                 yum -y install httpd php-mysql php
-                 systemctl restart httpd.service
-                 systemctl enable httpd.service
-                 tar -xf phpMyAdmin-2.11.11-all-languages.tar.gz
-                 ls
-                 mv phpMyAdmin-2.11.11-all-languages phpMyAdmin
-                 cp phpMyAdmin /var/www/html/
-                 cd /var/www/html/phpMyAdmin
-                 cp config.sample.inc.php config.inc.php
-                 vim config.inc.php
-                 31  $cfg['blowfish_secret'] = 'plj123';  /* YOU MUST FILL IN THIS FOR COOKIE AUTH! */      ### cookie 认证参数  随便修改为什么
-                 17  $cfg['Servers'][$i]['host'] = 'localhost'; ###数据库服务器地址
-                 systemctl restart httpd.service
-
-                 访问软件管理数据库服务
-                 http://192.168.4.50/phpmyadmin
-                 用户名 root
-                 密  码 tarena (之前设置的数据可密码)
-
-
-
-                 ##########数据库管理员必备知识 (必须会)4, 5################
-   DAY04
-
-        用户授权
-            1.1 用户授权: 在数据库服务器上添加新用户授权 默认允许数据库管理员本机登录
-                远程访问数据库服务器
-                mysql -h192.168.4.50 -ubob -p123aaa...
-            1.2 命令
-                grant 权限列表 on 库名 to 用户名@"客户端地址" identified by "密码"
-                with grant option; ###有授权权限(使该用户可以使用授权命令).可选项
-
-                权限列表:
-                    all //所有权限
-                    usage //无权限
-                    select,update,insert  //个别权限
-                    select,update(字段1,....字段N)  //指定字段权限,只对指定字段有权限
-                库名:
-                    *.* //所有数据库
-                    库名.* //一个库
-                    库名.表名 //一张表
-                用户名:
-                    授权时自定义,有标示性
-                    存储在mysql库中的user中
-                客户端地址:
-                    %           //表示 全部主机
-                    192.168.4.% //一个网段
-                    192.168.4.253 //一个ip
-                    localhost  //数据库服务器主机
-
-                    授权用户
-                eg: mysql> grant all on db4.* to yaya@"%" identified by "123aaa.."
-
-            1.3 相关命令
-
-                登录用户使用:
-                    select user();  ####显示登录用户以及客户端地址
-
-                    show grants;    #####用户显示自身访问权限
-
-                    show grants for #####管理员查看已有授权用户权限, 注意这里 grants 里的s 不要漏写
-                    用户名@"客户端地址";
-
-                    set password=   #####授权用户修改连接密码
-                    password("密码");
-
-                    set password for #####管理员重置用户连接密码
-                    用户名@"客户端地址"=
-                    password("密码");
-
-                    drop user
-                    用户名@"客户端地址";  删除授权用户(必须有管理员权限)
-            1.4 授权库
-
-                mysql库              记录授权信息
-				user表               记录已有的授权用户
-				db表	                 记录已有的授权用户对数据库的访问权限
-				tables_priv          记录已有的授权用户对表的访问权限
-				columns_priv         记录已有的授权用户对字段的访问权限
-
-                    desc mysql.user; 关注 Host(主机地址) User(用户名) 字段
-                    select hosts,name from mysql.user;
-                    show grants for user@"host";
-
-                    desc mysql.db;   关注 db字段
-                    select host,user,db from mysql.db;
-                    select * from mysql.db where db="db3" and user="admin2" and host="localhost" \G;
-                    show grants for admin2@"localhost"; ###这条命令结果是上条命令结果的另一种表示
-                    ####修改表字段
-                    update mysql.db set Drop_priv="Y" where host="localhost" and db="db3" and user="admin2";
-                    flush privileges; ####重新加载表记录
-
-                    desc tables_priv;
-                    select * from mysql.tables_priv;
-                    select host,user,db,Table_name from tables_priv;
-                    select * from tables_priv where Table_name="user" and db="db3"\G;  ###查看用户对表有什么权限
-
-                    desc columns_priv;
-                    select * from columns_priv;
-                    select * from columns_priv;
-                    [root@DBA ~]# mysql -uadmin3 -p123qqq...A
-                    show grants;
-                    select * from db3.user
-                    update db3.user set age=18;
-                    erro
-                    update db3.user set passwd="H";
-                    SELECT * FROM db3.user;
-
-            1.5 撤销权限
-                回收授权用户的权限
-                命令:
-                    revoke 权限列表 on 库名.表名 from 用户名@"客户端地址";
-                eg:
-                    revoke insert,drop on db3.user from admin3@"localhost";
-                    show grants for admin3@"localhost";
-                    revoke all on *.* fromnts for mydba@"%"; ##撤销所有权限
-                    select user,host from mysql.user ##查看所有的授权用户
-                    show grants for mydba@"%";       ##查看指定用户的权限
-                    revoke grant  option on *.* from mydba@"%"; ##撤销权限
-                    show grants for mydba@"%";     ##查看权限
-
-            1.6 数据库root密码
-                恢复数据库root密码
-                    你需要知道 系统的root 密码
-                    方法:
-                        1.停止mysql服务程序
-                            systemctl stop mysqld.service
-
-                        2.跳过授权启动mysql服务程序
-                            vim /etc/my.cnf
-                            skip-grant-tables
-                            #validate_password_policy=0   ####密码策略
-
-                            #validate_password_length=6   ####密码长度
-                            ]# mysql  ###跳过了密码验证,不输入密码 直接进入数据库
-                        3.修改数据库ROOT密码
-                            authentication_string 为mysql.user 中的字段;作用是储存 用户密码(授权用户)
-                            mysql> update mysql.user set authentication_string=password("123qqq...A") where user="root" and host="localhost";
-                            Query OK, 1 row affected, 1 warning (0.02 sec)
-                            Rows matched: 1  Changed: 1  Warnings: 1
-
-                            mysql> flush privileges; ###刷新配置文件
-                             #skip-grant-tables
-                             validate_password_policy=0
-
-                             validate_password_length=6
-                        4.以正常的方式重启mysql
-                            systemctl restart mysqld.service
-                            mysql -uroot -p123qqq...A
-
-                重置数据库root密码
-                mysqladmin -uroot -p password "tarena" ###新密码
-                Enter password:                        ###旧密码
-        备份
-            2.1数据备份方式
-                物理备份
-                    冷备份  cp tar...
-                        先停止mysql服务,恢复后重启
-                    备份    eg:
-                             cp -r /var/lib/mysql 备份目录/mysql.bak  ### -r 包含文件夹复制
-                             tar -zcvf /root/mysql.tar.gz  /var/lib/mysql
-                    恢复    eg:
-                             rm -rf/var/lib/mysql
-                             cp -r 备份目录/mysql.bak /var/lib/mysql
-                             tar -zxvf /root/mysql.tar.gz -C /var/lib/mysql/
-                             chown -R mysql:mysql /var/lib/mysql   ###修改属主属组,由于cp命令 由root执行,所以拷贝过来后属主 为root(不修改属主,属组) ,mysql无法读取
-                逻辑备份
-                    完全备份
-                        完全备份备份所有数据
-                        备份命令:
-                             mysqldump //备份命令
-                             ]# mysqldump -uroot -p密码 库名 > 目录/xxx.sql(目录自己创建)
+                        select name from usr where name like "____"; ##匹配任意四个字符 ,这里起始是四个_
+                        select name from usr where name like "_%_"; ##匹配任意字符
+                        select name from usr where name like "a%";  ##以a开头
+                        select name from usr where name like "%a%"; ##必须包含a
 
 
-                                备份时库名的表示方式  --all-database 或 -A //所有库
-                                数据库名                                 //单个
-                                数据库名 表名                             //单张表, 注意这里没有 .  只是空格
-                                -B 数据库1 数据库2                        //多个库
-                             scp 给其他服务器
-                        恢复命令
-                            完全恢复
-                            ]# mysql -uroot -p 密码 [库名] < 目录/xxx.sql
+                    正则匹配
+                        语法: where 字段号 regexp '正则表达式';
+                        正则符号:^ $ [] | *
+                        select name from usr where name regexp  '^r|y$'; ### r开头 或者 y 结尾
+                        select name from usr where name regexp  '^r.*y$';  ### .* 任意字符的任意次数, .任意字符 *前一个字符的任意次数
+                        select name,uid from usr where uid regexp  '^....$'; ###四位数字
+                        insert into usr(name)values("yaya9"),("7yaya"),("ya8ya");
+                        select name,uid from usr where uid regexp  '[0-9]';
+                    四则计算
+                     + - * /
+                     select name,uid,gid,uid+gid sum from usr where name="bin";
+                     select name,uid,gid, uid+gid sum from usr; ###将所有的uid和gid相加
+                     select name,uid,gid,(uid+gid)/2 ava from usr where name="root";
+                         +------+------+------+--------+
+                        | name | uid  | gid  | ava    |
+                        +------+------+------+--------+
+                        | root |    0 |    1 | 0.5000 |
+                        +------+------+------+--------+
 
-                    增量备份
-                        备份上次备份后产生的所有数据  ###和上一次备份比较
-                        核心: 使用mysql的binlog日志 进行恢复(重要)
-                        1.使用binlog日志恢复数据
-                            binlog日志是什么:
-                                    1)二进制文件
-                                    2)mysql服务日志文件的一种
-                                    3)记录出查询之外的sql命令
-                                    4)可用于数据备份和恢复
-                                    5)配置mysql主从同步的必要条件
-                            查看日志格式
+                     update usr set gid=gid+1; ### 每一个gid+1
 
-                                mysql> show variables like "%binlog%";
-				                mysql>show variables like "binlog_format";
+                     alter table usr add age tinyint unsigned default 19 after name;
+                     select name,age, 2019-age your_age from usr where name="root";
+                        +------+------+----------+
+                        | name | age  | your_age |
+                        +------+------+----------+
+                        | root |   19 |     2000 |
+                        +------+------+----------+
 
-                            启用日志:
-                                    文件类型:
-                                    server_id=数字 1-255
-                                     log-bin[=目录/文件名]
-                                     max_binlog_size=数值m ##默认1G,超过1G后生成新文件
-                                     主机名-bin.index 索引文件
-                                     主机名-bin.00000001 第一个二进制文件
-                                     主机名-bin.00000002 第二个二进制文件
-                                    ###############################
-                            启用:    vim /etc/my.cnf
-                                    [mysql]
-                                    log-bin     //启用binlog日志
-                                    server_id   //指定id值 唯一
-                            手动生成 binlog文件
-                                执行后不管文件是否达到设定的默认值,都会生成新的binlog文件
-                                1.systemctl restart mysqld  ###生产环境 不要用第一个.用2,3
-                                2.mysql> flush logs;
-                                    或 ]# mysql -uroot -p密码 -e 'flush logs'
-                                    备份数据库时 也可以 重新生成 日志文件
-                                3.mysqldump -uroot -p密码 --flush-logs 库 > /xxx.sql
-                            清除日志
-                                清除所有
-                                mysql> reset master;
-                                清除指定编号之前的binlog文件
-                                mysql> purge master logs to "DBA-bin.000004";  ###这里 DBA 是主机名 000004 是文件数(这里是指第四个文件)
-                            启用日志时自定义日志文件存储目录和文件名
+               操作查询结果(适用于select)
+
+                     select count(字段名) from usr; 求字段值的个数
+                     select min(字段名) from usr;   求字段值的最小值
+                     select avg(字段名) from usr;   求字段值的平均值
+                     select sum(字段名) from usr;   求字段值的总和
+                     select max(字段名) from usr;   求字段值的最大值
+                     eg:
+                         统计表中所有的行数
+                         select count(*) from usr;
+                         统计uid的 平均数
+                         select avg(uid) from usr;
+
+
+                     查询结果排序
+
+                         SQL查询 order by 字段名 [asc|desc];
+                         -asc 升序列 小--->大  ###默认
+                         -desc 降序列 大-->小
+                         eg:
+
+                            升序排
+                            select name,uid from usr where uid>=10 and uid<=500 order by uid; ##默认省略asc
+                                    +-----------------+------+
+                                    | name            | uid  |
+                                    +-----------------+------+
+                                    | operator        |   11 |
+                                    | games           |   12 |
+                                    | ftp             |   14 |
+
+                            降序排
+                            select name,uid from usr where uid>=10 and uid<=500 order by uid desc;
+                                    +-----------------+------+
+                                    | name            | uid  |
+                                    +-----------------+------+
+                                    | systemd-network |  192 |
+                                    | nobody          |   99 |
+                                    | dbus            |   81 |
+                                    | sshd            |   74 |
+
+                     查询分组
+                        SQL查询 group by 字段名;
+                        eg:
+                            select shell from usr group by shell;
+                            select shell from usr where uid<=1000 group by shell;
+                            select gid from usr group by gid;
+                            mysql> select shell,count(shell)from usr group by shell;
+                            +----------------+--------------+
+                            | shell          | count(shell) |
+                            +----------------+--------------+
+                            | NULL           |            0 |
+                            | /bin/bash      |            5 |
+                            | /bin/false     |            1 |
+
+                     查询结果过滤
+                            SQL查询 having 条件;
+                       eg:
+                        select name from usr where id<20 having name="adm";
+                        +------+
+                        | name |
+                        +------+
+                        | adm  |
+                        +------+
+                     限制查询结果的查询行数
+                            SQL查询 limit 数字; ##显示查询结果前多少条记录
+                            SQL查询 limit 数字1,数字2; ###显示指定范围内的查询记录
+                            数字1 起始行(0表示第一行)
+                            数字2 总行数
+
+                            eg:
+                                select id,name,password from usr where id<=20; ###默认全部输出
+                                select id,name,password from usr where id<=20 limit 10;
+                                select id,name,password from usr where id<=20 limit 5;
+                                select id,name,password from usr where id<=20 limit 0,2; ###从第一行开始输出 共输出两行
+                                select id,name,password from usr where id<=20 limit 1,3; ###从第二行开始输出 共输出三行
+
+            常见的mysql 管理工具
+
+                     phpMyAdmin  浏览器端      需要LNMP支持  开源 免费
+
+                     yum -y install httpd php-mysql php
+                     systemctl restart httpd.service
+                     systemctl enable httpd.service
+                     tar -xf phpMyAdmin-2.11.11-all-languages.tar.gz
+                     ls
+                     mv phpMyAdmin-2.11.11-all-languages phpMyAdmin
+                     cp phpMyAdmin /var/www/html/
+                     cd /var/www/html/phpMyAdmin
+                     cp config.sample.inc.php config.inc.php
+                     vim config.inc.php
+                     31  $cfg['blowfish_secret'] = 'plj123';  /* YOU MUST FILL IN THIS FOR COOKIE AUTH! */      ### cookie 认证参数  随便修改为什么
+                     17  $cfg['Servers'][$i]['host'] = 'localhost'; ###数据库服务器地址
+                     systemctl restart httpd.service
+
+                     访问软件管理数据库服务
+                     http://192.168.4.50/phpmyadmin
+                     用户名 root
+                     密  码 tarena (之前设置的数据可密码)
+
+
+
+                     ##########数据库管理员必备知识 (必须会)4, 5################
+       DAY04
+
+            用户授权
+                1.1 用户授权: 在数据库服务器上添加新用户授权 默认允许数据库管理员本机登录
+                    远程访问数据库服务器
+                    mysql -h192.168.4.50 -ubob -p123aaa...
+                1.2 命令
+                    grant 权限列表 on 库名 to 用户名@"客户端地址" identified by "密码"
+                    with grant option; ###有授权权限(使该用户可以使用授权命令).可选项
+
+                    权限列表:
+                        all //所有权限
+                        usage //无权限
+                        select,update,insert  //个别权限
+                        select,update(字段1,....字段N)  //指定字段权限,只对指定字段有权限
+                    库名:
+                        *.* //所有数据库
+                        库名.* //一个库
+                        库名.表名 //一张表
+                    用户名:
+                        授权时自定义,有标示性
+                        存储在mysql库中的user中
+                    客户端地址:
+                        %           //表示 全部主机
+                        192.168.4.% //一个网段
+                        192.168.4.253 //一个ip
+                        localhost  //数据库服务器主机
+
+                        授权用户
+                    eg: mysql> grant all on db4.* to yaya@"%" identified by "123aaa.."
+
+                1.3 相关命令
+
+                    登录用户使用:
+                        select user();  ####显示登录用户以及客户端地址
+
+                        show grants;    #####用户显示自身访问权限
+
+                        show grants for #####管理员查看已有授权用户权限, 注意这里 grants 里的s 不要漏写
+                        用户名@"客户端地址";
+
+                        set password=   #####授权用户修改连接密码
+                        password("密码");
+
+                        set password for #####管理员重置用户连接密码
+                        用户名@"客户端地址"=
+                        password("密码");
+
+                        drop user
+                        用户名@"客户端地址";  删除授权用户(必须有管理员权限)
+                1.4 授权库
+
+                    mysql库              记录授权信息
+                    user表               记录已有的授权用户
+                    db表	                 记录已有的授权用户对数据库的访问权限
+                    tables_priv          记录已有的授权用户对表的访问权限
+                    columns_priv         记录已有的授权用户对字段的访问权限
+
+                        desc mysql.user; 关注 Host(主机地址) User(用户名) 字段
+                        select hosts,name from mysql.user;
+                        show grants for user@"host";
+
+                        desc mysql.db;   关注 db字段
+                        select host,user,db from mysql.db;
+                        select * from mysql.db where db="db3" and user="admin2" and host="localhost" \G;
+                        show grants for admin2@"localhost"; ###这条命令结果是上条命令结果的另一种表示
+                        ####修改表字段
+                        update mysql.db set Drop_priv="Y" where host="localhost" and db="db3" and user="admin2";
+                        flush privileges; ####重新加载表记录
+
+                        desc tables_priv;
+                        select * from mysql.tables_priv;
+                        select host,user,db,Table_name from tables_priv;
+                        select * from tables_priv where Table_name="user" and db="db3"\G;  ###查看用户对表有什么权限
+
+                        desc columns_priv;
+                        select * from columns_priv;
+                        select * from columns_priv;
+                        [root@DBA ~]# mysql -uadmin3 -p123qqq...A
+                        show grants;
+                        select * from db3.user
+                        update db3.user set age=18;
+                        erro
+                        update db3.user set passwd="H";
+                        SELECT * FROM db3.user;
+
+                1.5 撤销权限
+                    回收授权用户的权限
+                    命令:
+                        revoke 权限列表 on 库名.表名 from 用户名@"客户端地址";
+                    eg:
+                        revoke insert,drop on db3.user from admin3@"localhost";
+                        show grants for admin3@"localhost";
+                        revoke all on *.* fromnts for mydba@"%"; ##撤销所有权限
+                        select user,host from mysql.user ##查看所有的授权用户
+                        show grants for mydba@"%";       ##查看指定用户的权限
+                        revoke grant  option on *.* from mydba@"%"; ##撤销权限
+                        show grants for mydba@"%";     ##查看权限
+
+                1.6 数据库root密码
+                    恢复数据库root密码
+                        你需要知道 系统的root 密码
+                        方法:
+                            1.停止mysql服务程序
+                                systemctl stop mysqld.service
+
+                            2.跳过授权启动mysql服务程序
                                 vim /etc/my.cnf
-                                #############将log_bin 修改为如下 dba50 为文件名###########
+                                skip-grant-tables
+                                #validate_password_policy=0   ####密码策略
 
-                                log_bin=/mylog/dba50
-                                [root@DBA ~]# mkdir /mylog/
-                                ###################将属主修改为mysql,否则mysql无法读取############3
+                                #validate_password_length=6   ####密码长度
+                                ]# mysql  ###跳过了密码验证,不输入密码 直接进入数据库
+                            3.修改数据库ROOT密码
+                                authentication_string 为mysql.user 中的字段;作用是储存 用户密码(授权用户)
+                                mysql> update mysql.user set authentication_string=password("123qqq...A") where user="root" and host="localhost";
+                                Query OK, 1 row affected, 1 warning (0.02 sec)
+                                Rows matched: 1  Changed: 1  Warnings: 1
 
-                                [root@DBA ~]# chown mysql /mylog
-                                [root@DBA ~]# systemctl restart mysqld
-                                [root@DBA ~]# ls /mylog/*
-                                /mylog/dba50.000001  /mylog/dba50.index
-                                ############显示日志信息##########
-                                mysql>show master status;
+                                mysql> flush privileges; ###刷新配置文件
+                                 #skip-grant-tables
+                                 validate_password_policy=0
 
-                        2.恢复数据 (使用binlog日志恢复)
-                            日志格式 (日志如何记录多条命令)
-                                查看日志当前就格式
-                                mysql> show variables like "binlog_format";
-                                ######修改日志格式
+                                 validate_password_length=6
+                            4.以正常的方式重启mysql
+                                systemctl restart mysqld.service
+                                mysql -uroot -p123qqq...A
 
-                                [root@DBA ~]# vim /etc/my.cnf
-                                ####添加如下
-
-                                binlog_format="mixed"   三种记录方式 :statement 报表模式
-                                                                    row       行模式
-                                                                    mixed     混合模式
-                            分析日志
-                                日志如何区分记录多条SQL命令
-                                    偏移量
-                                    时间点
-
-                                查看日志内容:
-                                   ]# mysqlbinlog [选项] binlog文件
-                                    选项:
-                                    --start-datetime="yyyy-mm-dd hh:mm:ss"   ###起始时间
-                                    --stop-datetime="yyyy-mm-dd hh:mm:ss"    ###结束时间
-                                    --start-position=数字                     ###起始偏移量
-                                    --stop-position=数字                      ###结束偏移量
-                                    基本思路: 使用mysqlbinlog 提取历史mysql 操作日志
-                                             通过mysql 命令执行
-                                命令格式:
-                                        mysqlbinlog 日志文件 | mysql -uroot -p密码
-
-                                        日志文件默认位置 : /var/lib/mysql/  但文件位置可以在mysql配置文件修改 /etc/my.cnf 中log_bin=/mylog 字段
-
-                                        //仅执行指定范围内记录的sql命令
-			                            ]# mysqlbinlog --start-position=293  --stop-position=958  \
-
-                            eg:使用编号为1的日志恢复数据
-                               mysqlbinlog /tmp/dba50.000001 |mysql -uroot -ptarena
-                               select * from usr;
+                    重置数据库root密码
+                    mysqladmin -uroot -p password "tarena" ###新密码
+                    Enter password:                        ###旧密码
+            备份
+                2.1数据备份方式
+                    物理备份
+                        冷备份  cp tar...
+                            先停止mysql服务,恢复后重启
+                        备份    eg:
+                                 cp -r /var/lib/mysql 备份目录/mysql.bak  ### -r 包含文件夹复制
+                                 tar -zcvf /root/mysql.tar.gz  /var/lib/mysql
+                        恢复    eg:
+                                 rm -rf/var/lib/mysql
+                                 cp -r 备份目录/mysql.bak /var/lib/mysql
+                                 tar -zxvf /root/mysql.tar.gz -C /var/lib/mysql/
+                                 chown -R mysql:mysql /var/lib/mysql   ###修改属主属组,由于cp命令 由root执行,所以拷贝过来后属主 为root(不修改属主,属组) ,mysql无法读取
+                    逻辑备份
+                        完全备份
+                            完全备份备份所有数据
+                            备份命令:
+                                 mysqldump //备份命令
+                                 ]# mysqldump -uroot -p密码 库名 > 目录/xxx.sql(目录自己创建)
 
 
-                    差异备份
-                        备份完全备份后,所有新产生的数据 ###只能和上次完全备份,比较
+                                    备份时库名的表示方式  --all-database 或 -A //所有库
+                                    数据库名                                 //单个
+                                    数据库名 表名                             //单张表, 注意这里没有 .  只是空格
+                                    -B 数据库1 数据库2                        //多个库
+                                 scp 给其他服务器
+                            恢复命令
+                                完全恢复
+                                ]# mysql -uroot -p 密码 [库名] < 目录/xxx.sql
+
+                        增量备份
+                            备份上次备份后产生的所有数据  ###和上一次备份比较
+                            核心: 使用mysql的binlog日志 进行恢复(重要)
+                            1.使用binlog日志恢复数据
+                                binlog日志是什么:
+                                        1)二进制文件
+                                        2)mysql服务日志文件的一种
+                                        3)记录出查询之外的sql命令
+                                        4)可用于数据备份和恢复
+                                        5)配置mysql主从同步的必要条件
+                                查看日志格式
+
+                                    mysql> show variables like "%binlog%";
+                                    mysql>show variables like "binlog_format";
+
+                                启用日志:
+                                        文件类型:
+                                        server_id=数字 1-255
+                                         log-bin[=目录/文件名]
+                                         max_binlog_size=数值m ##默认1G,超过1G后生成新文件
+                                         主机名-bin.index 索引文件
+                                         主机名-bin.00000001 第一个二进制文件
+                                         主机名-bin.00000002 第二个二进制文件
+                                        ###############################
+                                启用:    vim /etc/my.cnf
+                                        [mysql]
+                                        log-bin     //启用binlog日志
+                                        server_id   //指定id值 唯一
+                                手动生成 binlog文件
+                                    执行后不管文件是否达到设定的默认值,都会生成新的binlog文件
+                                    1.systemctl restart mysqld  ###生产环境 不要用第一个.用2,3
+                                    2.mysql> flush logs;
+                                        或 ]# mysql -uroot -p密码 -e 'flush logs'
+                                        备份数据库时 也可以 重新生成 日志文件
+                                    3.mysqldump -uroot -p密码 --flush-logs 库 > /xxx.sql
+                                清除日志
+                                    清除所有
+                                    mysql> reset master;
+                                    清除指定编号之前的binlog文件
+                                    mysql> purge master logs to "DBA-bin.000004";  ###这里 DBA 是主机名 000004 是文件数(这里是指第四个文件)
+                                启用日志时自定义日志文件存储目录和文件名
+                                    vim /etc/my.cnf
+                                    #############将log_bin 修改为如下 dba50 为文件名###########
+
+                                    log_bin=/mylog/dba50
+                                    [root@DBA ~]# mkdir /mylog/
+                                    ###################将属主修改为mysql,否则mysql无法读取############3
+
+                                    [root@DBA ~]# chown mysql /mylog
+                                    [root@DBA ~]# systemctl restart mysqld
+                                    [root@DBA ~]# ls /mylog/*
+                                    /mylog/dba50.000001  /mylog/dba50.index
+                                    ############显示日志信息##########
+                                    mysql>show master status;
+
+                            2.恢复数据 (使用binlog日志恢复)
+                                日志格式 (日志如何记录多条命令)
+                                    查看日志当前就格式
+                                    mysql> show variables like "binlog_format";
+                                    ######修改日志格式
+
+                                    [root@DBA ~]# vim /etc/my.cnf
+                                    ####添加如下
+
+                                    binlog_format="mixed"   三种记录方式 :statement 报表模式
+                                                                        row       行模式
+                                                                        mixed     混合模式
+                                分析日志
+                                    日志如何区分记录多条SQL命令
+                                        偏移量
+                                        时间点
+
+                                    查看日志内容:
+                                       ]# mysqlbinlog [选项] binlog文件
+                                        选项:
+                                        --start-datetime="yyyy-mm-dd hh:mm:ss"   ###起始时间
+                                        --stop-datetime="yyyy-mm-dd hh:mm:ss"    ###结束时间
+                                        --start-position=数字                     ###起始偏移量
+                                        --stop-position=数字                      ###结束偏移量
+                                        基本思路: 使用mysqlbinlog 提取历史mysql 操作日志
+                                                 通过mysql 命令执行
+                                    命令格式:
+                                            mysqlbinlog 日志文件 | mysql -uroot -p密码
+
+                                            日志文件默认位置 : /var/lib/mysql/  但文件位置可以在mysql配置文件修改 /etc/my.cnf 中log_bin=/mylog 字段
+
+                                            //仅执行指定范围内记录的sql命令
+                                            ]# mysqlbinlog --start-position=293  --stop-position=958  \
+
+                                eg:使用编号为1的日志恢复数据
+                                   mysqlbinlog /tmp/dba50.000001 |mysql -uroot -ptarena
+                                   select * from usr;
+
+
+                        差异备份
+                            备份完全备份后,所有新产生的数据 ###只能和上次完全备份,比较
 
 
 
-   DAY05
+   DAY05  备份
         innobackupex
 
         查看创建信息
@@ -1374,8 +1374,8 @@ panglj@tedu.cn
                             --incremental 目录名               增量备份
                             --incremental-basedir=目录名       增量备份时,指定上一次备份书记的存储目录名
                             --incremental-dir=目录名           准备恢复数据时,指定增量备份数据存储的目录名
-                            --export         导出表信息
-                            import           导入表空间
+                            --export         导出表信息 frm
+                            import           导入表空间  idb
                 命令:
                     完全备份
                         ]# innobackupex --user 用户名 --password 密码 备份目录名 --no-timestamp
@@ -1451,124 +1451,467 @@ panglj@tedu.cn
                 ]# mysql -uroot -ptarena
 
 
+
    进阶
-   DAY06
+       DAY06
 
-        mysql 主从同步
-            什么是: 实现数据自动同步
-                主服务器:接受客户端访问链接
-                从服务器:自动同步主服务器数据
+            mysql 主从同步
+                什么是: 实现数据自动同步
+                    主服务器:接受客户端访问链接
+                    从服务器:自动同步主服务器数据
 
 
-            拓扑: 主: 192.168.4.51
-                 从:  4.52
-                 客户端: 4.50
-            原理:
-                Master
-                      必须开启 binlog日志
-                Slave
-                      i/o 线程 : 负责读取master的binlog,存储到relay-log(中继日志文件 )
-                      sql 线程 : 执行relay-log 中的 sql语句 保证 数据与主服务器一致
-                      线程是进程的最小运行单位
+                拓扑: 主: 192.168.4.51
+                     从:  4.52
+                     客户端: 4.50
+                原理:
+                    Master
+                          必须开启 binlog日志
+                    Slave
+                          i/o 线程 : 负责读取master的binlog,存储到relay-log(中继日志文件 )
+                          sql 线程 : 执行relay-log 中的 sql语句 保证 数据与主服务器一致
+                          线程是进程的最小运行单位
 
-            构建方案:
-                配置主库
-                      51
-                    启动binlog日志\授权用户\查看binlog日志
-                        启动binlog日志
-                            vim /etc/my.cnf
-                                添加如下
-                                log-bin=db51 //启动binlog
-                                server_id=51 //指定server id
-                        授权用户
-                            不需要给予全部权限 只需要给予 replication slave 就好
-                            mysql> grant replication slave on *.* to repluser@'%' identified by "123qqq...A";
+                    删除主服务器中的 /var/lib/mysql/
+                          master.info
+                          relay-log.info
+                          主机名-relay-bin.xxxx
+                          主机名-relay-bin.index
+                          重启服务即可恢复 没有主从的状态
 
-                    确保与主服数据库一致
-                        4.51
-                            生成 备份文件
-                            ]#  mysqldump -uroot -ptarena --master-data -A > /a.sql
-                            将文件传递给52
-                            ]# scp /db3.sql /a.sql  root@192.168.4.52:/root/
-                        4.52
-                            给52中导入51的数据
-                            ]# mysql -uroot -ptarena < /root/a.sql
-
-                配置从服务器
-                    设置server_id\指定主库信息\启动slave程序
-                        设置server_id
-                            4.52
-                            server id 区分主从
+                构建方案:
+                    配置主库
+                          51
+                        启动binlog日志\授权用户\查看binlog日志
+                            启动binlog日志
                                 vim /etc/my.cnf
                                     添加如下
-                                    server_id=52
-                        指定主库信息
-                            需要先确认 主从数据库文件是否一致
-                            vim a.sql
-                                找到 `CHANGE MASTER TO MASTER_LOG_FILE='db51.000001', MASTER_LOG_POS=441;`
-                                填入 master|_log_file(binlog日志) 和 master_log_pos(偏移量)
-                                如果期间 主库重启会导致主库的binlog日志改变,那么这里填的数据将会按照新的binlog日志数据填写
-                            mysql> change master to master_host="192.168.4.51",
-                                    -> master_user="repluser",master_password="123qqq...A",
-                                    -> master_log_file="db51.000001",master_log_pos=441;
+                                    log-bin=db51 //启动binlog
+                                    server_id=51 //指定server id
+                            授权用户
+                                不需要给予全部权限 只需要给予 replication slave 就好
+                                mysql> grant replication slave on *.* to repluser@'%' identified by "123qqq...A";
 
-                                    核心:从库链接到主库,按照主库的binlog日志执行,完成后两个数据库就同步完成了.
-                        启动slave程序
+                        确保与主服数据库一致
+                            4.51
+                                生成 备份文件
+                                ]#  mysqldump -uroot -ptarena --master-data -A > /a.sql
+                                将文件传递给52
+                                ]# scp /db3.sql /a.sql  root@192.168.4.52:/root/
+                            4.52
+                                给52中导入51的数据
+                                ]# mysql -uroot -ptarena < /root/a.sql
 
-                            mysql> start slave; //启动slave
-                            mysql> show slave status\G;  //查看状态
-                                检查如下是否为yes, host 是否正确
-                                主要抓住两个线程 io线程 sql线程
-                                    Slave_IO_Running: Yes
-                                    Slave_SQL_Running: Yes
+                    配置从服务器
+                        设置server_id\指定主库信息\启动slave程序
+                            设置server_id
+                                4.52
+                                server id 区分主从
+                                    vim /etc/my.cnf
+                                        添加如下
+                                        server_id=52
+                            指定主库信息
+                                需要先确认 主从数据库文件是否一致
+                                vim a.sql
+                                    22行
+                                    找到 `CHANGE MASTER TO MASTER_LOG_FILE='db51.000001', MASTER_LOG_POS=441;`
+                                    填入 master|_log_file(binlog日志) 和 master_log_pos(偏移量)
+                                    如果期间 主库重启会导致主库的binlog日志改变,那么这里填的数据将会按照新的binlog日志数据填写
+                                mysql> change master to master_host="192.168.4.51",
+                                        -> master_user="repluser",master_password="123qqq...A",
+                                        -> master_log_file="db51.000001",master_log_pos=441;
+                                        //确保主服务器使用的binlog日志与你在这里填写的相同
+                                        核心:从库链接到主库,按照主库的binlog日志执行,完成后两个数据库就同步完成了.
+                            启动slave程序
 
-                                stop slave 停止slave服务
+                                mysql> start slave; //启动slave
+                                mysql> show slave status\G;  //查看状态
+                                    检查如下是否为yes, host 是否正确
+                                    主要抓住两个线程 io线程 sql线程
+                                        Slave_IO_Running: Yes
+                                        Slave_SQL_Running: Yes
 
-                        从服务器的配置文件
-                            位置 /var/lib/mysql/
-                            master.info                   主库信息
-                            relay-log.info                中继日志信息
-                            主机名-relay-bin.xxxx          中继日志
-                            主机名-relay-bin.index         索引文件
+                                    stop slave 停止slave服务
 
-                        启动slave失败解决方法
-                            最简单的方法:
-                                把从库数据可恢复为独立的数据服务器,重新配置
-                                rm -rf master.info relay-log.info host52-relay-bin.*c
-                                systemctl restart mysqld
-                                重新配置主库信息
-                                 查看上面笔记
+                            从服务器的配置文件
+                                位置 /var/lib/mysql/
+                                master.info                   主库信息
+                                relay-log.info                中继日志信息
+                                主机名-relay-bin.xxxx          中继日志
+                                主机名-relay-bin.index         索引文件
+
+                            启动slave失败解决方法
+                                最简单的方法:
+                                    把从库数据可恢复为独立的数据服务器,重新配置
+                                    rm -rf master.info relay-log.info host52-relay-bin.*c
+                                    systemctl restart mysqld
+                                    重新配置主库信息
+                                     查看上面笔记
 
 
 
-                        测试配置:
-                            51的数据库管理员在本机创建新的数据库和表
+                            测试配置:
+                                51的数据库管理员在本机创建新的数据库和表
 
-                                mysql> create table user4(name char(15));
-                                mysql> insert into user4 values("chihiro");
-                                Query OK, 1 row affected (0.10 sec)
+                                    mysql> create table user4(name char(15));
+                                    mysql> insert into user4 values("chihiro");
+                                    Query OK, 1 row affected (0.10 sec)
 
-                                mysql> insert into user4 values("chihiro2");
-                                Query OK, 1 row affected (0.12 sec)
+                                    mysql> insert into user4 values("chihiro2");
+                                    Query OK, 1 row affected (0.12 sec)
 
-                                mysql> insert into user4 values("chihiro22");
-                            52数据库管理员在本机查看
-                                mysql> select * from db3.user4;
-        主从同步模式
-            结构类型:
-                一主多从
-                主从从
-                主主
+                                    mysql> insert into user4 values("chihiro22");
+                                52数据库管理员在本机查看
+                                    mysql> select * from db3.user4;
+            主从同步模式
+                结构类型:
+                    一主多从
+                    主从从
+                    主主
 
-            配置一主多从结构
-                要求把4.53配置为51的从服务器
 
-                53配置如下:
-                        1.验证主服务器授权用户
-                        2.指定server id
-                        3.与主库数据一致
-                        4.配置slave,指定主服务器信息
-                        5.启动slave,查看slave信息
+                配置主服务器53
+                    ]# vim /etc/my.cnf
+                       [mysqld]
+                        server_id=53
+                        log-bin=db53
+                       :wq
+
+                    ]# systemctl  restart mysqld
+
+                    ]# mysql -uroot -p密码
+                    mysql> grant replication slave on  *.*
+                        to repluser@"%" identified by "123qqq...A";
+
+                    mysql> show  master status;
+                    +-------------+----------+--------------+------------------+-------------------+
+                    | File        | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
+                    +-------------+----------+--------------+------------------+-------------------+
+                    | db53.000001 |      441 |              |                  |                   |
+                    +-------------+----------+--------------+------------------+-------------------+
+
+                    配置从服务器54
+
+                    ]# vim /etc/my.cnf
+                        [mysqld]
+                        server_id=54
+                        log-bin=db54
+                        log_slave_updates
+                    :wq
+                    ]# systemctl  restart mysqld
+
+                    ]# mysql -uroot -p密码
+                    mysql> grant replication slave on  *.*  to  repluser2@"%" identified by "123qqq...A";
+                    Query OK, 0 rows affected, 1 warning (0.02 sec)
+
+                    mysql> show master status;
+                    +-------------+----------+--------------+------------------+-------------------+
+                    | File        | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
+                    +-------------+----------+--------------+------------------+-------------------+
+                    | db54.000001 |      442 |              |                  |                   |
+                    +-------------+----------+--------------+------------------+-------------------+
+                    1 row in set (0.00 sec)
+
+                    mysql> change master to  master_host="192.168.4.53",master_user="repluser",
+                        -> master_password="123qqq...A",master_log_file="db53.000001",master_log_pos=441;
+                    Query OK, 0 rows affected, 2 warnings (0.22 sec)
+
+                    mysql> start slave;
+                    Query OK, 0 rows affected (0.03 sec)
+
+                    mysql> show slave status\G;
+                     Slave_IO_Running: Yes
+                            Slave_SQL_Running: Yes
+                    Master_Host: 192.168.4.53
+
+                配置从服务器55
+                    ]# vim /etc/my.cnf
+                        [mysqld]
+                        server_id=55
+                    :wq
+
+                    ]# systemctl  restart mysqld
+                    ]# mysql  -uroot -p密码
+                    mysql> change master to  master_host="192.168.4.54",master_user="repluser2",
+                    master_password="123qqq...A",master_log_file="db54.000001",master_log_pos=442;
+
+                    mysql> start slave ;
+                    mysql> show slave status\G;
+                        Master_Host: 192.168.4.54
+                        Slave_IO_Running: Yes
+                            Slave_SQL_Running: Yes
+
+                测试配置
+                        在主服务器本机创建新库新表插入记录
+                        在2台从服务器本机可以查看到同样的库表及记录
+
+                        53 mysql>
+                           create database bbsdb;
+                           create table bbsdb.a(id int);
+                           insert into bbsdb.a values(99);
+
+                        54/55 mysql>
+                           select  * from bbsdb.a;
+
+
+
+                配置一主多从结构
+                    要求把4.53配置为51的从服务器
+
+                    53配置如下:
+                            1.验证主服务器授权用户
+                            2.指定server id
+                            3.与主库数据一致
+                            4.配置slave,指定主服务器信息
+                            5.启动slave,查看slave信息
+            复制模式
+                   模式分类:
+                            异步复制\全同步复制模式\半同步复制模式
+
+                       异步:主库执行完一次事物后,立即将结果返回给客户端,并不关心库是否已经接受并处理
+                       全同步:当主库执行玩事物,却所有从库都执行该事物后才将结果返回客户端
+                       半同步复制: 主库执行完成事物,等待至少一个库接收并写入relay log中才将结果返回客户端
+
+                       同步中默认为异步模式
+                       修该主和从的复制模式,并且模式需要匹配.
+
+                   配置半同步复制模式
+                        主 53 从主 54 从55
+                                命令行配置 立刻生效,重启失效,配置文件,重启生效,
+                        命令行配置
+
+                                加载模块 (主/从模块)
+			                        INSTALL PLUGIN rpl_semi_sync_master  SONAME  'semisync_master.so’;
+			                        INSTALL PLUGIN rpl_semi_sync_slave  SONAME  'semisync_slave.so’;
+                                启用模块
+                                      mysql> SET GLOBAL rpl_semi_sync_master_enabled = 1;
+                                      mysql> SET GLOBAL rpl_semi_sync_slave_enabled = 1;
+                                查看
+                                      mysql> show  variables  like  "rpl_semi_sync_%_enabled";
+
+                                修改主配置文件使其永久有效
+                                   ]# vim /etc/my.cnf
+                                                  [mysqld]
+                                                  plugin-load=rpl_semi_sync_slave=semisync_slave.so //加载模块
+                                                  plugin-load=rpl_semi_sync_slave=semisync_master.so //加载模块
+                                                  rpl_semi_sync_master_enabled=1  //启用半同步复制模式
+                                                  rpl_semi_sync_slave_enabled=1  //启用半同步复制模式
+                                               :wq
+                                            ]# systemctl restart  mysqld
+                                            ]# mysql  -uroot -ptarena
+                                            //查看插件是否安装
+                                            mysql> SELECT  PLUGIN_NAME, PLUGIN_STATUS FROM INFORMATION_SCHEMA.PLUGINS  WHERE PLUGIN_NAME LIKE '%semi%';
+
+                                            mysql> show  variables  like  "rpl_semi_sync_%_enabled";// 查看 两个插件是否启动
+
+
+       DAY02
+            一.数据读写分离
+                主从复制的局限性
+
+                如何分离mysql读写流量
+
+                在客户端分还是在服务端分
+
+                1.1数据读写分离介绍
+
+                1.2数据对读写分离的优点
+                    减轻主服务器的工作压力,提高服务器的硬件利用率
+                1.3配置数据读写分离
+                    程序实现      程序员写代码实现
+                    部署服务实现  在客户端部署读写分离
+                1.4拓扑结构
+                     master--------------  slave
+                     4.51                 4.52
+                       |
+                      读写
+                      mysql代理-----------linux客户机
+                      4.57                  4.50
+                1.5环境准备
+                    配置主从
+                        主 : 启动binlog 授权用户 配置server id
+                        从 : 配置server id 指定主库信息 启动slave
+                    配置ip
+                1.6配置代理
+                    可以提供代理的软件有许多
+                        mysql-procy
+                        mycat ...
+
+                        maxscale是其中一种
+                    1.6.1 配置软件
+                        yum -y install /root/maxscale-2.1.2-1.rhel.7.x86_64.rpm
+                        rpm -ql maxscale //检查 生成文件位置
+                    1.6.2 修改代理服务的主配置文件
+                        cp /etc/maxscale.cnf /root/ //备份主配置文件
+                        /var/log/maxscale/ log存放位置
+
+                        [maxscale]
+                     10 threads=auto//修改线程数量,多少核给多少个,或者直接auto
+                      // 定义两台数据库服务器
+                     18 [server1]
+                     19 type=server
+                     20 address=192.168.4.51
+                     21 port=3306
+                     22 protocol=MySQLBackend
+
+                     25 [server2]
+                     26 type=server
+                     27 address=192.168.4.52
+                     28 port=3306
+                     29 protocol=MySQLBackend
+                      //指定监控服务器 ,用户, 密码
+                     36 [MySQL Monitor]
+                     37 type=monitor
+                     38 module=mysqlmon
+                     39 servers=server1, server2
+                     40 user=maxscalemon
+                     41 passwd=123qqq...A
+                     42 monitor_interval=10000
+                      //注销 read only 部分
+                      [Read-Only Service]
+                      //读写分离
+                     64 [Read-Write Service]
+                     65 type=service
+                     66 router=readwritesplit
+                     67 servers=server1, server2  //注意添加server
+                     68 user=maxscalerouter   //路由用户
+                     69 passwd=123qqq...A
+                     70 max_slave_connections=100%
+                      //注销  R-O-L
+                     86 #[Read-Only Listener]
+                     //查看 RWL 端口
+                     102 port=4016
+                      //指定 管理端口
+                     98 [MaxAdmin Listener]
+                     102 port=4016
+
+
+                    1.6.3 配置数据可服务器
+                        创建监控用户
+                        mysql>grant replication slave, replication client on *.* to maxscalemon@"%" identified by "123qqq...A";
+                        创建路由用户
+                        mysql> grant select on mysql.* to maxscalerouter@"%" identified by "123qqq...A";
+                    1.6.4 启动代理服务器
+                        maxscale -f 配置文件位置
+                        [root@dba57 ~]# maxscale -f /etc/maxscale.cnf
+                        不要使用 systemctl start maxscale 这么启动 //否则使用 maxadmin 不能进入 管理界面
+
+                    1.6.5 查看服务状态
+                        [root@dba57 ~]# ss -antulp | grep 4016
+                        tcp    LISTEN     0      128      :::4016                 :::*                   users:(("maxscale",pid=1869,fd=12))
+                        [root@dba57 ~]# ss -antulp | grep 4006
+                        tcp    LISTEN     0      128      :::4006                 :::*                   users:(("maxscale",pid=1869,fd=11))
+                        [root@dba57 ~]# ls /var/log/maxscale/
+                        maxscale.log
+                        [root@dba57 ~]# ps -C maxscale
+                          PID TTY          TIME CMD
+                         1869 ?        00:00:00 maxscale
+                        //进入软件查看管理服务
+                        [root@dba57 ~]# maxadmin  -uadmin -pmariadb -P4016
+                        MaxScale> list servers
+                        Servers.
+                        -------------------+-----------------+-------+-------------+--------------------
+                        Server             | Address         | Port  | Connections | Status
+                        -------------------+-----------------+-------+-------------+--------------------
+                        server1            | 192.168.4.51    |  3306 |           0 | Master, Running
+                        server2            | 192.168.4.52    |  3306 |           0 | Slave, Running
+                        -------------------+-----------------+-------+-------------+--------------------
+                    1.6.6 测试配置
+                        1.在主服务器上添加访问数据链接用户
+                            mysql> create databases gamedb;
+                            mysql> create table a(id int);
+                            mysql> grant select,insert on gamedb.* to yaya66@"%" identified by "123qqq...A";
+                        2.客户端链接代理服务57 访问数据
+                            [root@DBA ~]# mysql -h192.168.4.57 -uyaya66 -P4006 -p123qqq...A
+                            mysql> select * from gamedb.a;
+                            Empty set (0.00 sec)
+
+                            mysql> insert into gamedb.a values(0214);
+                            Query OK, 1 row affected (0.18 sec)
+
+                            mysql> select * from gamedb.a;
+                            +------+
+                            | id   |
+                            +------+
+                            |  214 |
+                            +------+
+                        3.验证57主机的数据读写分离
+                            3.1 在从服务器添加新记录
+                                mysql> insert into gamedb.a values(52);
+                                Query OK, 1 row affected (0.04 sec)
+
+                                mysql> select * from gamedb.a;
+                                +------+
+                                | id   |
+                                +------+
+                                |  214 |
+                                |   52 |
+                                +------+
+                                在主服务器查看记录
+                                mysql> select * from gamedb.a;
+                                +------+
+                                | id   |
+                                +------+
+                                |  214 |
+                                +------+
+                            3.2客户端访问57 查看
+                                [root@DBA ~]# mysql -h192.168.4.57 -uyaya66 -P4006 -p123qqq...A
+                                mysql> select * from gamedb.a;
+                                +------+
+                                | id   |
+                                +------+
+                                |  214 |
+                                |   52 |
+
+
+
+
+            二.多实例服务
+
+                1.添加配置文件
+                    vim /etc/my.cnf
+                    [mysqld_multi]
+                    mysqld = /usr/local/mysql/bin/mysqld_safe
+                    mysqladmin = /usr/local/mysql/bin/mysqladmin
+                    user = root
+                    [mysqld1]
+                    datadir=/dir1
+                    port=3307
+                    log-error=/dir1/mysqld1.err
+                    pid-file=/dir1/mysqld1.pid
+                    socket=/dir1/mysqld1.socket
+                    [mysqld2]
+                    datadir=/dir2
+                    port=3308
+                    log-error=/dir2/mysqld2.err
+                    pid-file=/dir2/mysqld2.pid
+                    socket=/dir2/mysqld2.socket
+
+                2.添加PATH
+                  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin:/usr/local/mysql/bin/
+	              echo "export /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin:/usr/local/mysql/bin/" >> /etc/bashrc
+                3.启动服务编号是1 的实例服务
+                        ]# /usr/local/mysql/bin/mysqld_multi start 1
+                    查看服务信息
+                        ]# ls /dir1
+                        ]# netstat  -utnlp  | grep  :3307
+                    访问服务
+                        /usr/local/mysql/bin/mysql -uroot -p'k4R+MAfMUgar' -S /dir1/mysqld1.sock
+                        mysql> alter user  root@"localhost" identified by  "123456";
+                        mysql> show databases;
+                        mysql> exit
+                        存储数据 创库 插入数据
+
+
+
+
+
+
+
+
+
+
+
 
 
 

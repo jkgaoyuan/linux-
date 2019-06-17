@@ -1665,7 +1665,7 @@ mysql> select  * from user  where  shell != "/bin/bash" order by uid limit 1;
 			查看模块是否被加载 （默认没有加载）
 			SELECT  PLUGIN_NAME, PLUGIN_STATUS 
                         FROM INFORMATION_SCHEMA.PLUGINS  
-                        WHERE PLUGIN_NAME LIKE '%semi%'; 
+                        WHERE PLUGIN_NAME LIKE '%semi%';
 
 			加载半同步复制模块 （模块名semisync_master.so）
 			mysql>  INSTALL PLUGIN rpl_semi_sync_master   
@@ -1928,6 +1928,9 @@ MaxScale> exit
 			[root@mysql50 ~]# mkdir /dir1
 			[root@mysql50 ~]# mkdir /dir2
 
+            添加path
+            PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin:/usr/local/mysql/bin/
+	        echo "export /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin:/usr/local/mysql/bin/" >> /etc/bashrc
 	2.3 使用MySQL多实例
 			启动服务编号是1 的实例服务
 				]# /usr/local/mysql/bin/mysqld_multi start 1
