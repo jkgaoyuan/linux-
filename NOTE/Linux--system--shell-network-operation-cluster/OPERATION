@@ -2388,7 +2388,7 @@
                             [root@web1 ~]# vim ifcfg-lo:0
                             DEVICE=lo:0
                             IPADDR=192.168.4.15
-                            NETMASK=255.255.255.255
+                            NETMASK=255.255.255.255 //确保只有一个ip
                             NETWORK=192.168.4.15
                             BROADCAST=192.168.4.15
                             ONBOOT=yes
@@ -2747,7 +2747,7 @@
             osd     提供储存设备
             monitor 监控/管理  负责调度(取余算法,将数据平均分配到每个osd,至少三台负责 高可用)
             ceph    默认三副本, 大数据自动切割为小文件(要求至少三个osd)
-                    若只装前两个 只能块共享
+                    若只装前 ceph-mon ceph-osd 只能块共享
             mds     文件系统
             rgw     提供对象存储 (类似于 百度云盘)
             clients 客户端

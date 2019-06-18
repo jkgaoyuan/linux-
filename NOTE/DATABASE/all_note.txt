@@ -1930,7 +1930,7 @@ MaxScale> exit
 
             添加path
             PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin:/usr/local/mysql/bin/
-	        echo "export /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin:/usr/local/mysql/bin/" >> /etc/bashrc
+
 	2.3 使用MySQL多实例
 			启动服务编号是1 的实例服务
 				]# /usr/local/mysql/bin/mysqld_multi start 1

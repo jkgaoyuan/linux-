@@ -1163,7 +1163,7 @@ panglj@tedu.cn
                     eg:
                         revoke insert,drop on db3.user from admin3@"localhost";
                         show grants for admin3@"localhost";
-                        revoke all on *.* fromnts for mydba@"%"; ##撤销所有权限
+                        revoke all on *.* from mydba@"%"; ##撤销所有权限
                         select user,host from mysql.user ##查看所有的授权用户
                         show grants for mydba@"%";       ##查看指定用户的权限
                         revoke grant  option on *.* from mydba@"%"; ##撤销权限
@@ -1472,7 +1472,10 @@ panglj@tedu.cn
                           sql 线程 : 执行relay-log 中的 sql语句 保证 数据与主服务器一致
                           线程是进程的最小运行单位
 
-                    删除主服务器中的 /var/lib/mysql/
+
+                    如何将配置完成的主从结构恢复到无主从结构的状态
+
+                        删除主服务器中的 /var/lib/mysql/
                           master.info
                           relay-log.info
                           主机名-relay-bin.xxxx
@@ -1482,7 +1485,7 @@ panglj@tedu.cn
                 构建方案:
                     配置主库
                           51
-                        启动binlog日志\授权用户\查看binlog日志
+                        启动binlog日志\授权用户\确保与主服数据库一致
                             启动binlog日志
                                 vim /etc/my.cnf
                                     添加如下
@@ -1515,12 +1518,12 @@ panglj@tedu.cn
                                 vim a.sql
                                     22行
                                     找到 `CHANGE MASTER TO MASTER_LOG_FILE='db51.000001', MASTER_LOG_POS=441;`
-                                    填入 master|_log_file(binlog日志) 和 master_log_pos(偏移量)
                                     如果期间 主库重启会导致主库的binlog日志改变,那么这里填的数据将会按照新的binlog日志数据填写
                                 mysql> change master to master_host="192.168.4.51",
                                         -> master_user="repluser",master_password="123qqq...A",
                                         -> master_log_file="db51.000001",master_log_pos=441;
                                         //确保主服务器使用的binlog日志与你在这里填写的相同
+                                        填入 master|_log_file(binlog日志) 和 master_log_pos(偏移量)
                                         核心:从库链接到主库,按照主库的binlog日志执行,完成后两个数据库就同步完成了.
                             启动slave程序
 
@@ -1706,12 +1709,8 @@ panglj@tedu.cn
 
 
        DAY02
+
             一.数据读写分离
-                主从复制的局限性
-
-                如何分离mysql读写流量
-
-                在客户端分还是在服务端分
 
                 1.1数据读写分离介绍
 
@@ -1744,7 +1743,7 @@ panglj@tedu.cn
                     1.6.2 修改代理服务的主配置文件
                         cp /etc/maxscale.cnf /root/ //备份主配置文件
                         /var/log/maxscale/ log存放位置
-
+                        vim /etc/maxscale.cnf
                         [maxscale]
                      10 threads=auto//修改线程数量,多少核给多少个,或者直接auto
                       // 定义两台数据库服务器
@@ -1786,7 +1785,7 @@ panglj@tedu.cn
                      102 port=4016
 
 
-                    1.6.3 配置数据可服务器
+                    1.6.3 配置数据库服务器
                         创建监控用户
                         mysql>grant replication slave, replication client on *.* to maxscalemon@"%" identified by "123qqq...A";
                         创建路由用户
@@ -1888,8 +1887,9 @@ panglj@tedu.cn
                     socket=/dir2/mysqld2.socket
 
                 2.添加PATH
-                  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin:/usr/local/mysql/bin/
-	              echo "export /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin:/usr/local/mysql/bin/" >> /etc/bashrc
+
+                  PATH=/usr/local/mysql/bin:$PATH
+                       /usr/local/mysql/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin:/usr/local/mysql/bin/
                 3.启动服务编号是1 的实例服务
                         ]# /usr/local/mysql/bin/mysqld_multi start 1
                     查看服务信息
@@ -1901,12 +1901,153 @@ panglj@tedu.cn
                         mysql> show databases;
                         mysql> exit
                         存储数据 创库 插入数据
+                        重新登录
+                        /usr/local/mysql/bin/mysql -uroot -p123456 -S /dir1/mysqld1.socket
+                        没有设置开机自启
+
+       DAY03
+            一.数据分片
+                分片介绍
+                1.垂直分割
+                    1.1纵向切分
+                        将单个数据库的多个表按照业务分类按照业务类型分类,分散存储到不同数据库
+                2.水平切分
+                    2.1横向切分
+                        按照表中指定字段的分片规则,将表记录按行切分,分散存储到不同的的多个数据库
+            二.mycat
+                1.介绍
+                    mycat是基于java的分布式存储数据库系统中间件,为提高并发环境的分布式存储提供解决方案
+                        适合数据大量写入存储
+                        支持mayql Oracle Salserver mongodb
+                        支持数据读写分离
+                        支持数据分片
+                2.分片规则
+                    mycat 支持10 中分片规则
+                        枚举 固定分片 约定范围 求模 日期列分 通陪取模 ascii码 编程指定 字符拆分hash 解析 一致性hash
+                    不同的分片规则需要有特定的字段名存在
+                    通过检查 /usr/local/mycat/conf/schema.xml (<table>中的 值)和 rule.xml(<tableRule> </tableRule>)
+                    中相匹配的字段 决定 表中一定要存在的字段
+
+                3.拓扑结构
+                                             56                 50
+                    ----------------------分片服务器------------客户端
+                    |                 |                      |
+                    数据库服务器      数据库服务器            数据库服务器
+                        53           54                      55
+                4.工作工程
+                    当mycat收到一个sql命令
+                        1)解析SQL命令涉及到的表
+                        2)查看对表的配置,如国有分片规则,则获取sql命令里分片字段的值,匹配分片函数,获得分片列表
+                        3)将sql语句发往对应的分片服务器执行
+                        4)收集处理分片结果,返回结果
+                5.部署mycat 服务
+                    1)安装软件
+                         //这个软件需要java的支持
+                         yum -y install java-1.8.0-openjdk
+                         tar -xvf Mycat-server-1.6-RELEASE-20161028204710-linux.tar.gz -C /usr/local/
+                         软件的目录结构
+                            -bin     启动命令
+                            -catlet  扩展程序
+                            -conf    配置文件 /// txt 结尾的是分片规则算法, server.xml 设置链接账户以及逻辑 (逻辑库文件)
+                                            ///schemea.xml 配置数据分片   rules.xml 分片规则
+                            -lib    mycat 使用的jar包
+                            -logs   mycat启动日志和运行日志
+                            -wrapper.log    服务启动日志
+                            -mycat.log      记录sql脚本执行后的保存内容
 
 
+                            若启动服务 不报错 但是启动不了 说明内存不够
+                    2)修改配置文件
+                       分片规则设置为  枚举 sharding-by-intfile
+                        vim /usr/local/mycat/conf/server.xml 保持默认
+                        [root@mycat ~]# sed -i "57,77d" /usr/local/mycat/conf/schema.xml // 删除无用行
+                        [root@mycat ~]# sed -i "39,42d" /usr/local/mycat/conf/schema.xml
+                        [root@mycat ~]# sed -i "16,18d" /usr/local/mycat/conf/schema.xml
+                        [root@mycat ~]# wc -l /usr/local/mycat/conf/schema.xml
+                        48 /usr/local/mycat/conf/schema.xml
+
+                            文件结构如下:
+                            <mycat: >
+                                 <schema  >    //定义分片信息 name //逻辑表  databNode  //指定数据节点  rule //指定分片规则  type=global //数据不分片存储
+                                    <table />
+
+                                 </schema>
+                                <dataNode />
+                                 <dataHost>
+                                 </dataHost>
+                            </mycat: >
+                            ##############################将文件修改如下######################
+                             11                 <table name="company" primaryKey="ID" type="global" dataNode="dn1,dn2,dn3" />
+                             12                 <table name="goods" primaryKey="ID" type="global" dataNode="dn1,dn2,dn3" />
+                             13                 <!-- random sharding using mod sharind rule -->
+                             14                 <table name="hotnews" primaryKey="ID" autoIncrement="true" dataNode="dn1,dn2,dn3"
+                             15                            rule="mod-long" />
+                             16                 <table name="employee" primaryKey="ID" dataNode="dn1,dn2,dn3"
+                             17                            rule="sharding-by-intfile" />
+                             18                 <table name="customer" primaryKey="ID" dataNode="dn1,dn2,dn3"
+
+                                                ##################指定数据库###################
+
+                             33         <dataNode name="dn1" dataHost="localhost53" database="db1" />
+                             34         <dataNode name="dn2" dataHost="localhost54" database="db2" />
+                             35         <dataNode name="dn3" dataHost="localhost55" database="db3" />
+
+                                            #########################修改配置节点##############################
+
+                             36         <dataHost name="localhost53" maxCon="1000" minCon="10" balance="0"
+                             37                           writeType="0" dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
+                             38                 <heartbeat>select user()</heartbeat>
+                             39                 <writeHost host="hostM53" url="192.168.4.53:3306" user="adminplj"
+                             40                                    password="123qqq...A">
+                             41                 </writeHost>
+                             42         </dataHost>
+                             43
+                             44         <dataHost name="localhost54" maxCon="1000" minCon="10" balance="0"
+                             45                           writeType="0" dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
+                             46                 <heartbeat>select user()</heartbeat>
+                             47                 <writeHost host="hostM54" url="192.168.4.54:3306" user="adminplj"
+                             48                                    password="123qqq...A">
+                             49                 </writeHost>
+                             50         </dataHost>
+                             51         <dataHost name="localhost55" maxCon="1000" minCon="10" balance="0"
+                             52                           writeType="0" dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
+                             53                 <heartbeat>select user()</heartbeat>
+                             54                 <writeHost host="hostM55" url="192.168.4.55:3306" user="adminplj"
+                             55                                    password="123qqq...A">
+                             56                 </writeHost>
+                             57         </dataHost>
 
 
+                    3)配置数据库服务器
+                        创建授权用户,对应数据库
+                        mysql> create database db1;
+                        mysql> grant all on *.* to adminplj@"%" identified by "123qqq...A";
 
 
+                    4)验证
+                        [root@mycat bin]# ./mycat start
+                        Starting Mycat-server...
+                        [root@mycat bin]# ss -antulp | grep 8066
+                        tcp    LISTEN     0      100      :::8066                 :::*                   users:(("java",pid=1919,fd=81))
+                        //添加path
+                        [root@mycat bin]# PATH=/usr/local/mysql/bin:$PATH
+                        [root@mycat bin]# mysql -h192.168.4.53/54/55 -uadminplj -p123qqq...A
+
+                6.测试
+
+                    [root@mycat conf]# vim partition-hash-int.txt
+                    10000=0
+                    10010=1
+                    10020=2
+                    [root@53 ~]# mysql -h192.168.4.56 -P8066 -uroot -p123456
+                    mysql> use TESTDB;
+                    create table employee(ID int primary key, sharding_id int, name char(15), age int);
+
+                    ///一般来说给 表的每个字段名添加数据,表后面是可以不用写字段名的 但是这里不添加就不能加入数据
+
+                    insert into employee(ID,sharding_id,name,age) values(1,10000,"BOB",21),(2,10010,"AOA",23),(3,10020,"DOD",23);
+                    insert into employee(ID,sharding_id,name,age) values(1,10000,"ZOZ",21),(2,10000,"COC",23),(3,10000,"FOF",23);
+                    在54 55 只能查询到对应的 sharding_id的 值
 
 
 
