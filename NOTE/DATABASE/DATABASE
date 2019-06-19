@@ -1378,15 +1378,15 @@ panglj@tedu.cn
                             import           导入表空间  idb
                 命令:
                     完全备份
-                        ]# innobackupex --user 用户名 --password 密码 备份目录名 --no-timestamp
+                        ]# innobackupex --user 用户名 --password 密码 全备份目录名 --no-timestamp
                     完全恢复
-                        ]# innobackupex --apply-log 目录名 //准备恢复数据
-                        ]# innobackupex --copy-bak 目录名  //恢复数据
+                        ]# innobackupex --apply-log 全备份目录 //准备恢复数据
+                        ]# innobackupex --copy-bak 全备份目录  //恢复数据
                     增量备份
-                        ]# innobackupex  --user 用户名 --password 密码 --incremental 增量目录 --incremental-basedir=目录名 --no-timestamp
+                        ]# innobackupex  --user 用户名 --password 密码 --incremental 增量备份目录 --incremental-basedir=全备份目录 --no-timestamp
                     增量恢复
-                        ]# innobackupex  --apply-log --redo-only 目录名 --incremental-dir=目录名 //准备恢复
-                        ]# innobackupex --copy-back 目录 //恢复数据
+                        ]# innobackupex  --apply-log --redo-only 全备份目录--incremental-dir=增量备份目录 //准备恢复
+                        ]# innobackupex --copy-back 全备份目录 //恢复数据
 
 
         innobackupex 备份与恢复
@@ -2069,7 +2069,7 @@ panglj@tedu.cn
                         [root@db56 conf]# vim /usr/local/mycat/conf/rule.xml
                         <tableRule name="mod-long">
                         <rule>
-                            <columns>num</columns>  //对那个字段值求模,建表是必须有这个字段
+                            <columns>num</columns>  //对那个字段值求模,建表时必须包含这个字段
                             <algorithm>mod-long</algorithm>
                         </rule>
                         </tableRule>
@@ -2151,7 +2151,7 @@ panglj@tedu.cn
                             Query OK, 1 row affected (0.21 sec)
 
                             mysql> insert into company(ID, name, addr) values(2,"sic","chengdu");
-                        在53 54 55 上查看表
+                        在53 54 55 的本地数据库查看上查看表
 
                             mysql> mysql> select * from company;
                             +----+--------+---------+
