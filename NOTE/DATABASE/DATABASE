@@ -1111,7 +1111,7 @@ panglj@tedu.cn
                         show grants for #####管理员查看已有授权用户权限, 注意这里 grants 里的s 不要漏写
                         用户名@"客户端地址";
 
-                        set password=   #####授权用户修改连接密码
+                        set password=   #####授权用户修改连接密码 修改数据库密码
                         password("密码");
 
                         set password for #####管理员重置用户连接密码
@@ -1667,6 +1667,7 @@ panglj@tedu.cn
                             3.与主库数据一致
                             4.配置slave,指定主服务器信息
                             5.启动slave,查看slave信息
+
             复制模式
                    模式分类:
                             异步复制\全同步复制模式\半同步复制模式
@@ -1959,7 +1960,7 @@ panglj@tedu.cn
                             若启动服务 不报错 但是启动不了 说明内存不够
                     2)修改配置文件
                        分片规则设置为  枚举 sharding-by-intfile
-                        vim /usr/local/mycat/conf/server.xml 保持默认
+                        vim /usr/local/mycat/conf/server.xml 保持默认 添加(逻辑库)
                         [root@mycat ~]# sed -i "57,77d" /usr/local/mycat/conf/schema.xml // 删除无用行
                         [root@mycat ~]# sed -i "39,42d" /usr/local/mycat/conf/schema.xml
                         [root@mycat ~]# sed -i "16,18d" /usr/local/mycat/conf/schema.xml
@@ -1968,14 +1969,16 @@ panglj@tedu.cn
 
                             文件结构如下:
                             <mycat: >
-                                 <schema  >    //定义分片信息 name //逻辑表  databNode  //指定数据节点  rule //指定分片规则  type=global //数据不分片存储
-                                    <table />
+                                 <schema  >    //定义分片库  name //逻辑库名  databNode  //指定数据节点  rule //指定分片规则  type=global //数据不分片存储
+                                    <table />   //表信息 name //逻辑表名 ; schema 中有多少 table 就代表有多少表,有多少schema代表有多少库
 
                                  </schema>
                                 <dataNode />
                                  <dataHost>
                                  </dataHost>
                             </mycat: >
+
+                            添加(逻辑表)
                             ##############################将文件修改如下######################
                              11                 <table name="company" primaryKey="ID" type="global" dataNode="dn1,dn2,dn3" />
                              12                 <table name="goods" primaryKey="ID" type="global" dataNode="dn1,dn2,dn3" />
@@ -2048,6 +2051,117 @@ panglj@tedu.cn
                     insert into employee(ID,sharding_id,name,age) values(1,10000,"BOB",21),(2,10010,"AOA",23),(3,10020,"DOD",23);
                     insert into employee(ID,sharding_id,name,age) values(1,10000,"ZOZ",21),(2,10000,"COC",23),(3,10000,"FOF",23);
                     在54 55 只能查询到对应的 sharding_id的 值
+
+
+
+
+
+                将分片规则为求模进行验证
+
+                求模mod-long
+
+                    修改schema.xml文件
+                        [root@db56 conf]# vim /usr/local/mycat/conf/schema.xml
+
+                        <table name="hotnews" dataNode="dn1,dn2,dn3"
+                               rule="mod-long" />
+                    修改rule.xml文件
+                        [root@db56 conf]# vim /usr/local/mycat/conf/rule.xml
+                        <tableRule name="mod-long">
+                        <rule>
+                            <columns>num</columns>  //对那个字段值求模,建表是必须有这个字段
+                            <algorithm>mod-long</algorithm>
+                        </rule>
+                        </tableRule>
+
+                        <function name="mod-long" class="io.mycat.route.function.PartitionByMod">
+                        <!-- how many data nodes -->
+                        <property name="count">3</property>
+                        </function>
+
+                客户端验证求模分片规则
+                    [root@DBA ~]# mysql -h192.168.4.56 -uroot -P8066 -p123456
+                    mysql> create table hotnews(num int, title char(30), comment char(200));
+                    Query OK, 0 rows affected (10.80 sec)
+                    mysql> insert into hotnews(num,title,comment) values(9,"dchech","marryme");
+                    Query OK, 1 row affected (0.08 sec)
+                    mysql> insert into hotnews(num,title,comment) values(9,"have a baay","chouyn");
+                    Query OK, 1 row affected (0.06 sec)
+
+                    mysql> insert into hotnews(num,title,comment) values(5,"have a baby again","chouynaa  a ");
+                    Query OK, 1 row affected (0.03 sec)
+
+                    mysql> insert into hotnews(num,title,comment) values(4,"have a baby again agagin","chouynaa  a ");
+                    Query OK, 1 row affected (0.05 sec)
+                    53 进入本地数据库
+                    [root@dba-53 ~]# mysql -uroot -ptarena
+                    mysql> mysql> select * from hotnews;
+                    +------+-------------+---------+
+                    | num  | title       | comment |
+                    +------+-------------+---------+
+                    |    9 | dchech      | marryme |
+                    |    9 | have a baay | chouyn  |
+                    +------+-------------+---------+
+                    54
+                    [root@dba-54 ~]# mysql -uroot -ptarena
+                    mysql> select * from hotnews;
+                    +------+--------------------------+-------------+
+                    | num  | title                    | comment     |
+                    +------+--------------------------+-------------+
+                    |    4 | have a baby again agagin | chouynaa  a |
+                    +------+--------------------------+-------------+
+                    55
+                    [root@dba-55 ~]# mysql -uroot -ptarena
+                    mysql> select * from db3.hotnews;
+                    +------+-------------------+-------------+
+                    | num  | title             | comment     |
+                    +------+-------------------+-------------+
+                    |    5 | have a baby again | chouynaa  a |
+                    +------+-------------------+-------------+
+
+                添加新库新表
+
+                    修改配置文件
+
+                        [root@db56 conf]# vim /usr/local/mycat/conf/server.xml
+                        <user name="root">
+                                <property name="password">123456</property>  //添加一个库(逻辑库)
+                                <property name="schemas">TESTDB,BBSDB</property>
+                        <user>
+
+                        [root@db56 conf]# vim /usr/local/mycat/conf/schema.xml    //在库中添加表(逻辑表)
+                            <schema name="BBSDB" checkSQLschema="false" sqlMaxLimit="100">
+                            <table name="company" primaryKey="ID" type="global"  dataNode="dn1,dn2,dn3" />
+                            <table name="employee" primaryKey="ID"  dataNode="dn1,dn2,dn3" rule="sharding-by-intfile"  />
+                            </schema>
+
+
+                        [root@db56 conf]# /usr/local/mycat/bin/mycat stop
+                        [root@db56 conf]# /usr/local/mycat/bin/mycat start
+
+                        创建表
+                            company表是全局存储,没有分表,
+                            56
+                            mysql> create table company(ID int primary key,name char(20), addr char(20));
+                        添加数据
+                            mysql> insert into company(ID, name, addr) values(1,"tarena","xian");
+                            Query OK, 1 row affected (0.16 sec)
+
+                            mysql> insert into company(ID, name, addr) values(2,"dcjit","xian");
+                            Query OK, 1 row affected (0.21 sec)
+
+                            mysql> insert into company(ID, name, addr) values(2,"sic","chengdu");
+                        在53 54 55 上查看表
+
+                            mysql> mysql> select * from company;
+                            +----+--------+---------+
+                            | ID | name   | addr    |
+                            +----+--------+---------+
+                            |  1 | tarena | xian    |
+                            |  2 | dcjit  | xian    |
+                            |  3 | sic    | chengdu |
+                            +----+--------+---------+
+
 
 
 
