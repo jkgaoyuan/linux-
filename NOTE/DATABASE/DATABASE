@@ -2239,21 +2239,21 @@ panglj@tedu.cn
                         masterha_check_ssh     masterha_manager         masterha_secondary_check
                         masterha_check_status  masterha_master_monitor  masterha_stop
 
-                        [root@dba57 ~]# mkdir /etc/mha
+                        [root@dba57 ~]# mkdir /etc/mha   //创建文件夹 将准备好的配置文件拷贝到软件目录
                         [root@dba57 ~]# cp mha-soft-student/mha4mysql-manager-0.56/samples/conf/app1.cnf /etc/mha/
 
                         修改配置文件如下
                         [root@dba57 ~]# vim /etc/mha/app1.cnf
 
                             [server default]
-                            manager_workdir=/etc/mha
-                            manager_log=/etc/mha/manager.log
-                            master_ip_failover_script=/etc/mha/master_ip_failover
-                            ssh_user=root
+                            manager_workdir=/etc/mha     //配置文件日志存放位置
+                            manager_log=/etc/mha/manager.log    //日志
+                            master_ip_failover_script=/etc/mha/master_ip_failover //当主数据库出现问题时切换主数据库脚本
+                            ssh_user=root     //ssh远程管理用户
                             ssh_port=22
-                            repl_user=repluser
+                            repl_user=repluser      //同步binlog日志使用的用户
                             repl_password=123qqq...A
-                            user=root
+                            user=root               //监控用用户
                             password=123qqq...A
 
                             [server1]
@@ -2271,7 +2271,8 @@ panglj@tedu.cn
                             port=3306
                             candidate_master=1
                             hostname=192.168.4.53
-                            修改已经准备好的脚本 只修改 vip即可 自己写在tar包里找
+
+                            修改已经准备好的脚本 只添加 vip即可 脚本在tar包里找
                         [root@dba57 ~]# cp mha-soft-student/master_ip_failover /etc/mha/
                         [root@dba57 ~]# chmod +x /etc/mha/master_ip_failover
                         [root@dba57 ~]# vim +35 /etc/mha/master_ip_failover
@@ -2295,6 +2296,7 @@ panglj@tedu.cn
                             [root@52 ~]# yum -y install mha-soft-student/mha4mysql-node-0.56-0.el6.noarch.rpm
                         添加授权用户
                                 57中修改的 /etc/mha/app1.cnf 配置文件
+
                             同步数据链接用户
                                 51 52 53 都要添加,虽然有主从结构
                                 mysql> grant replication slave on *.* to repluser@"%" identified by "123qqq...A";
@@ -2340,9 +2342,11 @@ panglj@tedu.cn
 
                                 MySQL Replication Health is OK
 
-                            启动服务
+                            启动MHA-MANAGER服务
                              [root@dba57 ~]#   masterha_manager --conf=/etc/mha/app1.cnf --remove_dead_master_conf --ignore_last_failover
-                                                                                           删除宕机主库配置             忽略health文件
+
+                                 --remove_dead_master_conf        删除宕机主库配置
+                                 --ignore_last_failover           忽略health文件:取消8小时(自服务启动)内数据库主机宕机不切换主库的限制
                                 检查服务是否启动
                                     [root@dba57 ~]# masterha_check_status --conf=/etc/mha/app1.cnf
                                     app1 (pid:19354) is running(0:PING_OK), master:192.168.4.51
