@@ -1696,8 +1696,8 @@ panglj@tedu.cn
                                 修改主配置文件使其永久有效
                                    ]# vim /etc/my.cnf
                                                   [mysqld]
-                                                  plugin-load=rpl_semi_sync_slave=semisync_slave.so //加载模块
-                                                  plugin-load=rpl_semi_sync_slave=semisync_master.so //加载模块
+                                                  //加载模块
+                                                  plugin-load=rpl_semi_sync_slave=semisync_slave.so;rpl_semi_sync_master=semisync_master.so //加载模块
                                                   rpl_semi_sync_master_enabled=1  //启用半同步复制模式
                                                   rpl_semi_sync_slave_enabled=1  //启用半同步复制模式
                                                :wq
@@ -2161,16 +2161,228 @@ panglj@tedu.cn
                             |  2 | dcjit  | xian    |
                             |  3 | sic    | chengdu |
                             +----+--------+---------+
+       DAY04 MHA集群
+
+            一.环境准备
+                3台全新的数据库服务器 51 52 53
+                2台新的虚拟机  50 57
+                51 52 53 之间相互访问无密码登录
+                ssh-key-gen
+                ssh-copy-id ipaddress
+                57 可无密码登录51 52  53
+                51 52 53 57 安装 perl-*
+                配置主从 51 主 52 53 从
+                集群:多台服务器提供相同的服务
+                集群分类 LB(负载均衡) HA(高可用) HPC(高性能计算)
+                       lvs Haproxy  nginx ; keeplive
+
+                MHA介绍 实现mysql高可用的解决方案
+                        数据库的自动切换操作在30s内完成
+                        MHA能保证在故障切换过程中最大限度保证数据一致性,达到真正的高可用
+                        由perl语言开发
+                MHA组成:
+                        MHA Manager(管理节点)
+                            管理所有数据库服务器
+                            可单独部署在一台独立机器上
+                            也可以部署在某台数据库服务器
+                        MHA Node(数据节点)
+                            存储数据的mysql服务器
+                            运行在每台mysql服务器上
+                MHA工作过程
+
+                        manage 57----------------  master-slave-1
+                            |  \
+                            |   \
+                            |   |___________________
+                            |                       |
+                        master-slave-2            master-slave-3
+
+                        原理:
+
+                        master定时探测集群中的master节点
+                        当master节点故障,manager自动将拥有最新数据的slave提升为新的master.
+                        50 客户端
+                        51 主    当前主库
+                        52 从    备用主库
+                        53 从    备用主库
+                        57       管理主机
+                        100      VIP地址(虚拟ip)  浮动ip
+            二.部署MHA集群
+                    软件准备
+                        51 52 53 57 执行
+                    scp -r mha-soft-student/ root@192.168.4.{51,52,53,57}:/root/
+                    cd /root/mha-soft-student
+                    yum -y install perl-*.rpm
+                    rpm -qa |grep -i perl |wc -l
+                    检查主从结构是否正常(57不用检查)
+                    mysql -uroot -ptarena -e"show slave status\G" |grep -i yes
+
+                    57
+                    配置管理节点
+                        [root@dba57 mha-soft-student]# rpm -ivh mha4mysql-node-0.56-0.el6.noarch.rpm
+
+                        [root@dba57 mha-soft-student]# tar -zxf mha4mysql-manager-0.56.tar.gz
+
+                        [root@dba57 mha4mysql-manager-0.56]# perl Makefile.PL //perl 编译
+
+                        [root@dba57 mha4mysql-manager-0.56]# make && make install  //安装
+
+                        [root@dba57 mha4mysql-manager-0.56]# masterha_  //可以使用的命令
+                        masterha_check_repl       masterha_conf_host        masterha_master_switch
+                        masterha_check_ssh        masterha_manager          masterha_secondary_check
+                        masterha_check_status     masterha_master_monitor   masterha_stop
+                        [root@dba57 mha4mysql-manager-0.56]# which masterha_check_ssh
+                        /root/perl5/bin/masterha_check_ssh
+
+                        [root@dba57 ~]# ls /root/perl5/bin/             //安装路径
+                        masterha_check_repl    masterha_conf_host       masterha_master_switch
+                        masterha_check_ssh     masterha_manager         masterha_secondary_check
+                        masterha_check_status  masterha_master_monitor  masterha_stop
+
+                        [root@dba57 ~]# mkdir /etc/mha
+                        [root@dba57 ~]# cp mha-soft-student/mha4mysql-manager-0.56/samples/conf/app1.cnf /etc/mha/
+
+                        修改配置文件如下
+                        [root@dba57 ~]# vim /etc/mha/app1.cnf
+
+                            [server default]
+                            manager_workdir=/etc/mha
+                            manager_log=/etc/mha/manager.log
+                            master_ip_failover_script=/etc/mha/master_ip_failover
+                            ssh_user=root
+                            ssh_port=22
+                            repl_user=repluser
+                            repl_password=123qqq...A
+                            user=root
+                            password=123qqq...A
+
+                            [server1]
+
+                            hostname=192.168.4.51
+                            candidate_master=1
+                            port=3306
+
+                            [server2]
+                            hostname=192.168.4.52
+                            candidate_master=1
+                            port=3306
+
+                            [server3]
+                            port=3306
+                            candidate_master=1
+                            hostname=192.168.4.53
+                            修改已经准备好的脚本 只修改 vip即可 自己写在tar包里找
+                        [root@dba57 ~]# cp mha-soft-student/master_ip_failover /etc/mha/
+                        [root@dba57 ~]# chmod +x /etc/mha/master_ip_failover
+                        [root@dba57 ~]# vim +35 /etc/mha/master_ip_failover
+                            在配置文件中添加如下
+                            my $vip = '192.168.4.100/24';  # Virtual IP
+                            my $key = "1";
+                            my $ssh_start_vip = "/sbin/ifconfig eth0:$key $vip";
+                            my $ssh_stop_vip = "/sbin/ifconfig eth0:$key down";
+
+                        51 在主机上配置VIP地址
+                            [root@dba-51 ~]# ifconfig eth0:1
+                            [root@dba-51 ~]# ifconfig eth0:1 192.168.4.100
 
 
 
 
 
+                    配置数据节点(51 52 53)
+                        安装软件
+                            51 52 53 都要装 以52 为例
+                            [root@52 ~]# yum -y install mha-soft-student/mha4mysql-node-0.56-0.el6.noarch.rpm
+                        添加授权用户
+                                57中修改的 /etc/mha/app1.cnf 配置文件
+                            同步数据链接用户
+                                51 52 53 都要添加,虽然有主从结构
+                                mysql> grant replication slave on *.* to repluser@"%" identified by "123qqq...A";
+                            57主机监控用户
+                                 51 52 53 都要添加
+                                MYSQ> grant all on *.* to root@"%" identified by "123qqq...A";
+                        修改数据库服务运行参数
+                            主库 51
+                                [root@dba-51 ~]# vim /etc/my.cnf
+
+                                plugin-load="rpl_semi_sync_slave=semisync_slave.so;rpl_semi_sync_master=semisync_master.so" //加载插件
+                                rpl_semi_sync_master_enabled=1      //启动插件
+                                rpl_semi_sync_slave_enabled=1
+                                relay_log_purge=0           //禁止自动删除binlog日志
+
+                                [root@dba-51 ~]# systemctl restart mysqld
+                            从库 52 53 都要做 这里以 52 为例
+                                [root@dba-52 ~]# vim /etc/my.cnf
+                                plugin-load="rpl_semi_sync_slave=semisync_slave.so;rpl_semi_sync_master=semisync_master.so" //加载插件
+                                rpl_semi_sync_master_enabled=1      //启动插件
+                                rpl_semi_sync_slave_enabled=1
+                                relay_log_purge=0           //禁止自动删除binlog日志
 
 
+                                [root@dba-52 ~]# systemctl restart mysqld
+
+                                查看主从状态
+                                    52 53 都要检查
+                                    mysql> show slave status\G;
+                                    检查host 和 i/0 sql 线程
 
 
+                    检查测试
+                               排错时间
+                            测试SSH配置
+                                [root@dba57 ~]# masterha_check_ssh --conf=/etc/mha/app1.cnf
+                                All SSH connection tests passed successfully
+                            测试主从同步
+                                [root@dba57 ~]# masterha_check_repl --conf=/etc/mha/app1.cnf
+                                检查  Dead Servers:
+                                     Alive Servers:
+                                     是否正确
 
+                                MySQL Replication Health is OK
+
+                            启动服务
+                             [root@dba57 ~]#   masterha_manager --conf=/etc/mha/app1.cnf --remove_dead_master_conf --ignore_last_failover
+                                                                                           删除宕机主库配置             忽略health文件
+                                检查服务是否启动
+                                    [root@dba57 ~]# masterha_check_status --conf=/etc/mha/app1.cnf
+                                    app1 (pid:19354) is running(0:PING_OK), master:192.168.4.51
+                                查看当前数据库主服务器
+                                    [root@dba57 ~]# cat /etc/mha/app1.master_status.health
+
+                                客户端50链接vip地址访问集群
+                                    51
+                                    添加访问数据的链接用户
+                                    [root@dba-51 ~]# mysql -uroot -ptarena
+                                        mysql> create database db9;
+                                        mysql> create table db9.a;
+
+                                        mysql> grant select,insert on db9.* to yaya55@"%" identified by "123qqq...A";
+
+                                    50
+                                    添加数据测试
+                                    [root@dba-50 ~]# mysql -h192.168.4.100 -uroot -p123qqq...A
+                                        mysql> select * from db9.a;
+                                        Empty set (0.01 sec)
+
+                                        mysql> insert into db9.a values(100);
+                                        Query OK, 1 row affected (0.05 sec)
+
+                                        mysql> select * from db9.a;
+
+                            测试高可用
+                                停止51mysql 服务
+                                    [root@dba-51 ~]# systemctl stop mysqld.service
+
+                                客户端链接100 访问数据
+                                    [root@52 ~]# ifconfig eth0:1  //查看浮动ip
+                                    inet 192.168.4.100   (52变成新的主数据库服务器)
+
+                                    [root@DBA ~]# mysql -h192.168.4.100 -uyaya55 -p123qqq...A
+                                    mysql> insert into db9.a values(233);
+                                    mysql> select * from db9.a;
+                                    [root@dba57 ~]# cat /etc/mha/app1.cnf
+                                    发现 停掉的 server1 已经在配置文件中删掉了.
+                                    只有server2\3
 
 
 
