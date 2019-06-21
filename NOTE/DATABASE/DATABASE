@@ -1673,7 +1673,7 @@ panglj@tedu.cn
                             异步复制\全同步复制模式\半同步复制模式
 
                        异步:主库执行完一次事物后,立即将结果返回给客户端,并不关心库是否已经接受并处理
-                       全同步:当主库执行玩事物,却所有从库都执行该事物后才将结果返回客户端
+                       全同步:当主库执行完事物,却所有从库都执行该事物后才将结果返回客户端
                        半同步复制: 主库执行完成事物,等待至少一个库接收并写入relay log中才将结果返回客户端
 
                        同步中默认为异步模式
@@ -2180,6 +2180,7 @@ panglj@tedu.cn
                         数据库的自动切换操作在30s内完成
                         MHA能保证在故障切换过程中最大限度保证数据一致性,达到真正的高可用
                         由perl语言开发
+                        依赖主从同步提供高可用
                 MHA组成:
                         MHA Manager(管理节点)
                             管理所有数据库服务器
@@ -2284,7 +2285,7 @@ panglj@tedu.cn
 
                         51 在主机上配置VIP地址
                             [root@dba-51 ~]# ifconfig eth0:1
-                            [root@dba-51 ~]# ifconfig eth0:1 192.168.4.100
+                            [root@dba-51 ~]# ifconfig eth0:1 192.168.4.100 //添加虚拟ip地址 //零时添加
 
 
 
@@ -2388,29 +2389,386 @@ panglj@tedu.cn
                                     发现 停掉的 server1 已经在配置文件中删掉了.
                                     只有server2\3
 
+                            将宕机的数据库服务器添加到集群
+                                检查状态
+                                    在当前数据库主服务器查看 VIP 4.100 是否存在
+                                    在52 53 上检查主从状态
+                                    在mha管理主机57上
+                                        [root@dba57 ~]# masterha_check_status --conf=/etc/mha/app1.cnf  //检查 服务状态
+                                        app1 is stopped(2:NOT_RUNNING).
+                                        [root@dba57 ~]# masterha_check_ssh --conf=/etc/mha/app1.cnf     //检查ssh
+                                        [root@dba57 ~]# masterha_check_repl --conf=/etc/mha/app1.cnf    //检查主从
+                                        [root@dba57 ~]# masterha_manager --conf=/etc/mha/app1.cnf       //启动服务
+
+
+                                同步主库52 的数据到51
+                                    52
+                                      [root@dba52 ~]# mysqldump -uroot -ptarena --master-data -A > db9.a.sql
+                                      [root@dba52 ~]# scp db9.a.sql root@192.168.4.51:/root/
+
+                                    51
+                                      [root@dba-51 ~]#  mysql -uroot -ptarena  < db9.a.sql
+                                      [root@dba-51 ~]# mysql -uroot -ptarena
+                                      [root@dba-51 ~]# vim +22 db9.a.sql
+
+                                      CHANGE MASTER TO MASTER_LOG_FILE='masterdb52.000002', MASTER_LOG_POS=895;
+
+                                      mysql> change master to master_host="192.168.4.51",
+                                        -> master_user="repluser",master_password="123qqq...A",
+                                        -> master_log_file="masterdb52.000002",master_log_pos=895;
+                                      mysql> start slave;
+                                      mysql> show slave status\G
+
+                                添加51 到集群 中
+                                     停止服务
+                                    [root@dba57 ~]# masterha_stop --conf=/etc/mha/app1.cnf
+                                     修改配置文件
+                                    [root@dba57 ~]# vim /etc/mha/app1.cnf
+                                      添加如下
+                                      [server1]
+                                      candidate_master=1
+                                      hostname=192.168.4.51
+                                      port=3306
+                                     检查ssh
+                                    [root@dba57 ~]# masterha_check_ssh --conf=/etc/mha/app1.cnf
+
+                                     检查主从结构
+                                    [root@dba57 ~]# masterha_check_repl --conf=/etc/mha/app1.cnf
+                                     启动服务
+                                    [root@dba57 ~]# masterha_manager --conf=/etc/mha/app1.cnf --remove_dead_master_conf --ignore_last_failover
+                                      app1 (pid:3594) is running(0:PING_OK), master:192.168.4.52
 
 
 
 
+       DAY05 PXC 集群
+                准备三台全新虚拟机 4.71-4.73
+                servername= pxcnode71-73
+                配置 hosts 使之间可以使用 servername ping通
+
+            一.PXC介绍
+                pxc介绍
+                    开源软件
+                    pxc集群由两部分: Percona Server wiht XtraDB 和 WriteSet Replication patches
+                    同步 多主复制插件
+                特点
+                  数据强一致性 无同步延迟
+                  没有主从切换 无需虚拟ip
+                  支持innodb引擎
+                  多线程复制
+                  部署简单
+                  支持节点加入,无需拷贝数据
+                端口:
+                    3306 数据可端口
+                    4444 sst端口
+                    4567 集群成员同学端口
+                    4568 ist端口
+                    sst state snapshot transfer 全增量同步
+                    ist incremental state transfer 增量同步
+            二.配置
+                安装软件
+                    //依赖包
+                    [root@pxcnode71 PXC]# rpm -ivh libev-4.15-1.el6.rf.x86_64.rpm
+                    //安装 在线热备程序
+                    [root@pxcnode71 PXC]# yum -y install percona-xtrabackup-24-2.4.13-1.el7.x86_64.rpm
+                    //安装依赖--按照顺序来   递归压缩程序
+                    [root@pxcnode71 PXC]# rpm -ivh qpress-1.1-14.11.x86_64.rpm
+                    //服务端软件
+                    [root@pxcnode71 PXC]# tar -xvf Percona-XtraDB-Cluster-5.7.25-31.35-r463-el7-x86_64-bundle.tar
+                    //安装集群服务程序
+                    [root@pxcnode71 PXC]# yum -y install Percona-XtraDB-Cluster-*.rpm
+
+                配置文件
+                    [root@pxconde72 PXC]# ls /etc/percona-xtradb-cluster.conf.d/
+
+                        mysqld.cnf  //数据库服务器配置文件
+                        mysqld_safe.cnf //percona server 配置文件
+                        wsrep.cnf       //pXc集群配置文件
+
+                    修改配置文件
+
+                        数据配置配置文件
+
+                        修改mysqld.conf
+
+                        71 72 73 都要改 以 73 为例 将server id修改为主机ip末位
+                        [root@psconde73 PXC]#  vim /etc/percona-xtradb-cluster.conf.d/mysqld.cnf
+                            [client]
+                            socket=/var/lib/mysql/mysql.sock
+
+                            [mysqld]
+                            server-id=73                            //server id 不能重复
+                            datadir=/var/lib/mysql                  //数据库目录
+                            socket=/var/lib/mysql/mysql.sock        //sock文件
+                            log-error=/var/log/mysqld.log           //日志文件
+                            pid-file=/var/run/mysqld/mysqld.pid     //pid文件
+                            log-bin                                 //启动binlog日志
+                            log_slave_updates                       //启动链式复制
+                            expire_logs_days=7                      //日志保存天数
+
+                        修改wsrep.cnf
+                            3 台都要做
+                            [root@psconde73 PXC]# vim /etc/percona-xtradb-cluster.conf.d/wsrep.cnf
+                            修改如下 内容
+                                8  wsrep_cluster_address=gcomm://192.168.4.71,192.168.4.72,192.168.4.73
+                                25 wsrep_node_address=192.168.4.73  //保证与本地IP一致
+                                27 wsrep_cluster_name=pxc-cluster   //设定集群名称 其他两台保持一致
+                                30  wsrep_node_name=pxcnode73       //设置与server name 相同
+                                39 wsrep_sst_auth="sstuser:123456"  // sst同步授权用户
+                    启动服务
+                        只在其中一台操作 以73为例子
+                        [root@pxconde73 ~]# systemctl start mysql@bootstrap.service
+                        查找数据库初始密码
+
+                        [root@pxconde73 ~]# grep pass /var/log/mysqld.log
+                        进入数据库
+                        [root@pxconde73 ~]# mysql -uroot -pQhTHt-W4Sh4h
+                        修改默认密码
+                        mysql> alter user root@"localhost" identified by "123456";
+
+                        添加授权用户
+                        mysql> grant reload,lock tables,replication client,process on *.* to sstuser@"localhost" identified by "123456";
+
+                        在所有的数据库服务器上 检查 PXC 服务是否启动
+
+                        [root@pxcnode71 PXC]# systemctl start mysql //木有d
+                        tcp    LISTEN     0      128       *:4567                  *:*                   users:(("mysqld",pid=1756,fd=11))
+                        [root@pxcnode71 PXC]# ss -antulp | grep 3306
+                        tcp    LISTEN     0      80       :::3306                 :::*                   users:(("mysqld",pid=1756,fd=34))
+
+                    查看集群状态
+
+                        mysql> SHOW STATUS LIKE "%wsrep%";
+
+                        主要关注 :
+
+                                 wsrep_incoming_addresses   //集群成员列表       | 192.168.4.73:3306,192.168.4.71:3306,192.168.4.72:3306
+                                 wsrep_cluster_weight       //集群服务器台数     | 3
+                                 wsrep_cluster_status       //服务器状态      | Primary
+                                 wsrep_connected            //链接状态      | ON
+                                 wsrep_ready                //集群状态      | ON
 
 
+                测试
+                    测试数据插入授权
+
+                        链接任意任意一台数据库
+                        mysql> grant all on gamedb.* to yaya@"%" identified by "123456";
+                        mysql> create table gamedb.a(id int primary key auto_increment,name char(30));
+                        mysql> insert into gamedb.a values(2,"tom*li");   //插入数据
+                        mysql> insert into gamedb.a(name) values("tom*lili"); //不指定id 自加步长为3
+                        mysql> select * from gamedb.a;
+                        +----+----------+
+                        | id | name     |
+                        +----+----------+
+                        |  1 | bob*dc   |
+                        |  2 | tom*li   |
+                        |  5 | tom*wang |
+
+                    测试数据库服务器高可用
+                        停止任意一台数据库服务器,后插入数据,插入完成后重新启动该服务器.再进行检查
+                        [root@pxcnode71 ~]# systemctl stop mysql.service
+                        [root@pxcnode71 ~]# systemctl start mysql.service
+                        [root@pxcnode71 ~]# mysql -uroot -p123456
+                        mysql> select * from gamedb.a;
+
+                        52/53
+
+                        mysql> insert into gamedb.a(name) values("tomcat*wang001");
+                        Query OK, 1 row affected (0.06 sec)
+
+                        mysql> insert into gamedb.a(name) values("tomcat*wang002");
+                        Query OK, 1 row affected (0.04 sec)
+
+                        mysql> insert into gamedb.a(name) values("tomcat*wang003");
+                        Query OK, 1 row affected (0.10 sec)
+
+                        mysql> select * from gamedb.a;
 
 
+            数据库引擎
+
+                存储引擎
+                    作为可插拔的组件提供
+                    mysql服务软件自带的功能,处理表的处理器
+                    不同的存储引擎有不同的功能和数据存储方式
+                    mysql5.6以上默认innodb
+                查看数据库服务器可以使用的存储引擎
+                    mysql> show engines;//查看所有的数据库引擎
+                    | Engine             | Support | Comment                                                        | Transactions | XA   | Savepoints |
+                    +--------------------+---------+----------------------------------------------------------------+--------------+------+------------+
+                    | InnoDB             | DEFAULT | Supports transactions, row-level locking, and foreign keys     | YES          | YES  | YES        |
+
+                是否可以修改数据库服务使用的存储引擎
+
+                    [root@DBA ~]# vim /etc/my.cnf
+                        添加如下
+                        default-storage-engine=myisam //写引擎的名称
+                    [root@DBA ~]# systemctl restart mysqld
+
+                是否可以修改表的存储引擎
+                    创建时指定数据库引擎
+                        mysql> create table db10.b(name char(30))engine=myisam; //创建时指定引擎
+                        Query OK, 0 rows affected (0.05 sec)
+
+                        mysql> show create table db10.b; //查看创建时命令
+                    修改已经存在表的引擎
+
+                        mysql> create table db10.c(name char(10))engine=memory; //指定表引擎
+
+                        mysql> show create table db10.c\G
+                        ` char(10) DEFAULT NULL
+                        ) ENGINE=MEMORY DEFAULT CHARSET=latin1
 
 
+                        mysql> alter table db10.c engine=myisam;  //修改表引擎
+                        Query OK, 0 rows affected (0.05 sec)
+                        Records: 0  Duplicates: 0  Warnings: 0
+
+                        mysql> show create table db10.c\G;   //查看数据库创建信息
+                        (
+                          `name` char(10) DEFAULT NULL
+                        ) ENGINE=MyISAM DEFAULT CHARSET=latin1
 
 
+                常用存储引擎的特点
+                    myisam
+                        特点 支持表级锁
+                            不支持事物 事物回滚 外键
+                        .frm 表结构
+                        .MYI 表索引
+                        .MYD 表数据
+                    innodb
+                        特点 支持行级锁定
+                            支持事物 事物回滚 外键
+                        .frm 表结构
+                        .ibd 表数据
+                        事物日志文件  //只有innodb才支持
+                           事物:一次访问数据库的开始到断开数据库链接,表示一次事物
+                           当执行一个操作时,失败后可根据事物日志恢复.
+                        ibdata1
+                        ib_logfile0
+                        ib_logfile1
+
+                    nysql锁机制
+
+                        目的:解决并发访问冲突
+
+                        颗粒度:
+                            表级锁: 对整张表加锁
+                            行级锁: 仅对被访问的行提供加锁
+                        锁类型
+                            读锁(共享锁):支持并发
+                            写锁(互斥锁):是独占锁上锁期间其他线程不能读表\写表
+                        查看当前锁状态
+                            show status like "table_lock";
+                            +-----------------------------------------+-------+
+                            | Variable_name                           | Value |
+                            +-----------------------------------------+-------+
+                            | Performance_schema_table_lock_stat_lost | 0     |
+                            | Table_locks_immediate                   | 100   |
+                            | Table_locks_waited                      | 0     |  //锁等待
+                            +-----------------------------------------+-------+
+
+                    事物特性(ACID)
+                        Atomic :原子性
+                            事物的整个操作是一个整体,不可分割,要么全成功要么全失败
+                        Consistency :一致性
+                            事物操作前后,表中记录没有变化
+                        Isolation :隔离性
+                            事物操作是互相隔离不受印象的
+                        Durability :持久性
+                            一旦数据提交,不可改变,永久改变数据
+
+                        一致性测试
+
+                            开启新终端
+                                 关闭autocommit 测试一致性
+
+                                mysql> show variables like "autocommit";
+
+                                | autocommit    | ON    |
+
+                                mysql> set autocommit=off;  //暂时关闭autocommit
+                                Query OK, 0 rows affected (0.00 sec)
+
+                                mysql> show variables like "autocommit";
+
+                                | autocommit    | OFF   |
+                                //创建innodb的表之前将 默认引擎修改称为 myism
+                                mysql> create table db10.a4(name int)engine=innodb;
+                                //插入数据
+                                mysql> insert into db10.a4 values(10010);
+                            在另一个终端中查看
+                                mysql> select * from db10.a4;
+                                Empty set (0.00 sec)
+                                //在关闭autocommit的终端中
+                                mysql> commit;
+                                Query OK, 0 rows affected (0.07 sec)
+                            在另一个终端中查看
+                                mysql> select * from db10.a4;
+                                +-------+
+                                | name  |
+                                +-------+
+                                | 10010 |
+                                +-------+
+                        事务性测试
+                            在关闭autocommit的终端中
+                            //插入
+                                mysql> insert into db10.a4 values(10086);
+                                Query OK, 1 row affected (0.00 sec)
+
+                                mysql> insert into db10.a4 values(1008611);
+                                Query OK, 1 row affected (0.00 sec)
+                                mysql> select * from db10.a4;
+                                +---------+
+                                | name    |
+                                +---------+
+                                |   10010 |
+                                |   10086 |
+                                | 1008611 |
+                                +---------+
+                                mysql> delete from db10.a4;
+                                Query OK, 3 rows affected (0.00 sec)
 
 
+                            //删除
+                                mysql> select * from db10.a4;
+                                Empty set (0.00 sec)
+
+                                mysql> rollback;
+                                Query OK, 0 rows affected (0.03 sec)
+                            //回滚到所有操作之前(commit为界限)
+
+                                mysql> select * from db10.a4;
+                                +-------+
+                                | name  |
+                                +-------+
+                                | 10010 |
+                                +-------+
+                                1 row in set (0.00 sec)
+                                mysql> commit;
+                            在开机autocommit的终端中数据没有变化
+                                mysql> select * from db10.a4;
+                                +-------+
+                                | name  |
+                                +-------+
+                                | 10010 |
+                                +-------+
 
 
+                建表时如何决定表使用的存储引擎
 
+                    查询操作多的表推荐使用,myisam存储引擎,节省性能
+                        读锁 (表级锁)
+                        select *  from a1;
+                        select * from a1 where id<=3;
 
-
-
-
-
-
+                    写操作多的表推荐使用,innodb存储引擎,并发访问量大.
+                        行级锁:只给访问的行分别加锁
+                        同时操作
+                        pc1  update a1 set age=19 where id<=3;
+                        pc2  update a1 set age=21 where id>3;
 
 
 

@@ -54,6 +54,22 @@ bin       boot      dev      etc     home     root      run      sbin      tmp  
 绿色:可以执行的文件 
 青色:文件
 
+man 外部命令
+help 内部命令
+命令一般分为内部命令和外部命令
+
+内部命令: 集成在shell 中,根据shell种类不同所以 内部命令有时候也不同
+enable 查看内部命令
+enable -n 命令 //关闭内部命令
+
+
+外部命令: 额外安装的命令,一般可以找到对应的 文件
+
+hash
+系统初始hash表我空 ,执行外部命令时会将命令读取到hash表中,
+通过shell执行外部命令时会首先查找hash表中,若表中没有则根据path查找.
+可以大大提高外部命令的执行速度.
+
 Linux中表示上一级目录
 cd ..
 相当于Windows中的   后退 返回上一级
