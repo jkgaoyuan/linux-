@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+##依然有优化空间,是指可以在ssh中运行,可提高效率
     echo "安装LNMP并设置默认开机自启;;;"
     read -p "若要继续请输入1  " yes
 if [ -z $yes ]; then
