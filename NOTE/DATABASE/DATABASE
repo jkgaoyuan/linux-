@@ -2771,6 +2771,249 @@ panglj@tedu.cn
                         pc2  update a1 set age=21 where id>3;
 
 
+       DAY06 redis
+            部署redis服务器
+
+                相关概念
+                    RDBMS 关系型数据库
+
+                    Nosql 非关系型数据库
+
+                    数据库类型
+                                    关系型 relation database management system
+                                        按照预先设置的组织结构,将数据存储在物理介质上
+                                        eg:mysql db2 oracle sql server Mariadb
+
+                                    非关系型 not only sql
+                                         泛指非关系型数据库
+                                         不需要预先定义数据存储类型 (不需要先建表)
+                                         每条记录可以有不同的数据类型和字段个数
+                                         eg: memcached mongdb redis
+
+                介绍redis
+                        remote dictionary server (远程字典服务器)
+                        高性能的(key/values)分布式内存数据库 //分部署
+                        支持数据持久化(定期将内存中数据存储到硬盘中) //持久化
+                        支持多种数据类型 string list hash
+                        支持主从(maser/slave)模式数据备份
+
+                安装
+
+                      338  rpm -q gcc
+                      339  yum -y install gcc
+                      340  tar -zxvf
+                      341  tar -zxvf  redis-4.0.8.tar.gz
+                      342  ls
+                      343  cd redis-4.0.8/
+                      344  make && make install
+
+                初始化
+                    ./utils/insert_server.sh
+                                       一路回车使用默认,若要修改则可以输入
+                                       安装完成后需要修改的话,修改主配置文件
+                      端口6379
+                      主配置文件 /etc/redis/6379.conf
+                      日志问价  /var/log/redis_6379.log
+                      数据库主目录 /var/lib/redis/6379
+                      服务启动程序 /usr/local/bin/redis-server
+                      命令行链接程序 /usr/local/bin/redis-cli
+                      启动脚本      /etc/init.d/redis_6354  stop start //修改密码后无法使用,如果不修改该文件
+                redis 管理
+
+                        ss -ntulp |grep 6379
+                            tcp    LISTEN     0      128    127.0.0.1:6379             //默认只能本机链接
+                        ps -C redis-server
+                        /etc/init.d/redis_6379 stop  //停止服务
+                        /etc/init.d/redis_6379 start //启动
+
+                        //进入数据库,插入数据
+
+                        [root@DBA ~]# redis-cli
+                        127.0.0.1:6379> keys *   //查看所有变量
+                        (empty list or set)
+                        127.0.0.1:6379> set sechool tarena //插入数据
+                        OK
+                        127.0.0.1:6379> keys *
+                        1) "sechool"
+                        127.0.0.1:6379> get sechool    //读取数据
+                        "tarena"
+
+                        [root@DBA ~]# ls /var/lib/redis/6379/ //数据库数据
+                        dump.rdb
+                常用命令
+                        set keyname keyvalue //存储一个key值
+                        mset                 //存储多个key值
+                        get keyname          //获取多个key值
+                        mget                 //获取多个key值
+                        select 数据库编号(0-15,默认只有16个库) //切换库
+                        keys    *            //显示所有key名
+                        keys a?              //显示指定key名  //显示以a开头且只有两位的key
+                        exists  keyname      //测试key名是否存在
+                                    127.0.0.1:6379> EXISTS ch
+                                    (integer) 1 //表示存在
+
+
+                        ttl keyname          //查看key生存时间
+                                           127.0.0.1:6379> ttl li
+                                            (integer) -1 //表示永久存在
+
+
+                        type keyname         //查看key 类型
+
+                        move keyname dbname  //移动key到指定库
+                                            127.0.0.1:6379> MOVE ch 1
+                                            (integer) 1
+
+                        expire keyname 10    //设置key有效时间
+                                            127.0.0.1:6379> EXPIRE li 30 (秒)                                            (integer) 1
+                                            127.0.0.1:6379> ttl li
+                                            (integer) -2 //已过期
+
+
+                        del keyname          //删除指定key
+                                            127.0.0.1:6379> del ch
+                                            (integer) 1
+
+                        flishall             //删除所有内存中的key
+                                            127.0.0.1:6379> FLUSHALL
+                                            OK
+                                            127.0.0.1:6379> keys *
+                                            (empty list or set)
+
+                        flushdb              //删除所在库中的所有key
+                                            127.0.0.1:6379[1]> keys *
+                                            1) "ch"
+                                            2) "li"
+                                            127.0.0.1:6379[1]> FLUSHDB
+                                            OK
+                                            127.0.0.1:6379[1]> keys *
+                                            (empty list or set)
+
+                        save                 //保存所有key到硬盘
+
+                        shutdown             //停止服务
+
+                配置文件分析
+                        /etc/redis/6379.conf
+                        配置分类
+
+
+                            常用配置
+
+
+                        内存管理
+                            内初清除策略
+                                volatile-lru        //最近最少使用(针对设置了ttl的key)
+                                allkeys-lru         //删除最少使用的key(针对所有的key)
+                                volatile-lfu        //从所有的key中删除使用最少的key
+                                allkeys-lfu         //从所有配置过期时间的key(中清除)删除最少使用的key
+                                volatile-random     //在设置了ttl的key里随机删除
+                                allkeys-random      //随即删除key
+                                volatile-ttl        //删除最近过期的key
+                                noeviation          // 不删除,写满是报错 (默认)
+                            优化设置
+                                maxmemory           //最大内存  默认使用机器剩余全部内存
+                                maxmemory-policy    //定义使用策略
+                                maxmemory-samples   //选取key模板的个数 (针对lru和ttl 策略)
+                        链接密码
+                            设置密码 ip地址 端口
+                                [root@DBA ~]# vim /etc/redis/6379.conf
+                                    503 requirepass 123456
+                                    70  bind 192.168.4.50
+                                    93  port 6350
+                                [root@DBA ~]# /etc/init.d/redis_6379 stop
+                                    Stopping ...
+                                    Redis stopped
+                                [root@DBA ~]# /etc/init.d/redis_6379 start
+                                //只修改服务密码
+                                [root@DBA ~]# redis-cli
+                                127.0.0.1:6379> keys *
+                                (error) NOAUTH Authentication required.
+                                 127.0.0.1:6379> AUTH 123456
+                                OK
+                                127.0.0.1:6379> keys *
+                                1) "dc"
+                                //密码\端口\ip都修改
+                                [root@DBA ~]# redis-cli -h 192.168.4.50 -p 6350 -a 123456
+                                192.168.4.50:6350> keys *
+                                1) "dc"
+
+                        修改密码\端口\IP地址
+                        后无法使用   /etc/init.d/redis_6379 stop  停止服务
+                        只能在命令行中使用 shutdown 停止,开启不受到密码影响
+                                [root@DBA ~]# redis-cli
+                                127.0.0.1:6379> AUTH 123456
+                                OK
+                                127.0.0.1:6379> SHUTDOWN
+                                修改脚本使的脚本能够重新停止服务
+                                [root@DBA ~]# vim +43 /etc/init.d/redis_6379
+                                $CLIEXEC -h 192.168.4.50 -p 6350 -a 123456 shutdown
+                                [root@DBA ~]# /etc/init.d/redis_6379 stop
+                                Stopping ...
+                                Redis stopped
+
+
+
+            部署lnmp+redis
+
+                部署lnmp
+                    安装nginx
+                         yum -y install gcc pcre-devel zlib-devel
+                         cd lnmp/
+                         tar -xf nginx-1.12.2.tar.gz
+                         cd nginx-1.12.2/
+                          ./configure
+                          make && make install
+
+                    安装php-fpm,启动fpm,查看9000端口
+                         yum -y install php-fpm
+                         systemctl restart php-fpm.service
+                          ss -antulp | grep fpm
+                    修改nginx服务配置文件
+                        vim +65 /usr/local/nginx/conf/nginx.conf
+                        location ~ \.php$ {
+                        root           html;
+                        fastcgi_pass   127.0.0.1:9000;
+                        fastcgi_index  index.php;
+                        fastcgi_param  SCRIPT_FILENAME  /scripts$fastcgi_script_name;
+                        include        fastcgi.conf;
+                                 }
+                    编写php测试网页,访问测试
+                         vim /usr/local/nginx/html/test.php
+                            <?php
+                            echo "nihao\n"
+                            ?>
+                         curl http://localhost/test.php
+
+                    配置支持redis
+                         yum -y install php php-devel  autoconf automake
+                         tar -xf php-redis-2.2.4.tar.gz
+                         cd phpredis-2.2.4/
+                         phpize //生成php-configure以及configure命令
+                         ./configure --with-php-config=/usr/bin/php-config
+                         make
+                         make install
+
+                         vim +728 /etc/php.ini
+                             728 extension_dir = "/usr/lib64/php/modules/"
+                             730 extension = "redis.so"
+                         systemctl restart php-fpm.service
+                         php -m |grep -i redis
+                            redis
+
+                         cp linkredis.php /usr/local/nginx/html/
+
+                         将配置文件修改如下
+                         vim /usr/local/nginx/html/linkredis.php
+                            <?php
+                            $redis = new redis();
+                            $redis->connect('192.168.4.50',6350);
+                            $redis->auth("123456");               //若redis 没有密码则可以不用写
+                            $redis->set('redistest','666666');
+                            echo $redis->get('redistest');
+                            ?>
+                            访问测试
+                         curl http://localhost/linkredis.php
 
 
 

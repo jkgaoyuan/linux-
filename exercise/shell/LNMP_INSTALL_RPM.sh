@@ -20,7 +20,7 @@ if [ -z $yes ]; then
         yum -y install php php-mysql
 
         #systemctl start httpd
-        systemctl enable httpd
+        #systemctl enable httpd
         systemctl start mariadb
         systemctl enable mariadb
         /usr/local/nginx/sbin/nginx
