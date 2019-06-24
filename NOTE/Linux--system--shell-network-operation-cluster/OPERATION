@@ -3345,3 +3345,7 @@
                     测试删除功能
                     [root@client ~]# s3cmd del s3://my_bucket/log/message
 
+
+
+
+
