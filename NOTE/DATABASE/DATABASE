@@ -2874,7 +2874,7 @@ panglj@tedu.cn
                                             127.0.0.1:6379> del ch
                                             (integer) 1
 
-                        flishall             //删除所有内存中的key
+                        flushall             //删除所有内存中的key
                                             127.0.0.1:6379> FLUSHALL
                                             OK
                                             127.0.0.1:6379> keys *
@@ -3284,6 +3284,301 @@ panglj@tedu.cn
                                 192.168.4.52:6352 (7eb70abf...) -> 2 keys | 4096 slots | 1 slaves.
                                 192.168.4.53:6353 (4128c44b...) -> 2 keys | 4096 slots | 1 slaves.
 
+
+       DAY08  主从复制
+                概述:
+                    主从结构
+                        一主一从 一主多从 主从从
+                        redis配置好后默认为主,我们只需要配置从库就好
+                    原理
+                        slave向master请求 sync命令
+                        master启动后台存盘进程,收集所有修改数据命令
+                        master完成存盘后,传输整个数据文件到slave
+                        slave接受数据文件,加载到内存完成首次同步
+                        后续有新数据产生,master继续收集数据修改命令传递给slave,完成同步
+
+                配置主从复制
+
+                    配置一主一从
+                            查看主信息
+                            ~]# redis-cli -h 192.168.4.51 -p 6351
+                                192.168.4.51:6351> INFO replication
+                                # Replication
+                                role:master
+                        配置从库
+                             ~]# redis-cli -h 192.168.4.52 -p 6352
+                                192.168.4.52:6352> SLAVEOF 192.168.4.52 6351  //零时配置重启失效
+                                OK
+                                192.168.4.52:6352> info replication
+                                # Replication
+                                role:slave
+                                master_host:192.168.4.52
+                                master_port:6351
+                                修改配置文件永久配置
+                             52 ~]# vim +282 /etc/redis/6352.conf
+                                slaveof 192.168.4.51 6351
+
+                        如何删除从库配置
+                            删除配置文件282行内容,重启服务/在cli下 slaveof no one(零时,不删除配置文件)
+
+
+
+                        带验证的主从复制
+                            接上面实验
+                            51 修改配置文件添加密码重启服务
+
+                                vim +501 /etc/redis/6351.conf
+                                    requirepass 123456
+                                /etc/init.d/redis_6351 stop
+                                /etc/init.d/redis_6351 start
+                            52
+                                 vim +289 /etc/redis/6352.conf
+                                 vim +282 /etc/redis/6352.conf
+                                    masterauth 123456
+                                    slaveof 192.168.4.51 6351
+                                 /etc/init.d/redis_6352 stop
+                                 /etc/init.d/redis_6352 start
+                    配置主从从
+
+                        接上面实验
+
+                            54 作为53的从
+                                 vim +282 /etc/redis/6354.conf
+                                    slaveof 192.168.4.53 6353
+                                    289 由于53 没设置密码 不需要填写
+                                 ~]# /etc/init.d/redis_6354 stop
+                                    Stopping ...
+                                    Redis stopped
+                                [root@redisD-54 ~]# /etc/init.d/redis_6354 start
+                                    Starting Redis server...
+                                [root@redisD-54 ~]# redis-cli -h 192.168.4.54 -p 6354
+                                    192.168.4.54:6354> INFO replication
+                                    # Replication
+                                    role:slave
+                                    master_host:192.168.4.53
+
+
+                哨兵服务
+
+                    在不开启redis集群时,使得redis具有高可用.
+                    即当主51 down 哨兵在其从库52 53 中选择新的主
+
+                    原理:
+                        监视master服务器
+                        发现masterdown后将从库升级为主库
+                        主配置文件 sentinel.conf
+                        模板文件 redis-4.0.8/sentinel.conf
+
+                    55 上配置哨兵服务
+                        vim /etc/sentinel.conf
+                            sentinel monitor server51 192.168.4.51 6351 1   //
+                                             主机名     ip        服务端口 票属(多少台sentinel发现主down后切换主库,这里只有一台1)
+                            bind 0.0.0.0
+                            sentinel auth-pass server51  123456
+
+                        redis-sentinel /etc/sentinel.conf  //启动哨兵服务
+
+                        51
+                        192.168.4.51:6351> SHUTDOWN
+                        not connected>
+
+                        55
+                        +switch-master server51 192.168.4.51 6351 192.168.4.52 6352
+
+
+
+
+
+                持久化
+
+                    RDB
+                        redis数据库文件 数据持久化方式之一
+                        按照指定时间间隔,将内存中的数据集快照写入硬盘
+                        恢复时将快照(Snapshot)直接读到内存
+
+
+
+                    将58 59 恢复为独立服务器(按照上面方法)
+                        [root@redis-G58 ~]# redis-cli -h 192.168.4.58 -p 6358
+                            192.168.4.58:6358>
+                            192.168.4.58:6358> keys *
+                            (empty list or set)
+                            192.168.4.58:6358> set a 123
+                            OK
+                            192.168.4.58:6358> set b
+                            (error) ERR wrong number of arguments for 'set' command
+                            192.168.4.58:6358> set b 256
+                            OK
+                            192.168.4.58:6358> set d dsfs
+                            OK
+                            192.168.4.58:6358> set jk 54adfs
+                            OK
+                            192.168.4.58:6358> SAVE
+                            OK
+
+                    使用RDB进行数据恢复
+
+                        59  导出数据
+                        [root@redis-G58 ~]# cp /var/lib/redis/6358/dump.rdb ./
+                        [root@redis-G58 ~]# scp dump.rdb root@192.168.4.59:/root/
+
+                        58 导入数据
+                         /etc/init.d/redis_6359 stop
+                            Stopping ...
+                            Redis stopped
+                        [root@redis-H59 ~]# cp ./dump.rdb /var/lib/redis/6359/
+                            cp：是否覆盖"/var/lib/redis/6359/dump.rdb"？ yes
+                        [root@redis-H59 ~]# /etc/init.d/redis_6359 start
+                            Starting Redis server...
+                        [root@redis-H59 ~]# redis-cli -h 192.168.4.59 -p 6359
+                            192.168.4.59:6359> KEYS *
+
+
+
+                RDB优缺点
+                    优点
+                        高性能的持久化实现
+
+                        适合大规模的数据恢复,适合与数据完整性要求不是特别高的场合
+                    缺点:
+
+                        宕机时丢失最后一次持久化的所有数据
+
+
+
+                AOF介绍
+                    append only file
+
+                        追加方式记录写操作的文件
+                        记录redis服务的所有写操作
+                        默认不启用
+                        可以cat查看
+                        不断将新的写操作追加写入到文件末尾
+
+                    AOF优缺点
+                        优点:
+                            可以灵活设置持久化方式
+                            宕机仅仅丢书1 秒的数据
+                        缺点:
+                            持久化文件体积通常大于rdb方式
+                            执行fsync策略时速度会比较慢和rdb相比
+
+                    启动AOF
+
+                       58:6358> config set appendonly yes
+                       58:6358> CONFIG rewrite
+
+                       ls /var/lib/redis/6358/
+                        appendonly.aof  dump.rdb
+
+                    使用AOF文件恢复数据
+
+                        58 备份aof
+                        ~]# cp /var/lib/redis/6358/appendonly.aof ./
+                        ~]# scp appendonly.aof root@192.168.4.59:/root/
+                        59 启动aof
+                        ~]# redis-cli -h 192.168.4.59 -p 6359
+                            59:6359> CONFIG SET appendonly yes
+                        OK
+                            192.168.4.59:6359> CONFIG REWRITE
+                        ~]# /etc/init.d/redis_6359 stop
+                        ~]# cp appendonly.aof /var/lib/redis/6359/
+                        ~]# /etc/init.d/redis_6359 start
+                        ~]# redis-cli -h 192.168.4.59 -p 6359
+                            192.168.4.59:6359> keys *
+
+                        修复aof文件
+                        将文件恢复到最后一次正确操作
+                        redis-check-aof --fix /var/lib/redis/6358/appendonly.aof
+
+
+                字符类型
+
+                    string
+
+                        > set f 18092184237
+                        OK
+                        192.168.4.58:6358> get f
+                        "18092184237"
+                        192.168.4.58:6358> SETRANGE f 4 ***  //替换从第4位,将第四位之后的三个字符替换为***
+                        (integer) 11
+                        192.168.4.58:6358> get f
+                        "1809***4237"
+
+                        get x
+                        "8888"
+                        > APPEND x 88   //追加
+                        (integer) 6
+                        192.168.4.58:6358> get x
+                        "888888"
+
+                        192.168.4.58:6358> setbit  bao 1 0
+
+                            ............
+
+                        192.168.4.58:6358> setbit  bao 8 1
+                        (integer) 0
+
+                        192.168.4.58:6358> BITCOUNT bao   //统计字符串中1的数量
+                        (integer) 8
+
+
+
+                        DECR x    // 变量自减 ,变量不存在会先将变量设定为0再自减1
+                        (integer) 888887
+                        DECRBY x 5 //自检步长为 5  ,不存在同上.
+                        (integer) 888872
+
+                        > SET a abcdefg
+                        GETRANGE a 0 3   //取得部分数据
+                        "abcd"
+
+                        > GETRANGE a -2 -1
+                        "fg"
+
+                        > get x
+                        "3"
+                        192.168.4.58:6358> INCRBY x 3  //自加 步长为3
+                        (integer) 6
+                        192.168.4.58:6358> get x
+                        "6"
+                        > INCRBYFLOAT x 0.5    //自加 浮点型自加
+                        "6.5
+
+                    list 列表类型
+
+                        字符队列
+                        先进后出
+                        一个key有多个数值
+
+                        > LPUSH mstu bobo tom jim taena lucy  // 创建表插入数据
+                        > LRANGE mstu 0 3
+                        1) "lucy"
+                        2) "taena"
+                        3) "jim"
+                        > LPUSH mstu jack mack  //追加插入
+                        > LRANGE mstu 0 9
+                        1) "mack"
+                        2) "jack"
+                        3) "lucy"
+
+                        > LPOP mstu  // 移除表头数据 key不存在返回null
+                        "mack"
+                        > LINDEX mstu 0 //输出指定位置数据
+                        "jim"
+
+                        > LSET mstu 2 baba //将mstu的第三个数据修改为 baba
+                        OK
+
+                        > RPUSH  mstu tttt   //在末尾添加数值
+                        > RPOP mstu          //从表尾开始删除
+
+                    hash 表
+
+                        > hmset boot boookname xxx worker yy money 21 fx rmcbs  //创建hash表
+                        > hmget  boot boookname worker          //查看hash表
+                        1) "xxx"
+                        2) "yy"
 
 
 

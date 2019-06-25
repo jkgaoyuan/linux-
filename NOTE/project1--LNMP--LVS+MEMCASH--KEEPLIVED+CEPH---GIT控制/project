@@ -84,6 +84,7 @@ LNMP
                         、php-fpm（进程管理器服务）、php-mysql（PHP的数据库扩展包）
 
 
+                            yum -y install gcc automake autoconf libtool make
                             [root@centos7 ~]# yum -y install gcc openssl-devel pcre-devel
                             [root@centos7 ~]# useradd -s /sbin/nologin  nginx
                             [root@centos7 ~]# tar -xvf nginx-1.12.2.tar.gz
@@ -105,7 +106,6 @@ LNMP
                             [root@centos7 ~]# ss -utnlp | grep :80                        #查看端口信息
                             [root@centos7 ~]# systemctl start   mariadb                   #启动mariadb服务器
                             [root@centos7 ~]# systemctl enable  mariadb
-
                             [root@centos7 ~]# systemctl start  php-fpm                   #启动php-fpm服务
                             [root@centos7 ~]# systemctl enable php-fpm
                         3）修改Nginx配置文件，实现动静分离
@@ -144,6 +144,7 @@ LNMP
                             [root@centos7 wordpress]# tar -xf wordpress-5.0.3-zh_CN.tar.gz
                             [root@centos7 wordpress]# cp -r  wordpress/*  /usr/local/nginx/html/
                             [root@centos7 wordpress]# chown -R apache.apache  /usr/local/nginx/html/
+                             //我们应当保证php-fpm用户与 /nginx/html/的属主属组一致,才能确保WordPress各个插件能够正常升级
                             提示：动态网站运行过程中，php脚本需要对网站目录有读写权限，而php-fpm默认启动用户为apache。
                         2)初始化网站配置（使用客户端访问web服务器IP）
                             [root@client ~]# firefox http://192.168.2.11/
