@@ -205,7 +205,7 @@ panglj@tedu.cn
                         7)drop database 库名; 删除库
                     表管理命令
                         1)select * from 库名.表名;
-                        2)insert into 库名.表名;
+                        2)insert into 库名.表名 values(xxx);
                         3)update 库名.表名 set 字段=值;
                         4)delete from 库名.表名;  删除表单中的所有数据,但不删除表
                         5)create table 库名.表名;
@@ -307,7 +307,7 @@ panglj@tedu.cn
                                  额外设置 extra
                                 mysql>create tabledb1.t7;
                                 ->name char(10) not null,
-                                ->age tinyint unsighted default 19
+                                ->age tinyint unsignted default 19  //无符号整型(没有负数)
                                 ->class char(7) not null default "nsd1903"
                                 ->pay float(7,2) default 28000
                                 #######float共7位 两位小数
@@ -364,10 +364,10 @@ panglj@tedu.cn
                                     新字段默认添加在地段的末尾, 添加 first 后可添加至行首 after xxx 在xxx后添加
                                     alter table db1.t10
                                     add
-                                    name char(15)frist;
+                                    name char(15) frist;
 
                                     alter table db1.t10
-                                    add age tinyint unsighted not null default 19 after name ;
+                                    add age tinyint unsignted not null default 19 after name ;
 
 
                             drop   删除已有字段
@@ -392,7 +392,7 @@ panglj@tedu.cn
                                         Query OK, 2 rows affected (0.73 sec)
                                         Records: 2  Duplicates: 0  Warnings: 0
 
-                                    mysql> desc db1.t10 ;
+                                    mysql> desc db1.t10 ;alter
                                         +-------+--------------------------------+------+-----+---------+-------+
                                         | Field | Type                           | Null | Key | Default | Extra |
                                         +-------+--------------------------------+------+-----+---------+-------+
@@ -1454,6 +1454,7 @@ panglj@tedu.cn
 
    进阶
        DAY06
+            max-connections MySQL服务的最大并发连接数
 
             mysql 主从同步
                 什么是: 实现数据自动同步
@@ -3545,6 +3546,23 @@ panglj@tedu.cn
                         > INCRBYFLOAT x 0.5    //自加 浮点型自加
                         "6.5
 
+                    string 总结
+                        set
+                        mset key value [key value ...]          设置多个key值,空格分割,具有原子型
+                        setrange
+                        get key                                 返回的key中存储的字符串值,若key不存在则返回null
+                        mget key [key]                          获取一个或多个key值
+                        getrange key start stop                 返回字符串值中的字符串,截取范围为start和stop
+                        strlen key                              统计 字符串长度
+                        append key value                        存在则追加,不存在则创建key以及value,返回key长度
+                        setbit key offset value                 对key所存储字符串,设置或清除指定位置的value,key不存在则创建
+                        bitcount key                            统计字符串被设为1的比特位数量
+                        decr    key                             将key中的值减1 key不存在则设置为0再减1
+                        decrby  key decrement                   将key中的值,减去decrease
+                        incr key                                将key的值增加1,如果key不存在,则初始为0后在加1
+                        incrby  key increment                   将key的值增加increment
+                        incrbyfloat key increment               为key中所储存的值增加浮点数量
+
                     list 列表类型
 
                         字符队列
@@ -3581,7 +3599,16 @@ panglj@tedu.cn
                         2) "yy"
 
 
+                    list 操作总结
 
+                    lpush  key value [value]                将一个或多个value插入到 key不存在则创建爱你 key中
+                    llen   key                              返回列表key长度
+                    lrange key start stop                   从开始位置读取key值到stop结束
+                    lpop   key                              移除并返回表头元素数据,key不存在则返回nil
+                    lindex key index                        返回表中第index个值
+                    lset   key index value                  将key中index位置的值修改为value
+                    rpop   key                              删除并返回key末尾的值
+                    rpush  key value                        将数值 添加到key的末尾
 
 
 
