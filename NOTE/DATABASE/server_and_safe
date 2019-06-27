@@ -1,0 +1,162 @@
+
+监控和服务安全
+    DAY01  监控
+            准备三台服务器 2.5 2.100 2.200
+       监控的目的
+            报告系统运行状态
+       监控的资源类别
+            公开数据(有服务)
+                web ftp ssh 数据库等应用服务
+                tcp或udp
+            私有数据(无法通过端口访问的)
+                cpu 内存 磁盘 网络
+                用户 进程等运行信息
+       监控软件
+            Zabbix 简介
+                高度集成的监控解决方案
+                实现企业级的开源开源分布式监控
+                通过c/s模式采集监控数据
+                通过b/s模式实现web管理
+
+            监控拓扑
+                监控主机
+                    监控服务器通过snmp或者agent采集数据
+                    数据可以写入mysql oracle等数据库
+                    服务器使用lnmp下实现web的前端管理
+                被监控主机
+                    安装agent
+                    常见的网络设备支持snmp协议
+
+
+            安装
+                监控主机
+
+                    安装lnmp
+
+                        vim +65 /usr/local/nginx/conf/nginx.conf 动静分类启动fpm后
+                            额外添加如下需要写在http下任意地方 不可以写到其他 地方比如location中
+                            fastcgi_buffers 8 16k;                      //缓存php生成的页面内容，8个16k
+                            fastcgi_buffer_size 32k;                      //缓存php生产的头部信息
+                            fastcgi_connect_timeout 300;                 //连接PHP的超时时间
+                            fastcgi_send_timeout 300;                     //发送请求的超时时间
+                            fastcgi_read_timeout 300;                        //读取请求的超时时间
+                        systemctl restart php-fpm
+                        systemctl restart mariadb
+                        /usr/local/nginx/sbin/nginx
+                        vim /usr/local/nginx/html/info.php  //测试网页
+                            <?php
+                            phpinfo();
+                            ?>
+                    安装 zabbix
+                        [root@zabbixserver lnmp_soft]# yum -y install  net-snmp-devel \
+                        > curl-devel
+                        //安装相关依赖包
+                        [root@zabbixserver lnmp_soft]# yum -y install  \
+                        > libevent-devel-2.0.21-4.el7.x86_64.rpm
+                        //注意libevent-devel这个软件包在lnmp_soft目录下有提供
+                        [root@zabbixserver lnmp_soft]# tar -xf zabbix-3.4.4.tar.gz
+                        [root@zabbixserver lnmp_soft]# cd zabbix-3.4.4/
+                        [root@zabbixserver zabbix-3.4.4]# ./configure  --enable-server \
+                        > --enable-proxy --enable-agent --with-mysql=/usr/bin/mysql_config \
+                        > --with-net-snmp --with-libcurl
+                        // --enable-server安装部署zabbix服务器端软件
+                        // --enable-agent安装部署zabbix被监控端软件
+                        // --enable-proxy安装部署zabbix代理相关软件
+                        // --with-mysql配置mysql_config路径
+                        // --with-net-snmp允许zabbix通过snmp协议监控其他设备
+                        // --with-libcurl安装相关curl库文件，这样zabbix就可以通过curl连接http等服务，测试被监控主机服务的状态
+                        [root@zabbixserver zabbix-3.4.4]# make && make install
+
+
+
+                    配置文件默认在 /usr/local/etc/
+                    启动命令      /usr/local/sbin/
+                    程序         /usr/local/bin/
+
+                    初始化
+                        真机
+                            Firefox http://192.168.2.5/setup.php
+
+                        2.5
+                            安装必须的依赖包
+
+                            yum -y install php-bcmath.x86_64 php-mbstring.x86_64
+                            yum -y install php-gd php-xml
+
+                            修改vim /etc/php.ini
+                                date.timezone = Asia/Shanghai
+                                post_max_size = 16M
+                                max_execution_time = 300
+                                max_input_time = 300
+                            systemctl restart php-fpm.service
+
+                            Firefox http://192.168.2.5/setup.php
+                                数据库类型选择对应的
+                                数据库用户 zabbix
+                                数据库密码 zabbix
+                                数据库服务器 localhost
+
+                                192.168.2.5
+                                登录用户 admin
+                                登录用户密码 zabbix
+
+                            修改配置文件 zabbix 启动服务
+                                监控主机
+
+                                vim /usr/local/etc/zabbix_server.conf
+
+                                38 LogFile=/tmp/zabbix_server.log
+                                85 DBHost=localhost
+                                95 DBName=zabbix
+                                111 DBUser=zabbix
+                                119 DBPassword=zabbix
+
+                                由于源码安装未指定用户
+
+                                useradd zabbix
+                                zabbix_server
+                                ss -antulp | grep 10051
+
+                            安装zabbix
+
+                                被监控主机
+
+                                      217  useradd -s /sbin/nologin zabbix
+                                      218  yum -y install gcc pcre-devel
+
+                                      220  yum -y install gcc pcre-devel
+                                      221  ls
+                                      222  tar -xf  zabbix-3.4.4.tar.gz
+                                      223  cd zabbix-3.4.4/
+                                      226  ./configure --enable-agent
+                                      227  make && make install
+
+                                      vim /usr/local/etc/zabbix_agentd.conf
+                                          134 ServerActive=192.168.2.5:10051
+                                          93  Server=127.0.0.1,192.168.2.5
+                                          30  LogFile=/tmp/zabbix_agentd.log
+                                      zabbix_agentd //启动agent服务
+                                      ss -antulp |grep 10050
+
+            自定义监控
+                配置客户端
+
+                    启动自定义监控
+                        vim /usr/local/etc/zabbix_agentd.conf
+                            264 Include=/usr/local/etc/zabbix_agentd.conf.d/
+                             280 UnsafeUserParameters=1
+
+                    定义监控命令
+                         vim /usr/local/etc/zabbix_agentd.conf.d/user.number
+                            UserParameter=user.number,wc -l /etc/passwd | awk ' {print $1} '
+                    重启服务
+                         killall -9 zabbix_agentd
+                         zabbix_agentd
+                    本机测试
+                        zabbix_get -s 127.0.0.1 -p 10050 -k user.number
+
+                配置监控服务器
+                    测试客户端定义监控
+                        zabbix_get -s 192.168.2.100 -p 10050 -k user.number
+
+

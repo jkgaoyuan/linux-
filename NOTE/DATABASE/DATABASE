@@ -3591,14 +3591,6 @@ panglj@tedu.cn
                         > RPUSH  mstu tttt   //在末尾添加数值
                         > RPOP mstu          //从表尾开始删除
 
-                    hash 表
-
-                        > hmset boot boookname xxx worker yy money 21 fx rmcbs  //创建hash表
-                        > hmget  boot boookname worker          //查看hash表
-                        1) "xxx"
-                        2) "yy"
-
-
                     list 操作总结
 
                     lpush  key value [value]                将一个或多个value插入到 key不存在则创建爱你 key中
@@ -3610,5 +3602,17 @@ panglj@tedu.cn
                     rpop   key                              删除并返回key末尾的值
                     rpush  key value                        将数值 添加到key的末尾
 
+                    hash 表
+
+                        > hmset boot boookname xxx worker yy money 21 fx rmcbs  //创建hash表
+                        > hmget  boot boookname worker          //查看hash表
+                        1) "xxx"
+                        2) "yy"
+                                site 变量名 dc 列名 chuiha 值
+                        > HMSET site dc chuiha sina www.sian.cn tarence www.tarence.com //一次插入多条数值
+                        > HKEYS site //只获取列名
+                        > HVALS site //只获取值
+                        > HGETALL site //查看变量的全部信息
+                        > DEL site   //删除数值
 
 
