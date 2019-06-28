@@ -651,7 +651,16 @@ shell
                 sed 's/.//2 ; s/.$//' 2.txt   //删除每行第2个字符和最后一个字符
 
                                                         \1 可视为位置变量
-                sed -r 's/(^.)(.*)(.$)/\3\2\1/' 2.txt  //使用扩展正则表达式 将文件的 头和尾互换 ;;()有复制的效果
+                sed -r 's/(^.)(.*)(.$)/\3\2\1/' 2.txt  //使用扩展正则表达式 将文件的 头和尾互换 // ()有复制的效果
+
+
+                sed -rn '75s/(        #)(.*)(fastcgi)(.*)/\2\3.conf/p' nginx.conf   //测试  将75 行 # 取消并且将 fastcgi_params; 替换为fastcgi.conf;
+                        #    include        fastcgi_params; //源
+                             include        fastcgi.conf;   //修改后
+
+
+                sed -i "106,120 s/    #//"  nginx.conf  //取消配置文件中 开头的#,来取消注释
+                sed -n "106,120 s/    #//p"  nginx.conf //测试取消注释输出是否正常,在替换时不要写p否则会在文件中再输出.
 
 
             eg: 编写一个自动部署 ftp 的 脚本 并开启自动上传功能

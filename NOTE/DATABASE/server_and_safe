@@ -160,3 +160,108 @@
                         zabbix_get -s 192.168.2.100 -p 10050 -k user.number
 
 
+
+       Zabbix报警机制
+            触发器
+
+                触发器表达式
+
+                    常用的表达式
+                        sum(600) 600s内所有值的总和
+                        sum(#)最后5个值的总和
+                    {web1:system.cpu.load[all,avg1].last(0)}>5
+                    web1主机最新的cpu平均负载大于5,触发器状态为问题状态
+                配置邮件服务器(在监控主机本机运行邮件服务器)
+                    # yum -y  install postfix
+                    ]# rpm -q postfix
+                    ]# systemctl  start postfix
+                    ]# netstat -utnlp  | grep  :25
+
+                    //////////确认可以使用hostname访问本机///////////////
+
+                    ]# vim /etc/hosts
+                    127.0.0.1       zabbix-server  localhost localhost.localdomain localhost4 localhost4.localdomain4
+                    :wq
+
+
+                    ]# yum -y  install mailx
+                    [root@zabbix-server ~]# which  mailx
+                    /usr/bin/mailx
+                    [root@zabbix-server ~]# mail -s "xxx"  zabbix  < /etc/yum.repos.d/local.repo
+                    [root@zabbix-server ~]#
+                    [root@zabbix-server ~]# su - zabbix
+                    [zabbix@zabbix-server ~]$
+                    [zabbix@zabbix-server ~]$ mail
+                    Heirloom Mail version 12.5 7/5/10.  Type ? for help.
+                    "/var/spool/mail/zabbix": 1 message 1 new
+                    >N  1 root                  Fri Jun 28 09:48  22/734   "xxx"
+                    & exit
+                    [zabbix@zabbix-server ~]$ exit
+                    logout
+
+                指定邮件服务器
+                    创建Media （指定收件人）
+                    创建Action   名aone
+                    验证配置： 监控到主机100的用户数量大于28个时,zabbix@localhost邮箱是否收到邮件。
+
+
+
+       Zabbix进阶操作
+
+            自动发现
+                创建自动发现
+
+                创建动作
+
+            主被动监控
+               主动监控
+
+               被动监控(默认)
+
+               配置主动监控
+                    配置客户端  192.168.2.201
+
+                        安装zabbix
+                            useradd zabbix
+                        修改配置文件
+                            vim /usr/local/etc/zabbix_agentd.conf
+                            93 #Server=127.0.0.1  //
+                            118 StartAgents=0   //主动链接服务器,不需要端口
+                            134 ServerActive=192.168.2.5  //监控主机
+                            145 Hostname=Zabbix client web2 //主动监控模式,依靠hostname区分主机
+                            183 RefreshActiveChecks=120     //自动刷新时间
+                        启动服务
+                            zabbix_agentd
+                            ps  aux | grep agentd   //只有服务没有端口
+                            ss -antulp | grep 10050
+
+                    配置监控主机
+                        登录2.5管理
+                        克隆模板
+                          全克隆
+                        修改监控项模式
+
+
+            监控案例
+
+                监控nginx
+
+                    2.100安装lnmp
+                        在客户端创建监控命令 nginx.status[*]
+
+                    配置监控服务器
+
+                        登陆监控服务的管理页面做如下配置:
+                        1 创建监控模板 	Atmp2
+                        2 创建应用集      mon-nginx
+                        3 创建监控项 并关联到对应的监控命令
+                        now_link_num  	  nginx.status[Active]
+                        now_link_req	  nginx.status[accepts]
+                        now_waiting_num   nginx.status[Waiting]
+
+                        4 添加监控主机 并调用监控模板
+                        5 查看监控数据
+
+
+
+

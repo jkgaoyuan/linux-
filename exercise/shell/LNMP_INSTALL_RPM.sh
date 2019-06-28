@@ -2,7 +2,7 @@
 ##依然有优化空间,是指可以在ssh中运行,可提高效率
     echo "安装LNMP并设置默认开机自启;;;"
     read -p "若要继续请输入1  " yes
-if [ -z $yes ]; then
+if [ !-z $yes ]; then  ##-z 空为真  -n 非空为真
 
     echo "请确认nginx的目录是否存在并且已经安装 gcc pcre-devel openssl-devel 若没有会自动安装 "
         yum -y install gcc pcre-devel openssl-devel
