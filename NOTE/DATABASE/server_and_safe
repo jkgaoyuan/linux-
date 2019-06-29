@@ -261,7 +261,218 @@
 
                         4 添加监控主机 并调用监控模板
                         5 查看监控数据
+            总结:
+
+            搭建zabbix监控服务器 : 部署lnmp 安装源码 zabbix 初始化配置 启动服务
+            监控配置: 基本监控 自定义监控 邮件报警(报警媒介 触发器 动作)
+                     自动发现 主被动监控
+       DAY03
+
+
+            linux基本防护
+              用户账户安全
+                    账户安全
+                         chage  更改用户密码过期信息
+                             chage –E 时间 账户名称
+                             chage –l    账户名称
+                             chage -l root //显示root的密码信息
+
+                             chage -l jim  //  /etc/shadow 是保存密码相关信息的文件
+                             chage -d 0 jim // -d 指定密码过期时间
+                             //强制用户使用初始密码登录必须修改密码
+                                最近一次密码修改时间					：密码必须更改
+                                密码过期时间					：密码必须更改
+                                密码失效时间					：密码必须更改
+
+
+                    账户的锁定
+                         passwd
+                            -l 锁定账户  锁定账户后用户无法登录(对root无效)
+                            -u 解锁账户
+                            -S 查看状态
+
+                    强制定期修改密码
+                         /etc/login.defs  //账户密码的默认有效期
+                         PASS_MAX_DAYS    99999                        //密码最长有效期
+                         PASS_MIN_DAYS    0                            //密码最短有效期
+                         PASS_MIN_LEN    5                            //密码最短长度
+                         PASS_WARN_AGE    7                            //密码过期前几天提示警告信息
+                         UID_MIN                  1000                //UID最小值
+                         UID_MAX                  60000                //UID最大值
+
+                    伪装登录提示
+                         /etc/issue   //本地登录信息  默认包括系统版本 内核版本
+                            为了安全,伪装登录,使之不显示 正常的系统版本和内核版本
+
+                         /etc/issue.net  //远程登录信息
+                            里面向写啥写啥 //只是伪装登录信息,登录依然可以查看正确的系统版本信息
+              文件系统安全
+                    程序和服务控制
+                        systemctl (7)
+
+                        checkconfig( redhat 6 5 )   服务名  on /off  开机自启/关闭开机自启
+
+
+                    锁定/解锁保护文件
+
+                        EXT3/EXT4 文件属性控制
+
+                            命令
+                                chattr 添加/删除
+                                lsattr 查看
+                            方法
+                                + - =
+                            属性 i 不可变 //可以复制
+
+                                a 仅可追加 //可以复制
+
+                            当你发现 作为管理员用户 无法对某个文件操作时,
+                            记得查看文件的属性
+                            比如  useradd dc
+                                 提示 权限不够 请检查 /etc/passwd
+                            入职时检查  别名的设置 看看有没有坑
+
+            用户切换提权
+                切换与提权的应用场景
+
+                    切换用户
+                        su
+                        不是所有维护人员使用 root账户登录
+                        su 日志文件 /var/log/secure 查看谁使用过 su
+
+                        su 单独使用时 要求 当前管理员 密码 只将用户切换过来,环境没变
+                        su -  用户和环境都变化
+                         -c 使用命令
+
+                        su - -c "command" user
+                        EG:
+                        su  -c "/usr/local/nginx/sbin/nginx " root
+
+                    提权
+                        sudo
+
+                        配置文件
+                            visudo
+                            vim /etc/sudoers
+
+                        提权格式
+                            修改配置文件
+                            用户 主机列表=命令列表
+                            %名字 //用户组
+
+                            root    ALL=(ALL)       ALL
+                            用户     主机=命令
+                            %wheel  ALL=(ALL)       ALL
+                            wheel用户组 可以在任何地点使用任何命令以ROOT权限
+                        普通用户查看提权命令
+                            sudo -l
+                            查看用户可以使用的提权命令
 
 
 
 
+                        普通用户执行提权命令
+                            vim /etc/sudoers
+
+                                添加如下,使得可以 sudo时不需要输入密码
+                                mike   localhost,dba=/sbin/* , !/sbin/ifconfig eth0 , NOPASSWD:ALL
+
+                            启用sudo日志
+                                vim /etc/sudoers
+                                添加如下,之后sudo命令将会被记录
+                                    Defaults logfile="/var/log/sudo"
+                                cat /var/log/sudo
+                                    Jun 29 14:57:35 : mike : command not allowed ; TTY=pts/1 ; PWD=/home/mike ;
+                                    USER=root ; COMMAND=/sbin/ifconfig eth0
+                    sudo别名设置
+
+                        提高利用率 易读性
+
+                            用户 User_Alias OPERATORS=jerry,tom,alice
+                            主机 Host_Alias MAILSERVERS=localhost,dba
+                            命令 Cmnd_Alias SOFTMGR=/usr/bin/rpm , /usr/bin/yum , /usr/bin/vim , /etc/my.cnf , /usr/bin/systemctl * mysqld
+
+                            调用
+                                OPERATORS MAILSERVERS=SOFTMGR , NOPASSWD:ALL
+
+
+
+            ssh访问控制
+                修改ssh默认访问端口
+                    vim /etc/ssh/sshd_config
+                        17  Port 3389     //登录端口
+                        37  LoginGraceTime 2m //登录限时
+                        40  MaxAuthTries 3  //最多认证次数
+                        115 UseDNS no       //不解析客户机地址
+                    systemctl restart sshd
+
+                    使用新终端链接
+                         ssh root@192.168.4.50 -p 3389
+                ssh黑白名单
+
+                    修改配置文件
+
+                    vim /etc/ssh/sshd_config
+
+                        DenyUsers user1 user2
+                        AllowUsers user1@host user2@localhost
+                        DenyGroups  group1 group2
+                        AllowGroups group1 group2
+
+                    eg:
+                    vim /etc/ssh/sshd_config
+                        AllowUsers root@192.168.4.50 alice
+                        允许4.50以root登录本机,且 alice用户不受限制登录
+                口令验证
+
+                    PasswordAuthentication yes  //口令验证  默认开启
+                启动密钥对登录
+                    PubkeyAuthentication yes    //秘钥检查
+            部署ssh公钥
+                生成公钥
+                    指定加密算法 -t rsa -t dsa
+                ssh-keygen
+                ssh-keygen -f /root/.ssh/id_rsa -N ''  -f 指定秘钥位置  -N 提供新密码 '' 表示无密码.为空
+
+                ssh-copy-id ip
+            selinux安全
+
+                sestatus  //查看selinux 状态
+                    SELinux status:                 enabled
+                    SELinuxfs mount:                /sys/fs/selinux
+                    SELinux root directory:         /etc/selinux
+                    Loaded policy name:             targeted  //保护常用的服务; mls 全方位保护;
+                    Current mode:                   enforcing
+                    Mode from config file:          error (Success)
+                    Policy MLS status:              enabled
+                    Policy deny_unknown status:     allowed
+                    Max kernel policy version:      31
+
+                getenforce
+                setenforce 1/0  //零时开启或者关闭 selinux 强制模式
+
+
+
+            策略设置
+
+                安全上下文
+                    属性构成
+                        用户:角色:访问类型:选项
+                        system_u:object_r:bin_t:s0       /bin/ls
+
+                    查看
+                        文件
+                            ls -lZ  文件名
+                        目录
+                            ls -ldZ 目录名
+                        进程
+                            ps aux -Z
+                            ps aux -Z | grep -i 服务名
+                    修改安全上下文
+                        chcon
+                            -t 指定访问类型
+                            -R 递归修改
+                    一般操作规则
+                        创建的文件,一般是继承父级目录的安全上下文
+                        移动的文件,原有的上下文属性不变
+                        复制的文件,自动继承目标位置的上下文
