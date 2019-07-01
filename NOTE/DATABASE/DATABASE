@@ -195,7 +195,7 @@ panglj@tedu.cn
                                 mysql> create table db1.学生表(
                                姓名 char(10),
                                家庭地址 char(20)
-                               ) DEFAULT CHARSET=utf8; ####添加参数支持中文
+                               ) DEFAULT CHARSET=utf8; ####添加参数支持中文,似乎只能在创建表的时候添加,待测试
 
                                 mysql> insert into db1.学生表 values("张三丰","武当山");
                                 mysql> insert into db1.学生表 values("张四丰","武台山");
@@ -1120,6 +1120,10 @@ panglj@tedu.cn
 
                         drop user
                         用户名@"客户端地址";  删除授权用户(必须有管理员权限)
+
+                        grant all on *.* to root@"%" identified by "123qqq...A";
+                        *.* 所有库的所有表, 指定某个也可以用  库.表 ,在某个库下对整个库授权授权时,可以不用写 .*,
+                        添加用户授权
                 1.4 授权库
 
                     mysql库              记录授权信息
@@ -2812,7 +2816,7 @@ panglj@tedu.cn
                     ./utils/insert_server.sh
                                        一路回车使用默认,若要修改则可以输入
                                        安装完成后需要修改的话,修改主配置文件
-                      端口6379
+                      redis默认端口端口6379
                       主配置文件 /etc/redis/6379.conf
                       日志问价  /var/log/redis_6379.log
                       数据库主目录 /var/lib/redis/6379
