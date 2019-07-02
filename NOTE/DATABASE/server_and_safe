@@ -473,10 +473,109 @@
                             chcon
                                 -t 指定访问类型
                                 -R 递归修改
+                                                      admin_home_t  为安全上下文的 文件规则
+                              -rw-r--r--. root root unconfined_u:object_r:admin_home_t:s0 a3.html
+                              html]# chcon -t httpd_sys_content_t a3.html
+
                         一般操作规则
                             创建的文件,一般是继承父级目录的安全上下文
                             移动的文件,原有的上下文属性不变
                             复制的文件,自动继承目标位置的上下文
+
+                        恢复安全上下文
+
+                            restorecon
+                             -R 递归修改
+
+
+                             html]# ls -Z
+                            -rw-r--r--. root root unconfined_u:object_r:admin_home_t:s0 a1.html
+                            -rw-r--r--. root root unconfined_u:object_r:admin_home_t:s0 a.html
+                             html]# restorecon a.html a1.html
+                             html]# ls -Z
+                            -rw-r--r--. root root unconfined_u:object_r:httpd_sys_content_t:s0 a1.html
+                            -rw-r--r--. root root unconfined_u:object_r:httpd_sys_content_t:s0 a.html
+                             html]#
+
+                        重置安全上下文
+
+                             /.autorelable  文件
+                             下次重启 安全上下文自动重置
+                        调整SElinux 布尔值
+                            查看
+                                getsebool
+                                -a 列出所有的布尔值
+                            使用
+                                setsebool
+                                -P 永久修改 重启有效
+
+                                eg:    54  getsebool |grep ftp
+                                            ftpd_anon_write --> off
+                                            ftpd_full_access --> off
+                                       55  getsebool -a |grep ftp
+                                       56  setsebool -P ftpd_anon_write on
+                                       57  setsebool -P ftpd_full_access on
+                                       58  getsebool -a |grep ftp
+                                            ftpd_anon_write --> on
+                                            ftpd_full_access --> on
+
+                                在启selinux的系统上修改默认端口
+                                     这里以 httpd为例子
+
+                                     systemctl restart httpd.service
+
+                                     在message中有semanage信息需要下面三个软件
+                                     rpm -qa | grep setroubleshoot
+                                        setroubleshoot-plugins-3.0.66-2.1.el7.noarch
+                                        setroubleshoot-server-3.2.29-3.el7.x86_64
+                                        setroubleshoot-3.2.29-3.el7.x86_64
+
+                                查看semanage的日志
+                                    注意最后面的 sealert -l xxxxxx 这是日志文件
+                                       查看日志文件
+                                    grep setroubleshoot /var/log/messages | tail -1
+
+                                        Jul  2 09:18:14 localhost setroubleshoot: SELinux is preventing httpd from getattr
+                                        access on the file /var/www/html/a3.html.
+                                        For complete SELinux messages run: sealert -l 54c353ed-077e-4511-88df-1f0cfd39a4d7
+
+                                    sealert -l 54c353ed-077e-4511-88df-1f0cfd39a4d7
+                                        找到 do 如下添加端口命令
+
+                                添加 semanage 管理的端口
+                                    semanage -l //查看所有的semange端口
+                                    semanage port -a -t http_port_t -p tcp 8089
+
+
+                            fpt 上传
+
+                                ftp 192.168.4.80
+                                    [root@room9pc01 ~]# ftp 192.168.4.80
+                                    Connected to 192.168.4.80 (192.168.4.80).
+                                    220 (vsFTPd 3.0.2)
+                                    Name (192.168.4.80:root): ftp
+                                    331 Please specify the password.
+                                    Password:
+                                    230 Login successful.
+                                    Remote system type is UNIX.
+                                    Using binary mode to transfer files.
+
+                                    ////////进入fpt共享目录///////
+
+                                    ftp> cd share
+                                    250 Directory successfully changed.
+                                    ////////目标文件目录/////////
+
+                                    ftp> lcd /var/log/
+                                    Local directory now /var/log
+                                    ftp> put vmware-vmusr.log
+                                    local: vmware-vmusr.log remote: vmware-vmusr.log
+                                    227 Entering Passive Mode (192,168,4,80,244,48).
+                                    150 Ok to send data.
+                                    226 Transfer complete.
+                                    47892 bytes sent in 0.0562 secs (852.76 Kbytes/sec)
+
+
 
 
            DAY04
@@ -705,5 +804,237 @@
                                         wireshark
 
                                         绿色的 选择 网卡 三角(表示监听)
+
+
+           DAY05
+
+                系统审计
+                    什么是审计
+                        基于事先配置的规则生成日志,记录可能发生在系统上的事件
+                        审计不会为系统提供额外的安全保护,但会发现并记录违法安全策略的人及其对应的行为
+                        审计能够记录的日志内容
+                            日期,事件 ,结果
+                            触发事件的用户
+                            所有认证机制的使用都可以被记录 eg:ssh
+                            对关键数据文件修改行为
+
+
+                    部署audit
+
+                        审计系统需要安装audit软件包
+                        开启后无法关闭
+                        主配置文件
+                            /etc/audit/audit.conf
+                        日志文件
+                            /var/log/audit/audit.log
+                        规则文件
+                            /etc/audit/audit.rules
+                        ausearch 工具  根据条件过滤日志
+                        aureport 工具  将记录的信息生成报表
+
+                        安装
+                           yum -y install audit
+                           systemctl start auditd
+                           systemctl enable auditd
+
+                        auditctl
+
+                            auditctl -l  //查询规则
+                            auditctl -s  //查看状态
+                            auditctl -D  //删除所有规则
+
+                            定义临时规则
+                            auditctl -w  path permission -k key_name
+                                 -path 需要审计的文件/目录
+                                 权限可以是 rwxa 文件/目录 属性变化
+                                 key_name 可选项 方便识别那些规则生成特点日志项目
+
+                                设置规则对所有passwd文件的写和属性修改操作 都会记录于日志文件
+                                eg:  auditctl -w /etc/passwd -p wa -k passwd_change
+
+
+
+
+
+
+                        搜索日志
+                            命令
+                                ausearch option -if file_name
+                                -i 交互式
+                                -if file_name //指定文件名
+
+                            eg: ausearch -k disk_partition
+                                arch=c000003e syscall=59 success=yes exit=0 a0=19b5b50 a1=18edd60 a2=198cd50 a3=7ffcc5ec7520
+                                items=2 ppid=6429 pid=6479 auid=0 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0
+                                tty=pts2 ses=26 comm="fdisk" exe="/usr/sbin/fdisk"
+                                subj=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 key="disk_partition"
+
+                             我们主要观察 uid gid comm exe  key  a1-a4(命令参数)这几项
+
+                服务安全
+
+                    安装源码
+                        nginx 并运行服务
+                        这里不在说明,参考project1
+                    nginx 优化
+
+                        关闭默认安装时 加入的 两个模块 提高安全性
+
+                            /usr/local/nginx/sbin/nginx -s stop
+                            [root@localhost nginx-1.12.2]# ./configure \
+                            > --without-http_autoindex_module \   // 会将网站更目录下的全部文件暴露给公网
+                            > --without-http_ssi_module
+                            make && make install
+                            /usr/local/nginx/sbin/nginx
+
+                        修改nginx版本信息
+
+                            修改源码包中的版本信息 (在头部文件)
+                                http]# cd /root/nginx-1.12.2/src/http
+                                http]# vim +48 ngx_http_header_filter_module.c
+                                     修改server后的部分
+                                        static u_char ngx_http_server_string[] = "Server: tomcat" CRLF;
+                                        static u_char ngx_http_server_full_string[] = "Server:tomcat "  CRLF;
+                                        static u_char ngx_http_server_build_string[] = "Server:tomcat "  CRLF;
+
+                            重新安装
+                                 /usr/local/nginx/sbin/nginx -s stop
+                                nginx-1.12.2]# ./configure \
+                                > --without-http_autoindex_module \   // 会将网站更目录下的全部文件暴露给公网
+                                > --without-http_ssi_module
+                                make && make install
+                                /usr/local/nginx
+
+                            限制并发
+
+                                由于安装使没有取消ngx_http_limit_req_module的安装导致ddos攻击风险增加
+                                     --该模块可降低ddos风险
+                                     通过修改配置来限制这个模块
+
+                                    vim /usr/local/nginx/conf/nginx.conf
+                                               $binary_remote_addr 为 nginx内置的函数 ---记录用户ip
+                                                zone=one 定义名为 one的内存空间 10 Mb  每秒处理一个请求 r --request
+                                    limit_req_zone $binary_remote_addr zone=one:10m rate=1r/s;
+                                    server{
+                                        ....
+                                        limit_req zone=one burst=5
+                                        .....
+                                        }
+                                    /usr/local/nginx/sbin/nginx -s stop
+                                    /usr/local/nginx/sbin/nginx
+
+
+                            拒绝非法请求
+
+                                禁用其他只允许  get/post
+
+                                    vim /usr/local/nginx/conf/nginx.conf
+                                        server {
+                                            listen       80;                 匹配不到 get/post 时为真
+                                            if ($request_method !~ ^(GET|POST)$){  ///正则: ~ 表示 匹配不到为真
+
+                                                    return 444'
+
+                                                                                }
+                                        .....
+                                        }
+
+
+                                    测试
+                                            curl -i -X HEAD http://192.168.4.80/
+                                            curl -i -X GET http://192.168.4.80/
+
+                        防止buff溢出
+
+                            防止客户端请求数据溢出
+                            有效降低机器dos攻击风险
+
+                                    vim /usr/local/nginx/conf/nginx.conf
+                                        client body
+
+
+
+                数据库安全
+
+                    mariadb
+                        初始化安全脚本
+                            配置root密码
+                            删除匿名账户
+                            禁止远程root登录
+                            删除测试库
+                            刷新权限
+                        #~ mysql_secure_installation
+                            输入密码 ....
+
+                        修改数据库密码
+                            ~]# mysqladmin -uroot -pgaoyuan password 'mysql'
+                                                    旧密码             新密码
+                            或者
+
+                            MariaDB [(none)]> set password for root@"localhost"=password('redhat')
+
+                    tomcate
+
+
+                        安装tomcat
+
+                            你需要 openjdk的支持
+
+                                 yum -y install java-1.8.0-openjdk
+                                 java -version
+                                 解包 tomcat
+                                 复制到  /usr/local/tomcat/
+                                 确保防火墙关闭 selinux 状态
+                                 启动tomcat
+                                 /usr/local/tomcat/bin/startup.sh
+                                 检查Tomcat的端口
+                                 ss -antulp | grep 8080
+                                 访问测试
+                                 curl -I http://192.168.4.80:8080/a.html
+
+                        修改tomcat配置文件隐藏 tomcat版本信息
+                             安装
+                                 yum -y install java-1.8.0-openjdk-devel
+
+                                 which jar  //需要使用jar 解压
+
+                             修改配置文件
+                                  ~]# /usr/local/tomcat/bin/shutdown.sh
+                                  ~]# cd /usr/local/tomcat/lib/
+                                  lib]# jar -xf catalina.jar
+                                  lib]# vim org/apache/catalina/util/ServerInfo.properties
+
+                                        server.info=APPLE.INC
+                                        server.number=7.4.41.0
+                                        server.built=2018.01
+
+                                  lib]# vim +69 /usr/local/tomcat/conf/server.xml
+
+                                            <Connector port="8080" protocol="HTTP/1.1"
+                                            connectionTimeout="20000"
+                                            redirectPort="8443" server="apple" />
+
+                                  lib]# /usr/local/tomcat/bin/startup.sh
+                                  curl -I http://192.168.4.80:8080/a.html
+                                    .....
+                                    Server: apple
+                                    .....
+
+                             降权启动
+
+                                 添加用户并指定启动用户
+
+                                 useradd tomcat
+                                 chmod -R tomcat:tomcat /usr/local/tomcat/
+                                 su -c "/usr/local/tomcat/bin/startup.sh"  tomcat
+
+                                开机启动
+
+                                    lib]# chmod +x /etc/rc.local
+                                    lib]# vim /etc/rc.local
+                                    su -c "/usr/local/tomcat/bin/startup.sh"  tomcat
+
+                                    测试
+                                    ps aux | grep tomcat
 
 

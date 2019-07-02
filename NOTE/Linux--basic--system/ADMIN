@@ -473,6 +473,10 @@ userdel -r 用户名 #连通用户的的家目录一起删了(工作中尽量不
 2.       vim
 切换 用户 
 su 用户名
+su -c 传递command 给shell
+              -c, --commmand=COMMAND
+              传递单个COMMAND给-c的shell.
+eg: su -c "/usr/local/tomcat/bin/startup.sh"  tomcat  //让 startup.sh 由  Tomcat执行
 ##############################################
 删除
 	rm- Remove   删了 真的就没了
@@ -1022,6 +1026,11 @@ root 不受权限管理
 	-wget 软甲包url地址  #默认下载到当前位置
 	-wget 软甲包url地址 -O /目录
 	提供Ftp功能的软件包(vsftpd)
+		vim /etc/vsftpd/vsftpd.conf
+		允许匿名登录
+		anon_upload_enable=YES
+
+
 	6.安装
 	  适用于单个安装(若依赖关系过多的话请使用yum)
 		rpm -qa 软件名 查询该软件是否已经安装
