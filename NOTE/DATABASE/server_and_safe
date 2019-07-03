@@ -426,7 +426,7 @@
                             允许4.50以root登录本机,且 alice用户不受限制登录
                     口令验证
 
-                        PasswordAuthentication yes  //口令验证  默认开启
+                        PasswordAuthentication yes  //密码验证  默认开启
                     启动密钥对登录
                         PubkeyAuthentication yes    //秘钥检查
                 部署ssh公钥
@@ -837,20 +837,29 @@
                            systemctl start auditd
                            systemctl enable auditd
 
-                        auditctl
+                        auditctl常用
+                        选项
 
                             auditctl -l  //查询规则
                             auditctl -s  //查看状态
                             auditctl -D  //删除所有规则
 
-                            定义临时规则
+                        定义临时规则
                             auditctl -w  path permission -k key_name
                                  -path 需要审计的文件/目录
                                  权限可以是 rwxa 文件/目录 属性变化
                                  key_name 可选项 方便识别那些规则生成特点日志项目
 
                                 设置规则对所有passwd文件的写和属性修改操作 都会记录于日志文件
-                                eg:  auditctl -w /etc/passwd -p wa -k passwd_change
+                                eg:  auditctl -w /etc/passwd -p wa -k passwd_change ///监控passwd文件,的写/属性修改
+                                     auditctl -w /etc/selinux/ -p wa -k selinux_change /// 监控/etc/selinux目录
+                        定义永久规则
+                            写入配置文件/etc/audit/rules.d/audit.rules
+
+                            vim /etc/audit/rules.d/audit.rules
+
+                                -w /etc/passwd -p wa -k passwd_change
+
 
 
 
@@ -897,7 +906,7 @@
                                         static u_char ngx_http_server_full_string[] = "Server:tomcat "  CRLF;
                                         static u_char ngx_http_server_build_string[] = "Server:tomcat "  CRLF;
 
-                            重新安装
+                            重新安装删除不需要的部分
                                  /usr/local/nginx/sbin/nginx -s stop
                                 nginx-1.12.2]# ./configure \
                                 > --without-http_autoindex_module \   // 会将网站更目录下的全部文件暴露给公网
@@ -912,14 +921,18 @@
                                      通过修改配置来限制这个模块
 
                                     vim /usr/local/nginx/conf/nginx.conf
-                                               $binary_remote_addr 为 nginx内置的函数 ---记录用户ip
-                                                zone=one 定义名为 one的内存空间 10 Mb  每秒处理一个请求 r --request
-                                    limit_req_zone $binary_remote_addr zone=one:10m rate=1r/s;
-                                    server{
-                                        ....
-                                        limit_req zone=one burst=5
-                                        .....
-                                        }
+
+                                      http{
+
+                                               ////$binary_remote_addr 为 nginx内置的函数 ---记录用户ip
+                                               ////zone=one 定义名为 one的内存空间 10 Mb  每秒处理一个请求 r --request
+                                        limit_req_zone $binary_remote_addr zone=one:10m rate=1r/s;
+                                           server{
+                                            ....
+                                            limit_req zone=one burst=5;
+                                            .....
+                                              }
+                                      }
                                     /usr/local/nginx/sbin/nginx -s stop
                                     /usr/local/nginx/sbin/nginx
 
@@ -929,14 +942,16 @@
                                 禁用其他只允许  get/post
 
                                     vim /usr/local/nginx/conf/nginx.conf
+                                        http{
                                         server {
                                             listen       80;                 匹配不到 get/post 时为真
                                             if ($request_method !~ ^(GET|POST)$){  ///正则: ~ 表示 匹配不到为真
 
                                                     return 444'
 
-                                                                                }
+                                            }
                                         .....
+                                            }
                                         }
 
 
@@ -950,12 +965,20 @@
                             有效降低机器dos攻击风险
 
                                     vim /usr/local/nginx/conf/nginx.conf
-                                        client body
+
+                                        http{
+                                            ...
+                                        client_body_buffer_size 1K;
+                                        client_header_buffer_size 1K;
+                                        client_max_body_size 16K;
+                                        large_client-header_buffers 4 4K;
+                                              ...
+                                               }
 
 
 
                 数据库安全
-
+                    mysql 就没有这些 问题
                     mariadb
                         初始化安全脚本
                             配置root密码
@@ -963,7 +986,8 @@
                             禁止远程root登录
                             删除测试库
                             刷新权限
-                        #~ mysql_secure_installation
+                            ///////////
+                            #~ mysql_secure_installation
                             输入密码 ....
 
                         修改数据库密码
@@ -972,6 +996,35 @@
                             或者
 
                             MariaDB [(none)]> set password for root@"localhost"=password('redhat')
+
+                            mariadb 5.6 版本之前的 binlog日志中 有明文密码
+
+                            并且bashde历史记录中也会记录操作命令
+
+                            ]# cat .bash_history
+                               ....
+                               mysqladmin -uroot -pxxx password 'redhat'
+                               ....
+                            ]# cat .mysql_history
+                                ...
+                                grant all on wordpress to wordpress identified by "wordpress";
+                                ...
+                            需要定时删除历史记录
+
+                        数据安全
+                            创建可以远程登录的账户
+                                ~]# mysql -uroot -p
+                                MariaDB [(none)]> grant allon *.* to t4om@"%" identified by "123";
+                            使用tcpdump抓包
+
+                                ~]# tcpdump -w log.cap -i eth0 src or dst port 3306
+                            客户端远程登录数据库
+                                ~]# mysql -h 192.168.4.23 -utom -p123
+                                ~]# tcpdump -A -r log.cap
+
+                            使用ssl/ssh加密数据传输
+
+
 
                     tomcate
 
@@ -1015,6 +1068,8 @@
                                             redirectPort="8443" server="apple" />
 
                                   lib]# /usr/local/tomcat/bin/startup.sh
+
+                                  访问测试
                                   curl -I http://192.168.4.80:8080/a.html
                                     .....
                                     Server: apple
@@ -1036,5 +1091,9 @@
 
                                     测试
                                     ps aux | grep tomcat
+
+                                    删除默认测试页面
+                                    ]# rm -rf /usr/local/tomcat/webapps/*
+                                    默认测试页面可以查看到详细的Tomcat详细
 
 
