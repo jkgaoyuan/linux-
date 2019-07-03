@@ -939,13 +939,13 @@
 
                             拒绝非法请求
 
-                                禁用其他只允许  get/post
+                                禁用其他只允许  get/post 请求
 
                                     vim /usr/local/nginx/conf/nginx.conf
                                         http{
                                         server {
                                             listen       80;                 匹配不到 get/post 时为真
-                                            if ($request_method !~ ^(GET|POST)$){  ///正则: ~ 表示 匹配不到为真
+                                            if ($request_method !~ ^(GET|POST)$){  ///正则: ~ 表示: 按位取反// ! 逻辑否
 
                                                     return 444'
 
@@ -1097,3 +1097,12 @@
                                     默认测试页面可以查看到详细的Tomcat详细
 
 
+
+
+                EOF end of file
+                cat  << EOF
+
+                    EOF
+                yum -y install expect
+
+                spawn
