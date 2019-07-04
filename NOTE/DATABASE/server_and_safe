@@ -272,7 +272,7 @@
                 linux基本防护
                   用户账户安全
                         账户安全
-                             chage  更改用户密码过期信息
+                             chage  更改用户密码过期信息 用户密码有效期
                                  chage –E 时间 账户名称
                                  chage –l    账户名称
                                  chage -l root //显示root的密码信息
@@ -626,13 +626,15 @@
 
                             加密
                                  --encrypt    加密操作
-                                 --decrypt    解密操作
+                                 --decrypt        解密操作
                                  --recipient  指定用户
                                 ~]$ gpg -e -r userb a.txt
 
                             解密
                                 ~]$ gpg -d a.txt.gpg > a.txt
                                     输入 userb.pub 的密码
+
+
 
                         GPG签名
                             软件官方以私钥对文件签名,
@@ -1099,10 +1101,231 @@
 
 
 
-                EOF end of file
-                cat  << EOF
+                            EOF end of file
 
-                    EOF
-                yum -y install expect
 
-                spawn
+                            cat  << EOF
+
+                                EOF
+
+                            yum -y install expect
+
+                                spawn ssh 192.168.4.80
+                                expect  << EOF
+                                expect "#"    {send "systemctl restart httpd"}  //需要expect支持
+                                EOF
+
+                            eg:
+                                    #!/bin/bash
+                                    expect <<EOF
+                                    spawn ssh 192.168.4.23
+                                    expect ":" {send "123456\r"}
+                                    expect "#" {send "useradd lisi\r"}
+                                    expect "#" {send "id lisi\r"}
+                                    expect "#" {send "passwd lisi\r"}
+                                    expect " 密码：" {send "gaoyuan\r"}
+                                    expect " 密码：" {send "gaoyuan\r"}
+                                    expect "#" {send "id lisi\r"}
+                                    expect "#" {send "exit\r"}
+                                    EOF
+
+
+                安装补丁
+
+                    diff  逐行比较
+
+                        -u               输出统一内容的头部信息 (打补丁使用)
+                        -r或--recursive  递归比较目录中的所有资源 可以比对目录
+                        -a               所有文件视为文本 (包括二进制程序)
+                        -N               无文件视为空
+
+                        一般者几个选项是连用的
+
+
+
+                        环境准备
+
+                              mkdir -p demo/source1 demo/source2
+                              cd demo/
+                              echo "hello word" > source1/test.sh
+                              echo "hello the word" > source2/test.sh
+                              echo "test" > source2/tmp.txt
+                              cp /bin/find source1/
+                              cp /bin/find source2/
+                              echo 1 >> source2/find
+                              yum -y install tree.x86_64
+
+                              [root@4_80 ~]# tree demo/
+                                demo/
+                                ├── source1
+                                │   ├── find
+                                │   └── test.sh
+                                └── source2
+                                    ├── find
+                                    ├── test.sh
+                                    └── tmp.txt
+                                //创建补丁文件
+                              [root@4_80 ~]# diff -rNau demo/source1/ demo/source2/ > /tmp/x2.patch
+
+                                将模拟的第一版程序和补丁文件传递给 客户端,安装补丁需要patch的支持
+                                    yum -y install patchutils.x86_64
+
+                              [root@4_80 ~]# scp -r demo/source1/ root@192.168.4.81:/root/demo/
+
+                              [root@4_80 ~]# scp /tmp/x2.patch root@192.168.4.81:/root/
+
+                                      patch -px   补丁文件中的路径与当前目录重复了几个x 就填几个
+                                      补丁文件中demo/source1/tmp.txt, 当前我在/ 下则x为0
+                              [root@4_81 ~]# patch -p0 < /root/x2.patch
+                                       //撤销补丁
+                              [root@4_81 ~]# patch -RE  < /root/x2.patch
+
+                              当我们进入/root/demo/source1 后再次使用 patch更新, 补丁文件中demo/source1/tmp.txt
+                              所以 -p2
+                              [root@4_81 source1]# patch -p2 < /root/x2.patch
+
+
+           DAY06 防火墙
+
+                 iptables     RHEL7使用Firewalls\IPtables 防火墙实现 软件防火墙\硬件防火墙
+
+                 环境准备
+                 准备三台  ip如下 4网段eth0 2网段eth1 a: 4.80 and 2.80 b: 4.81 c:2.81
+
+                        b和c分别设置网关为 4.80 / 2.80(零时配置),并开启linux的内核路由转发
+
+
+                        命令:
+                            a服务器
+                                 sysctl -a | grep -i ip_forward
+
+                                 vim /etc/sysctl.conf
+                                    添加如下
+                                    net.ipv4.ip_forward = 1
+
+                            b服务器
+                                 systemctl stop NetworkManager
+                                 route add default gw 192.168.4.80
+                                 route -n
+                            c服务器
+                                 systemctl stop NetworkManager
+                                 route add default gw 192.168.2.80
+                                 route -n
+                                 b和c 相互ping 通了表示 网关配置成功
+
+                 IPtables
+                        安装如下软件包
+                            iptables-services-1.4.21-24.el7.x86_64 防火墙服务端
+                            iptables-1.4.21-24.el7.x86_64          管理防火墙
+
+                        防火墙的组成
+
+                            由四张表, 五条链(匹配数据的传输方向)构成
+
+                            状态跟踪        包标记表                    地址转发            过滤表
+                             raw表         mangle表                   nat表               filter 表
+                             PREROUTING   PREROUTING(路由前处理)       PREOUTING             INPUT
+                             OUTPUT       POSTROUTING(路由后处理)      PREOUTING            FORWARD
+                                            INPUT
+                                            OUTPUT                    OUTPUT               OUTPUT
+                                           FORWARD
+
+                        包匹配流程
+                            匹配即停止(log除外)
+                            若无任何匹配则安装该链的默认策略处理
+                        IPtables 基本用法
+
+                            位置 /sbin/iptables
+                            指令  iptables [-t 表名] 选项 [链名] [条件] [-j 目标操作]
+
+                            iptables -t filter -i INPUT -p icmp -j REJECT
+
+                            常用的管理选项
+                                添加规则
+                                        -A              在链的末尾追加一条规则
+                                        -I              在链的开头(或指定序号)char插入规则
+                                        -L              列出所有的规则条目
+                                查看规则
+                                        -n              以数字形式显示地址 端口的选信息
+                                        --line-number   查看规则时显示规则序号
+                                删除规则
+                                        -D              删除链内指定序号(或内容)的一条规则
+                                        -F              情况所有的规则
+                                默认策略
+                                        -P              为指定的链设置默认规则
+                            基本的 目标操作
+                                 ACCEPT         允许通过/方行
+                                 DROP           直接丢弃,不给出任何回应
+                                 REJECT         拒绝通过,必要时会给出提示
+                                 LOG            记录日志然后传递给下一条规则
+
+
+                            基本的匹配条件
+
+
+
+                            保存  iptables-save > /etc/sysconfig/iptables
+
+
+                            filter 表
+
+                                                                    --dport 目标端口  -j 操作类型
+                                 iptables -t filter -A INPUT -p tcp --dport 22 -j ACCEPT
+                                 iptables -t filter -P INPUT DROP   // 将filter表的 INPUT链的默认操作设置为DROP
+                                 iptables -t filter -nL INPUT --line-number
+                                     Chain INPUT (policy DROP)
+                                     num  target     prot opt source               destination
+                                     1    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+
+                                 iptables -t filter -A INPUT -p tcp --dport 22 -j ACCEPT    //行尾追加
+
+                                 iptables -t filter -I INPUT -p icmp -j ACCEPT //接受全部的 icmp 请求
+
+                                 iptables -t filter -I INPUT -p icmp -s 192.168.4.254 -j DROP //拒绝4.254icmp -I 行首插入
+
+                                 iptables -t filter -nL --line-number
+                                    Chain INPUT (policy DROP)###### 默认策略
+                                    num  target     prot opt source               destination
+                                    1    DROP       icmp --  192.168.4.254        0.0.0.0/0
+                                    2    ACCEPT     icmp --  0.0.0.0/0            0.0.0.0/0
+                                    3    ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+
+                                 iptables -t filter -I INPUT -p icmp --icmp-type echo-request -j REJECT  //拒绝对本机所有的icmp request 请求
+
+                                 iptables -t filter -A INPUT -m multiport -p tcp --dports 21,8089,3306 -j ACCEPT //允许多端口 混合端口
+
+                                 iptables -t filter -I INPUT -m mac --mac-source 52:54:00:49:2d:5c -j DROP // 拒绝 设定的 mac地址 主机访问
+
+                                 iptables -t filter -I INPUT -p tcp --dport 22 -m iprange --src-range 192.168.4.250-192.168.4.254 -j ACCEPT // 允许ip段访问
+
+
+                            nat表
+
+                                准备 2.81
+
+                                   yum -y install httpd
+                                   echo "<H1>I AM WEB2.81 "  > /var/www/html/a.html
+                                   systemctl restart httpd
+                                   crul http://loccalhost/a.html
+                                   curl http://loccalhost/a.html
+                                   curl http://192.168.2.81/a.html
+                                   tailf /etc/httpd/logs/access_log
+
+                                配置SNAT共享上网
+
+
+                                    iptables -t nat -A POSTROUTING -s 192.168.4.0/24 -p tcp --dport 80 -j SNAT --to-source 192.168.2.80
+
+
+                                动态网络地址转换
+
+                                    iptables -t nat -A POSTROUTING -s 192.168.4.0/24 -o eth1 j MASQUERADE
+
+
+
+
+
+
+
+
+
