@@ -67,11 +67,92 @@
                             // --with-libcurl安装相关curl库文件，这样zabbix就可以通过curl连接http等服务，测试被监控主机服务的状态
                             [root@zabbixserver zabbix-3.4.4]# make && make install
 
+                        导入数据库
+                            [root@zabbixserver ~]# mysql
+                            mysql> create database zabbix character set utf8;
+                            //创建数据库，支持中文字符集
+                            mysql> grant all on zabbix.* to zabbix@'localhost' identified by 'zabbix';
+                            //创建可以访问数据库的账户与密码
+                            [root@zabbixserver ~]# cd lnmp_soft/zabbix-3.4.4/database/mysql/
+                            [root@zabbixserver mysql]# mysql -uzabbix -pzabbix zabbix < schema.sql
+                            [root@zabbixserver mysql]# mysql -uzabbix -pzabbix zabbix < images.sql
+                            [root@zabbixserver mysql]# mysql -uzabbix -pzabbix zabbix < data.sql
+                            //刚刚创建是空数据库，zabbix源码包目录下，有提前准备好的数据
+                            //使用mysql导入这些数据即可（注意导入顺序）
+
+
+                        上线Zabbix的Web页面
+
+                            [root@zabbixserver ~]# cd lnmp_soft/zabbix-3.4.4/frontends/php/
+                            [root@zabbixserver php]# cp -r * /usr/local/nginx/html/
+                            [root@zabbixserver php]# chmod -R 777 /usr/local/nginx/html/
+
+
+                        修改Zabbix_server配置文件，设置数据库相关参数，启动Zabbix_server服务
+
+                            [root@zabbixserver ~]# vim /usr/local/etc/zabbix_server.conf
+                            DBHost=localhost
+                            //数据库主机，默认该行被注释
+                            DBName=zabbix
+                            //设置数据库名称
+                            DBUser=zabbix
+                            //设置数据库账户
+                            DBPassword=zabbix
+                            //设置数据库密码，默认该行被注释
+                            LogFile=/tmp/zabbix_server.log
+                            //设置日志，仅查看以下即可
+                            [root@zabbixserver ~]# useradd -s /sbin/nologin zabbix
+                            //不创建用户无法启动服务
+                            [root@zabbixserver ~]# zabbix_server                      //启动服务
+                            [root@zabbixserver ~]# ss -ntulp |grep zabbix_server     //确认连接状态，端口10051
+                            tcp LISTEN 0 128 *:10051 *:* users:(("zabbix_server",pid=23275,fd=4),("zabbix_server",pid=23274,fd=4)
+
+
+                        提示：如果是因为配置文件不对，导致服务无法启动时，不要重复执行zabbix_server，
+                        一定要先使用killall zabbix_server关闭服务后，再重新启动一次。
+                        修改Zabbix_agent配置文件，启动Zabbix_agent服务
+
+
+
+                            [root@zabbixserver ~]# vim /usr/local/etc/zabbix_agentd.conf
+                            Server=127.0.0.1,192.168.2.5                    //允许哪些主机监控本机
+                            ServerActive=127.0.0.1,192.168.2.5                //允许哪些主机通过主动模式监控本机
+                            Hostname=zabbix_server                        //设置本机主机名
+                            LogFile=/tmp/zabbix_server.log                    //设置日志文件
+                            UnsafeUserParameters=1                        //是否允许自定义key
+                            [root@zabbixserver ~]# zabbix_agentd            //启动监控agent
+                            [root@zabbixserver ~]# ss -ntulp |grep zabbix_agentd   //查看端口信息为10050
+                            tcp    LISTEN     0      128       *:10050                 *:*                   users:(("zabbix_agentd",pid=23505,fd=4),("zabbix_agentd",pid=23504,fd=4)
+
+
+                        访问安装页面确认
+
+                            Firefox http://192.168.2.5/setup.php
+
+
+                            环境不满足则修改配置文件 或安装软件,满足
+
+                            [root@zabbixserver ~]# yum -y install  php-gd php-xml
+                            [root@zabbixserver ~]# yum install php-bcmath-5.4.16-42.el7.x86_64.rpm
+                            [root@zabbixserver ~]# yum install php-mbstring-5.4.16-42.el7.x86_64.rpm
+                            [root@zabbixserver ~]# vim /etc/php.ini
+                            date.timezone = Asia/Shanghai                //设置时区
+                            max_execution_time = 300                    //最大执行时间，秒
+                            post_max_size = 32M                        //POST数据最大容量
+                            max_input_time = 300                        //服务器接收数据的时间限制
+                            memory_limit = 128M                        //内存容量限制
+
+                            [root@zabbixserver ~]# systemctl restart php-fpm
+
+
 
 
                         配置文件默认在 /usr/local/etc/
                         启动命令      /usr/local/sbin/
                         程序         /usr/local/bin/
+
+                        启动 zabbix_server     启动 zabbix_agentd
+
 
                         初始化
                             真机
@@ -223,6 +304,7 @@
 
                             安装zabbix
                                 useradd zabbix
+
                             修改配置文件
                                 vim /usr/local/etc/zabbix_agentd.conf
                                 93 #Server=127.0.0.1  //

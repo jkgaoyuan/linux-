@@ -112,8 +112,8 @@ zabbix_serves(){
 
 ######## 主程序
 cat << EOF
-1 输入nginx的源码包,不用解压
-2 输入zabbix的源码包,不用解压
+1 输入nginx源码包的绝对路径,不用解压
+2 输入zabbix源码包的绝对路径,不用解压
 3 输入zabbix_server,启动zabbix服务端进程
 4 不要有骚操作,本脚本很脆弱,经办不起折腾
 EOF

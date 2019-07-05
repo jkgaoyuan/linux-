@@ -1460,7 +1460,7 @@ panglj@tedu.cn
        DAY06
             max-connections MySQL服务的最大并发连接数
 
-            mysql 主从同步
+            mysql 数据库主从同步
                 什么是: 实现数据自动同步
                     主服务器:接受客户端访问链接
                     从服务器:自动同步主服务器数据
@@ -1716,7 +1716,7 @@ panglj@tedu.cn
 
        DAY02
 
-            一.数据读写分离
+            一.数据库读写分离
 
                 1.1数据读写分离介绍
 
@@ -1742,7 +1742,7 @@ panglj@tedu.cn
                         mysql-procy
                         mycat ...
 
-                        maxscale是其中一种
+                        maxscale是其中一种 (数据库读写分离)
                     1.6.1 配置软件
                         yum -y install /root/maxscale-2.1.2-1.rhel.7.x86_64.rpm
                         rpm -ql maxscale //检查 生成文件位置
@@ -1784,8 +1784,8 @@ panglj@tedu.cn
                      70 max_slave_connections=100%
                       //注销  R-O-L
                      86 #[Read-Only Listener]
-                     //查看 RWL 端口
-                     102 port=4016
+                     //查看 RWL 端口 与 管理端口必须不同
+                     95 port=4006
                       //指定 管理端口
                      98 [MaxAdmin Listener]
                      102 port=4016
@@ -1796,6 +1796,7 @@ panglj@tedu.cn
                         mysql>grant replication slave, replication client on *.* to maxscalemon@"%" identified by "123qqq...A";
                         创建路由用户
                         mysql> grant select on mysql.* to maxscalerouter@"%" identified by "123qqq...A";
+                        这两步可以只在主库上做 因为主从同步 这个操作会在从库上同步完成
                     1.6.4 启动代理服务器
                         maxscale -f 配置文件位置
                         [root@dba57 ~]# maxscale -f /etc/maxscale.cnf

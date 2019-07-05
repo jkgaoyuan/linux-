@@ -1289,6 +1289,7 @@ SCAN 	  pvscan     vgscan  lvmscna
 
 
 
+[root@mysql_11_master ~]# yum -y install lvm2
 
 
 lvm卷组制作
@@ -1310,7 +1311,7 @@ vgs #查看卷组
   /dev/vdc1  systemvg lvm2 a--  10.00g 10.00g
   /dev/vdc2  systemvg lvm2 a--  10.00g 10.00g
  2.创建逻辑卷
-格式: lvcreate -n vo -L 16G ststemvg
+格式: lvcreate -n vo -L 16G systemvg
                   逻辑卷名   大小  卷组名
  
 eg:

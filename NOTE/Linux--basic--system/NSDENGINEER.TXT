@@ -773,7 +773,8 @@ nfs-utils-1.3.0-0.el7.x86_64
 3.修改配置文件/etc/exports ,指定共享目录
 -- 文件夹路径  客户机地址(权限)  客户机地址(权限) .....    ##可以写多个客户机地址
  /public      *(ro) ##readonly                  
-客户端;
+客户端:
+linux需要nfs-utlis软件的支持 来挂在 nfs
 在Linux中 共享文件与win不同 , win 直接输入 ip 访问,然而 Linux 需要挂载.
 1.查看服务端共享路径并重启服务
 showmount -e 172.25.0.11 
