@@ -1,0 +1,256 @@
+没有git的安装 git
+
+准备软件  git clone git://43.254.90.134/nsd1903.git
+         cd nsd1903/
+         git pull  //同步
+         eip 100 修改IP地址(老师写的jue本)
+         vim /etc/
+环境介绍  修改专用的虚拟机模板
+      修改文件   /etc/clone.conf
+      适合旧版本的 教学系统
+      clone-vm7
+      新版本 系统
+      base-vm
+      账户root
+      密码a
+
+DAY01 云平台的部署与管理
+一.虚拟化
+        1.1 介绍
+            vmware(linux才是本体) 和 kvm(redhat)  rhev(redhat)
+
+            vmware(window软件)= esxi+vcenter
+
+            esxi= linux+ vm (虚拟化软件)
+            vcenter  管理软件(Windows)
+
+        1.2 安装虚拟化服务器平台
+            KVM/QEMU/LIBVIRTD
+            kvm是linux一个内核的模块,需要cpu支持, intel-vt/ amd-v 内存 ept / rvi
+
+            QEMU  虚拟化仿真工具 通过ioctl与内核kvm交互完成虚拟化硬件支持
+
+            libvirtd 是一个对虚拟化管理接口和工具  提供用户程序  virsh virt-install virt-manager virt-view
+
+            lsmod 列出所有的内核模块
+            ps -efww -ef显示进程 ww显示完整的信息
+
+        1.3 必备软件
+            qemu-kvm
+            libvirt-daemon  //libvirtd 后台守护进程
+            libvirt-client //客户端软件 提供客户端管理命令
+            libvirt-daemon-driver-qemu  //libvirtd 链接qemu驱动
+
+        1.4 kvm虚拟机的组成
+            内核虚拟化模块  KVM
+            系统设备仿真    QEMU
+            虚拟机管理程序  LIBVIRT
+
+            两部分构成
+            配置文件位置  /etc/libvirt/qemu/
+            磁盘镜像文件位置  /var/lib/libvirt/images/
+二.virsh 管理
+        2.1 virsh命令介绍
+
+            提供管理虚拟机的命令借口
+            -支持交互模式 ,查看/创建/停止/关闭
+            -格式 : virsh 控制命令 [虚拟机名] 参数
+
+
+            虚拟机控制
+            
+            -list[-all]  列出虚拟机
+            -start|shutdown|reboot 虚拟机停止 重启 (正常关机)
+            -destroy 强制停止虚拟机 //拔电源
+            -define|undefine 根据 xml文件创建/删除虚拟机
+            -console 链接虚拟机的console
+            -resert  重置虚拟机
+            虚拟机管理
+
+            -edit       修改虚拟机配置  //修改完成直接生效,不推荐使用vim打开(需要重启生效)
+            -autostart  设置虚拟机自启动
+            -domiflist  查看虚拟机网卡
+            -domblklist 查看虚拟机磁盘信息
+
+            虚拟网络管理
+            -net-list[-all]
+            -net-start 启动虚拟交换机
+            -net-destroy 强制关闭虚拟交换机
+            -net-define  创建虚拟交换机
+            -net-undefine 删除虚拟交换机
+            -net-edit    修改虚拟交换机配置文件
+            -net-autostart 开机自启
+
+
+
+             eg:
+                ~]$ virsh list --all //非交互
+                [student@room9pc01 ~]$ virsh
+                欢迎使用 virsh，虚拟化的交互式终端。
+
+                输入：'help' 来获得命令的帮助信息
+                       'quit' 退出
+
+                virsh # list
+                 Id    名称                         状态
+                ----------------------------------------------------
+                 1     mysql_22_slave                 running
+                 2     mysql_11_master                running
+                 3     monitor55                      running
+                 4     tedu_node002                   running
+
+                只有链接到同一个虚拟交换机的虚拟机是可以互通的(配置同网段ip)
+                ~]$ virsh domiflist tedu_node002 //查看当前主机链接的虚拟交换机
+                接口     类型     源        型号      MAC
+                -------------------------------------------------------
+                vnet12     bridge     vbr        virtio      52:54:00:67:fc:90
+
+                 ~]$ virsh domblklist tedu_node002   //查看当前虚拟机的磁盘信息
+                目标     源
+                ------------------------------------------------
+                vda        /var/lib/libvirt/images/tedu_node002.img
+
+        2.2 常用磁盘镜像类型
+
+            RAW(物理磁盘)  QCOW2(用多少写多少)
+            qcow2 核心: copy on write 技术
+
+            qemu-img 是虚拟机记得磁盘管理指令,支持非常多的磁盘格式
+
+            qemu-img  命令 阐述 块文件名称 大小
+
+            常用命令
+                -create 创建磁盘
+                -convert 转换磁盘格式
+                -info   查看磁盘信息
+                -resize 扩容磁盘空间
+            选项:
+                -f 指定文件系统
+                 -f qcow2
+                -b 指定后端盘
+                -b node.img
+                eg:
+                     查看磁盘文件信息/
+                     1 ~]$  qemu-img info  /var/lib/libvirt/images/tedu_node002.img
+                            image: /var/lib/libvirt/images/tedu_node002.img
+                            file format: qcow2
+                            virtual size: 20G (21474836480 bytes)
+                            disk size: 25M
+                            cluster_size: 65536
+                            backing file: /var/lib/libvirt/images/.node_base.qcow2
+                            Format specific information:
+                                compat: 1.1
+                                lazy refcounts: false
+
+                     创建 -f 指定磁盘文件类型 50G表示最大可容量
+                      ~]$ qemu-img create -f qcow2 ./f1.img 50G
+                          Formatting './f1.img', fmt=qcow2 size=53687091200 encryption=off cluster_size=65536 lazy_refcounts=off
+
+                     创建教学系统中创建虚拟机使用的前端盘
+                          这里使用的后端盘可以由我们自己全新安装,配置完成后 img 文件 就是这里使用的模板(这里需要取消虚拟机定义,修改为qcow2)
+                          //查找虚拟机的前端盘
+
+                          ~]$ virsh domblklist tedu_node002
+                                目标     源
+                                ------------------------------------------------
+                                vda        /var/lib/libvirt/images/tedu_node002.img
+
+
+                          //查找后端盘
+                          ~]$ qemu-img info /var/lib/libvirt/images/tedu_node002.img
+
+                                image: /var/lib/libvirt/images/tedu_node002.img
+                                file format: qcow2
+                                virtual size: 20G (21474836480 bytes)
+                                disk size: 9.6M
+                                cluster_size: 65536
+                                backing file: /var/lib/libvirt/images/.node_base.qcow2  //后端磁盘文件
+                                Format specific information:
+                                    compat: 1.1
+                                    lazy refcounts: false
+
+                          ~]$ cd /var/lib/libvirt/images
+                          //创建前端盘
+                          记得删除旧的前端盘
+                          images]$ qemu-img create -f qcow2 ./tedu_node002.img -b /var/lib/libvirt/images/.node_base.qcow2  20G
+        2.3 virsh 管理
+
+            xml 文件管理
+                命令 virsh edit 主机名
+
+                eg:修改如下
+                    virsh  edit tedu_node002.
+                      <memory unit='KiB'>4588282</memory>   //最大内存
+                      <currentMemory unit='KiB'>4588282</currentMemory>  //当前内存
+                      <vcpu placement='static'>4</vcpu>  //cpu个数
+                      <disk type='file' device='disk'>
+                      <source file='/var/lib/libvirt/images/tedu_node002.img'/>  //磁盘
+                      <interface type='bridge'>
+                      <source bridge='vbr'/> //链接的虚拟交换机
+
+                创建虚拟机
+
+                    创建虚拟机前端盘
+
+                        qemu-img create -f qcow2 /var/lib/libvirt/images/nsd1903.img -b /var/lib/libvirt/images/.node_base.qcow2 30G
+
+                    创建虚拟机配置文件
+                        cp /var/lib/libvirt/images/.node_base.xml /etc/libvirt/qemu/nsd1903.xml
+                        vim /etc/libvirt/qemu/nsd1903.xml
+                        修改为  <name>nsd1903</name>
+                               <source file='/var/lib/libvirt/images/nsd1903.img'/>
+                    定义虚拟机
+                        virsh define /etc/libvirt/qemu/nsd1903.xml
+                    开机
+                        virsh start nsd1903
+
+            网卡机器配置文件
+                /etc/sysconfig/network-scripts/xxx xx主机名
+
+
+
+
+            virsh 扩容硬盘
+
+                virsh domblklist 主机名
+                //扩容硬盘
+                virsh blockresize --path [绝对路径] -- size xxG 主机名
+
+                思路:
+                    先扩容磁盘
+                    扩容分区
+                    扩容文件系统
+            eg:扩容nsd1903 虚拟机
+                物理机
+                virsh domblklist nsd1903
+                virsh blockresize --path /var/lib/libvirt/images/nsd1903.img --size 50G nsd1903
+
+                虚拟机nsd1903
+                LANG=en growpart /dev/vda 1
+                xfs_growfs /dev/vda1
+                df -h
+
+
+
+三.云平台
+        3.1 云平台介绍
+            IaaS (infrastructure  as a service) 基础设置即服务
+
+                iaas 通常分为 公有云(全部托管) 私有云(自建机房) 和 混合云(两种混合)
+                提供给消费者所有云计算的基础设施,包括处理cpu 内存 存储 网络
+            PaaS (Platform as a service)平台即服务
+                不仅仅是单充的基础平台,还针对平台的技术支持服务,对于平台进行的应用系统开发优化等服务
+            SaaS (software as a service )软件即服务
+                通过internet提供软件(软件商店)
+        3.2 openstack 简介
+
+            iaas 解决方案
+            开源的云计算管理平台
+            Apache 授权
+四.华为云
+
+        基于openstack 开发而来的
+        4.1
+
+
+
