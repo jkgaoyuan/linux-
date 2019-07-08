@@ -3,6 +3,8 @@
 邮箱: 有问题可以发邮件
 panglj@tedu.cn
 402er
+
+数据库是可以存储所有的数据,但不是所有的数据都适合保存在数据库中(比如视频),
         SQL语句执顺序
             执行FROM ---> where--->group by--->聚合函数having--->order by (排序)
 
