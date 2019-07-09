@@ -497,6 +497,70 @@ DAY02 OPENSTACK
             访问1.10登录
 
 
+    DAY02
+        openstack项目管理
+            之前版本把项目也叫做租户
+            openstack的一切管理都是从项目开始
+                项目的目的是分配资源
+                项目的资源是按照 需求的总数划分的 比如 多少核cpu 多少内存 多少储存 带宽的等(具体的划分可以由客户自己分配)
+
+            项目管理员
+                授权用户时,角色确认为member,admin是openstack的管理用户,并且必主选项目.
+
+
+                在openstack 数据库中的 kyesstone.user 记录用户信息
+                MariaDB [keystone]>  select * from user;
+
+                在master主机上 查看
+                 ~]# source keystonerc_admin //加载认证信息
+                ~(keystone_admin)]# openstack user list //显示用户
+                    +----------------------------------+---------+
+                    | ID                               | Name    |
+                    +----------------------------------+---------+
+
+                 ~(keystone_admin)]# openstack user set --password aa uu   //修改普通用户的密码, 先写新密码 再写用户名
+
+            修改管理员密码
+
+                 ~]# source keystonerc_admin //加载认证信息
+                 ~(keystone_admin)]# openstack user set --password aa admin
+
+
+
+
+            云主机类型
+
+                也叫作资源模板
+
+            计算节点扩容
+                删除已经创建的虚拟主机(openstack中),原因内存不够
+
+                修改 answer.ini 98/102 添加 nova_02的ip地址
+
+                安装
+                    packstack --answer-file=answer.ini
+
+
+
+                修改httpd 下的 15-horizon_vhost.conf
+                    vim /etc/httpd/conf.d/15-horizon_vhost.conf
+
+                    内容参考,第一次安装
+                    WSGIProcessGroup apache
+                    WSGIApplicationGroup %{GLOBAL}
+                重启httpd
+                    apachectl graceful/systemctl restarthttpd
+
+
+            主机迁移
+
+                迁移必须使用 openstack的管理账号迁移,迁移过程中不影响业务.
+
+                迁移条件
+                        -nova节点与openstack管理节点都能互相ping通 主机名也要可以ping通
+                        所有计算节点安装 qemu-img-rhev,qemu-kvm-rhev
+                        若位安装,在安装后需要重启libvirtd服务
+
 
 
 
