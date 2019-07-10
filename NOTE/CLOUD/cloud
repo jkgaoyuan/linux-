@@ -665,22 +665,22 @@ DAY02 OPENSTACK
                     docker inspect -f "{{.NetworkSettings.IPAddress}}" a49918ac2a02(容器id) // -f
 
 
-                docker tag docker.io/oldname:oldtag newname:newtag  //修改镜像的名称和tag
-                    docker tag docker.io/nginx:latest nsd:nsd
+                    docker tag docker.io/nginx:latest nsd:nsd  //修改镜像的名称和tag
+                docker tag docker.io/oldname:oldtag newname:newtag
                 docker rmi 镜像名称   // 删除镜像,启动过容器的镜像不能删除
                     docker rmi docker.io/nginx:latest
 
                 docker save 镜像名称 -o 保存文件名称  //导出镜像 (保存为tar包)
                     docker save docker.io/redis:latest -o redis.tar
 
-                docker  load 镜像名称 -i 导入文件名称  //导入镜像
+                docker  load  -i 导入文件名称  //导入镜像
                     docker load  -i busybox.tar/
 
                 docker search 镜像名称  //查找镜像
 
             1.8docker 管理命令
-                docker run -itd docker.io/redis:latest  // 运行容器(创建新容器) i 交互式界面 t terminal(终端) d 后台
-                docker ps  //查看启动的容器列表 -a 显示所有
+                docker run -itd docker.io/redis:latest  // 运行容器(创建新容器) i 交互式界面 t terminal(终端) d 后台执行
+                docker ps  //查看启动的容器列表 -a 显示所有 -q 只显示容器数字id CONTAINER ID
                 docker ps -a
                 docker stop 9752526130d0    //关闭容器
                 docker start 9752526130d0   //开启容器

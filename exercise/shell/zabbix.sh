@@ -118,7 +118,7 @@ cat << EOF
 4 不要有骚操作,本脚本很脆弱,经办不起折腾
 EOF
 read -p "请您输入:" n
-soft=${n%%-*}
+soft=${n%%-*} ##%表示从右往左删删除第一个以及后面一个
 case $soft in
 nginx)
 	jiancha $n 
