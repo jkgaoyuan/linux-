@@ -126,7 +126,7 @@ DAY01 云平台的部署与管理
                 -resize 扩容磁盘空间
             选项:
                 -f 指定文件系统
-                 -f qcow2
+                -f qcow2
                 -b 指定后端盘
                 -b node.img
                 eg:
@@ -173,6 +173,10 @@ DAY01 云平台的部署与管理
                           //创建前端盘
                           记得删除旧的前端盘
                           images]$ qemu-img create -f qcow2 ./tedu_node002.img -b /var/lib/libvirt/images/.node_base.qcow2  20G
+
+                          使用后端盘创建镜像
+                                qemu-img create -b 后端模板文件 -f 格式  磁盘路径  大小
+
         2.3 virsh 管理
 
             xml 文件管理
@@ -431,7 +435,7 @@ DAY02 OPENSTACK
                  921 CONFIG_NEUTRON_OVS_BRIDGE_IFACES=br-ex:eth0
                 //br-ex桥的名称与eth0连接，管理eth0,网桥与哪个物理网卡连接
                 1179 CONFIG_PROVISION_DEMO=n   //DEMO是否测试
-                 [root@openstack ~]# packstack --answer-file=answer.ini
+                 [root@openstack ~]# packstack --answer-file=answer.ini  //安装openstack
                 Welcome to the Packstack setup utility
                 The installation log file is available at: /var/tmp/packstack/20190423-170603-b43g_i/openstack-setup.log
                 Installing:
@@ -662,7 +666,7 @@ DAY02 OPENSTACK
                 docker inspect   //查看镜像底层信息,注意 PATH和cmd部分就好
                     docker inspect docker.io/nginx //查看镜像底层信息
                     docker inspect a49918ac2a02 //查看容器信息
-                    docker inspect -f "{{.NetworkSettings.IPAddress}}" a49918ac2a02(容器id) // -f
+                    docker inspect -f "{{.NetworkSettings.IPAddress}}" a49918ac2a02(容器id) // -f  格式化输出
 
 
                     docker tag docker.io/nginx:latest nsd:nsd  //修改镜像的名称和tag
@@ -696,9 +700,124 @@ DAY02 OPENSTACK
 
                 docker rm $(docker stop $(docker ps -qa)) //删除所有的容器包括 关闭的 //命令中可以传递参数
 
+            1.9 制作镜像
+                    手动创建
+                        docker run -it docker.io/centos:latest          //新建容器
+
+                            安装需要的软件
+
+                        docker commit CONTAINER ID docker.io/name:tag   //导出镜像
+
+                    自动创建
+
+                        Dockerfile
+
+                        FROM 基础镜像
+                        RUM  在容器中执行  //RUM是在容器bash中执行的,也就是说每个RUN的父进程是一个bash进程                        ADD  复制文件到镜像
+                        MAINTAINER 镜像创建者信息
+                        EXPOSE 开放端口
+                        ENV  设置环境变量
+                        WORKDIR 定义容器工作目录  //设置当前目录
+                        CMD  容器启动时执行的命令,仅只能有一条  所有参数和命令之间用','分割并用""将每一部分引起来 CMD ["/bin/ls","-a"]
+
+                        docker build  // -t  Name and optionally a tag in the 'name:tag' format (default [])
+
+
+                    eg: 配置yum源
+                        [root@docker1 ~]# ls base/
+                        cp  /etc/yum.repos.d/local.repo .
+                        Dockerfile  local.repo  //创建文件如下
+
+                        FROM docker.io/centos:latest
+                        RUN rm -rf  /etc/yum.repos.d/*.repo
+                        ADD local.repo  /etc/yum.repos.d/    ### 需要复制到docker的文件必须和 Dockerfile 在一个文件夹下
+                        RUN yum -y install vim net-tools iproute psmisc tree lftp rsync
+
+                        [root@docker1 base]# docker build -t test:test .
+
+                    eg:配置httpd服务
+
+
+                        vim Dockerfile
+
+                            FROM docker.io/myos1:latest
+                            RUN yum -y install httpd
+                            RUN echo "hello world" > /var/www/html/index.html
+                            EXPOSE 80
+                            ENV EnvironmentFile=/etc/sysconfig/httpd
+                            CMD ["/usr/sbin/httpd","-DFOREGROUND"]
+
+                        docker build -t myapach:test .
+
+                        docker run -it myapach:test
+                        curl 172.17.0.2
+                            hello world
+
+            1.10自定义私有仓库
+                      1.31
+                      yum -y install docker-distribution
+                      systemctl restart docker-distribution.service
+                      systemctl enable docker-distribution.service
+                      vim /etc/sysconfig/docker  //修改如下
+                        13 ADD_REGISTRY='--add-registry 192.168.1.31:5000'  //docker1 定义在/etc/hosts 中也可以填 ip:port
+                                                                        但是需要注意的是  这两行要么填hosts 要么填 ip:port
+                                                                        并且之后上传/启动镜像也要使用相对应的
+
+                        24 INSECURE_REGISTRY='--insecure-registry 192.168.1.31:5000'
+
+                      systemctl restart docker-distribution.service
+
+                      docker tag docker.io/myos1:latest 192.168.1.31:5000/myos:latest
+
+                      docker push 192.168.1.31:5000/myos:latest
+
+                      1.32
+                        vim /etc/sysconfig/docker
+                            //依然是13/24 行和31 填写的相同
+                        systemctl restart docker-distribution.service
+                            //启动
+                        docker run -it 192.168.1.31:5000/apache:httpd /bin/bash
+
+                查看共享的image
+                     查看私有镜像仓库全部镜像
+                     curl http://192.168.1.31:5000/v2/_catalog
+
+                     私有库存储位置   /var/lib/registry/
+
+
+            1.11 主机卷的共享
+
+                docker 数据持久化
+                        -v 数据传递
+                    docker run -it -v/真机目录:/docker目录 192.168.1.31:5000/apache:httpd /bin/bash
+
+                    docker run -v/webroot:/usr/share/nginx/html/ -itd 192.168.1.31:5000/nginx:latest
+
+                        真机/webroot 可以使用nfs 等磁盘共享
+                        docker 直接挂载使用
 
 
 
 
+            1.12 docker 网络拓扑
 
+                docker network list  //查看网络信息
+
+                docker network create --subnet=10.10.10.0/24 docker1 //创建虚拟交换机 --subnet指定子网
+
+                docker run --network=docker1 -itd docker.io/busybox:latest
+
+
+
+                客户端访问容器内资源
+                    默认容器可以访问外网
+                    但是外部主机不可以不可以变成对应的服务
+                    容器的特性是可以把宿主机器变成对应服务
+                        -p 将容器端口和宿主机端口绑定
+
+                        -p 宿主机端口:容器端口
+
+                    eg:
+                        docker run -v/webroot:/var/www/html -itd -p 80:80 192.168.1.31:5000/apache:httpd
+                          -v
 

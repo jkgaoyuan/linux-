@@ -181,6 +181,9 @@ panglj@tedu.cn
                             DML  数据操作语言  insert update delete
                             DCL  数据控制语言  grant revoke
                             DTL  数据事物语言  commit  rollback
+                         什么是事物:
+                            事物:一次访问数据库的开始到断开数据库链接,表示一次事物
+                            当执行一个操作时,失败后可根据事物日志恢复.
 
                     2.mysql管理环境
                         1)show databases; 显示已有的库
