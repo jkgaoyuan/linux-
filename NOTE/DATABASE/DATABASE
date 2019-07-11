@@ -284,6 +284,11 @@ panglj@tedu.cn
                 枚举  enum  单选
                      set   多选
 
+                     mysql> create table db1.t21(
+                                -> name char(10) not null,
+                                -> age tinyint unsigned default 25,
+                                -> sex enum("m","w") not null default "w");
+
                 插入数据
                 mysql> insert into db1.t21 (name,sex) values("tianmao","m");
 

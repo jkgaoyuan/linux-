@@ -819,5 +819,5 @@ DAY02 OPENSTACK
 
                     eg:
                         docker run -v/webroot:/var/www/html -itd -p 80:80 192.168.1.31:5000/apache:httpd
-                          -v
+                          -v 数据传递
 
