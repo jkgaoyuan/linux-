@@ -1492,7 +1492,15 @@ find  查找 递归
   -exec 处理命令 {}\; #处理find查找的结果
 	优势:以{}代替每一个结果逐个处理,遇到\;结束#####注意 结尾
       [root@server0 ~]# find /boot/ -name 'vm*' -exec    cp {} /opt \;
-	[root@server0 ~]# find /boot/ -name 'vm*' -exec    cp {} /opt/ \;
+	  [root@server0 ~]# find /boot/ -name 'vm*' -exec    cp {} /opt/ \;
+                    -exec 执行 command；如果命令返回状态值0，那么 exec 返回true。所有 find
+                          其余的命令行参数将作为提供给命令的参数，直到遇到一个由       `;'
+                          组成的参数为止。命令的参数中，字符串                        `{}'
+                          将以正在处理的文件名替换。所有的                            `{}'
+                          都会被替换，不仅是在单独的一个参数中。有些版本的            find
+                          不是这样做的。       这些参数可能需要用       `\'       来escape
+                          或者用括号括住，防止它们被shell展开。命令是从起始目录执行的。
+
 
 	[root@server0 ~]# find /etc/ -name passwd* ####支持通配符
 
