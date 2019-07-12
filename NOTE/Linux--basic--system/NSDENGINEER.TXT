@@ -767,7 +767,6 @@ selinux 和 Firewall 状态
 rpm -q nfs-utlis
 nfs-utils-1.3.0-0.el7.x86_64
 
-
 2.创建共享目录
 [root@server0 ~]# mkdir /public
 [root@server0 ~]# echo 'I AM STUDENT' > /public/1.txt  

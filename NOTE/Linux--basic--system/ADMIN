@@ -9,10 +9,93 @@ GPL 协议 (开源协议)
 程序 硬盘
 进程 内存 在进程中可以启动多个线程
 线程   (共享内存)
+####################
 debin       Redhat
 dpkg        rpm
 apt-get     yum
-############################################
+##################
+配置ubuntu的 apt-get
+
+/etc/apt/sources.list   //存放地址列表的配置文件
+deb [web或ftp地址] [发行版名字] [main/contrib/non-free]
+    deb http://archive.ubuntu.com/ubuntu/ bionic main restricted
+    deb-src http://archive.ubuntu.com/ubuntu/ bionic main restricted
+
+apt-get update 更新镜像
+apt-get upgrande 更新软件
+apt-get install package  安装软件
+apt-get remove package  卸载软件(不删除配置文件)
+apt-get purge package  卸载软件(删除配置文件)
+
+###########################################
+dpkg -i packagename  //安装
+dpkg -r packagename  //卸载
+dpkg -L packagename = rpm -ql  //列出软件包的详细详细
+dpkg -l packagename = rpm -qa  //列出所有软件包
+dpkg -S packagename  = rpm -qf /usr/bin/vim//验证文件所属的软件包
+
+##########################################
+RHEL6/7
+
+6和7的不同:
+服务启动 服务自启 运行状态切换
+
+rhel 6
+系统服务管理
+    /etc/init.d/ 脚本目录
+    /etc/init.d/name state
+    /etc/init.d/name status
+    /etc/init.d/name stop
+    /etc/init.d/name restart
+    /etc/init.d/name reload
+服务自启
+    chkconfig --list [name]  //查看服务自启状态(不设置运行级别,默认为全部级别)
+    chkconfig --list   //查看所有进程自启状态
+    chkconfig [--level 级别列表] 服务名 on  //开机自启 --leave 指定运行级别,不加默认全部
+    chkconfig [--level 级别列表] 服务名 off
+系统运行状态
+    6和7 相同
+    0-6 7个状态
+    0 关机状态
+    6 重启状态
+    init3/5 3命令行多用户,5图形多用户
+    1 单用户
+    2 多用户模式，没有NFS网络支持。
+    3 完整的多用户文本模式，有NFS，登陆后进入控制台命令行模式。
+    4 系统未使用，保留一般不用，在一些特殊情况下可以用它来做一些事情。例如在笔记本电脑的电池用尽时，可以切换到这个模式来做一些设置。
+    init 3 //切换到运行级别3
+
+rhel7
+
+服务状态
+    systemctl -t service //查看当前所有启动服务
+    systemctl -t service --all //查看当前所有服务(包括未启动的)
+当前系统运行级别
+    runlevel
+    列出当前可以切换的运行级别
+    systemctl -t target
+    切换运行级别
+    systemctl isolate 状态
+    查看默认运行级别
+    systemctl get-default
+    设置默认运行级别
+    systemctl set-default 状态
+##########################################
+linux系统启动中init 程序的作用
+    linux系统和服务管理器
+        -内核引导后加载的第一个初始化进程(PID=1)
+        -负责掌握整个linux的运行/服务资源组合
+    传统的init程序
+        systmev 顺序加载
+    systemd
+        一个更加高效的系统&服务管理器
+        开机启动服务,并启动各个系统服务间的精确依赖
+        配置目录: /etc/systemd/system/
+        服务目录: /lib/systemd/system/
+        主要管理工具: systemctl
+
+
+##########################################
 Linux文件目录
 / 根  
 /etc 存放系统配置文件（删掉的话无法正常启动）
@@ -737,7 +820,8 @@ arp -a 查看ip地址
 
 ############################################################################################
 
-cat /etc/redhat-release　#查看当前系统版本
+cat /etc/redhat-release　#查看系统版本
+cat /etc/issue
 
 
 lscpu 查看cpu信息
@@ -1044,6 +1128,7 @@ root 不受权限管理
 		rpm -qc 软件名                  ###查找软件生成的配置文件位置
 		rpm -ql 软件名                  ###查看安装软件安装位置
 		yum provides /etc/hosts        ###查询某个文件所属的软件
+		rpm -qf                        ###查询/验证文件属于的软件包
         rpm --import name              ###解决签名
 
 	#######################################	

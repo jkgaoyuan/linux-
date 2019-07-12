@@ -18,7 +18,7 @@ if [ !-z $yes ]; then  ##-z 空为真  -n 非空为真
 #服务端使用httpd
 #        yum -y install httpd
         yum -y install mariadb mariadb-devel mariadb-server
-        yum -y install php php-mysql
+        yum -y install php php-mysql php-fpm
 
         #systemctl start httpd
         #systemctl enable httpd

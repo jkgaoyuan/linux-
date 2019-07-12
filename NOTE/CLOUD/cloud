@@ -530,6 +530,15 @@ DAY02 OPENSTACK
                  ~]# source keystonerc_admin //加载认证信息
                  ~(keystone_admin)]# openstack user set --password aa admin
 
+            破解openstack管理员密码
+                 ~]# vim token
+                        export OS_TOKEN=262b214a14ac4bdeb72999f1d824b1c9 ### 在/etc/keystone/keystone.conf 中找到 18 行 的数据 将这里的替换
+                        export OS_URL=http://127.0.0.1:35357/v2.0
+                        export OS_INDETITY_API_VERSION=2
+
+                 ~]# source token
+                 ~]# source  keystonerc_admin
+                ~(keystone_admin)]# openstack user set --password gaoyuan admin
 
 
 
