@@ -5,6 +5,7 @@ DevOps
     它是一种重视“软件开发人员（Dev）”和“IT运维技术人员（Ops）”之间沟通合作的文化、运动或惯例。透过自动化“软件交付”和“架构变更”的流程，来使得构建、测试、发布软件能够更加地快捷、频繁和可靠。
     它的出现是由于软件行业日益清晰地认识到：为了按时交付软件产品和服务，开发和运营工作必须紧密合作.
 一.ansible
+    使用时 千万要小心  rsync rm 这种都是危险操作
     1.1简介
         ansible是it自动化和DevOps软件 基于python开发 批量部署 批量运行命令
         ansible可以实现:
@@ -187,12 +188,146 @@ DevOps
                     web1
                 测试 ansible app -m ping
 
+            动态主机
+                无限可能
+                    ansible inventory 包含静态和动态的inventory,静态的inventory
+                    指在文件/etc/ansible/hosts中指定的主机和组
+                    动态inventory指通过外部的脚本获取主机列表,按照要求格式返回给ansible命令
+
+                json
+                    Javascriptobjectnotation,Javascript对象表示法,一种基于文本独立于语言的轻量级数据交换格式
 
 
 
+    1.8ansible 模块
+
+        ansible-doc和ping模块
+
+            ansible-doc
+                -模块的手册相当于shell的man,  (非常重要,ansible必备)
+                ansible-doc -l          //列出所有模块
+                ansible-doc modulename   //查看帮助
+            ping 模块
+                测试网络连通性,ping模块没有参数,测试的ssh链接是否成功
+                ansible host-pattern -m ping
+
+
+            command模块
+                ansible是并发执行
+                默认模块,远程执行命令
+                    ansible host-pattern -m command -a 'args'
+                    查看机器负载
+                    ansible all -m command -a 'free -mh'
+                    查看当前时间日期
+                    ansible all -m command -a 'date +%F_%T'
+                command模块注意事项
+                    -该模块通过-a 跟上需要执行的命令可以直接执行,若命令中有如下字符则不能执行
+                    "<" ">" "|" "&"
+                    -command模块不能解析系统变量
+                    -该模块不起动shell 直接在ssh进程中执行,所有使用到shell的命令都会失败
+                    - 下面命令会失败
+                    -ansible all -m command -a 'ps aux |grep ssh'
+            shell 模块
+                -shell 模块用法基本和command一样,区别是shell模块通过/bin/sh 执行命令,可以执行任意命令
+                -不能执行交互命令 如 vim top
+
+                ansible all -m shell -a "echo ${HOSTNAME}"  //本地bash解析
+                    db2 | SUCCESS | rc=0 >>
+                    ansible
+                ansible all -m shell -a 'echo ${HOSTNAME}'  //远程bash解析
+                    db1 | SUCCESS | rc=0 >>
+                    DB1
+
+                ansible all -m shell -a 'echo \${HOSTNAME}'
+                    web1 | SUCCESS | rc=0 >>
+                    ${HOSTNAME}
+
+                testfile 文件在哪里
+                    ansible cache -m shell -a 'cd /tmp'
+                    ansible cache -m shell -a 'touch testfile'
+
+                问题解析
+                    变量解析
+                        -ansible 执行 命令是二次解析
+                        -第一次在本机解析,第二次在执行机器解析
+                        -需要第二次解析的变量要转义(\)
+                    文件在哪里
+                        -文件子用户家目录
+                        -ansible是使用ssh多次链接执行
+                        -链接退出后之前状态就全部失效
+                        -解决方法使用chdir 代替cd
+
+                给web1,db2 添加用户nb ,修改nb密码为123
+                    ansible web1,db2 -m shell -a 'useradd nb && echo 123 |passwd --stdin nb'
+
+            script 模块
+                通过该模块可以执行脚本
+               -在本地写脚本,然后使用script模块批量执行
+               -注意:该脚本包含但不限于shell脚本,只要指定sha-bang解释器的脚本都可以
+                ansible cache -m script -a 'useradd.sh'
+                    vim useradd
+                        #!/bin/bash
+                        id nb
+                        if [ $? != 0 ];then
+                        useradd wk
+                        echo 456 | passwd --stdin wk
+                        fi
+
+            yum模块
+                -通过该模块使用yum包管理器
+                -name 要进行操作的软件包名字
+                -state 动作 (installed ,removed)
+                -installed 安装
+                -removed  删除
+
+                ansible db -m yum -a 'name=mariadb-server state=installed'
+
+            service模块
+                -name 必选项,服务名
+                -enabled 是否开机启动 yes/no
+                -sleep 执行restarted,会在stop和start之间睡几秒
+                -state 对应当前服务执行启动 停止 重启 重新加载
+                -started stopped restarted reloaded
+
+                ansible db -m service -a 'name=mariadb state=started enabled=yes'
+
+            copy模块
+                -复制文件远程主机
+                -src 复制本地文件到远程主机,绝对路径和相对路径都可以,
+                路径为目录时会递归复制.若路径以'/'结尾,则复制目录里面的内容,
+                若不以'/'结尾,则复制包含目录在内的整个内容类似rsync
+                -dest 必选项.远程主机的绝对路径,如源文件是一个目录,那路径必须是目录
+                -backup 覆盖前先备份源文件,备份文件包含时间信息 选项:yes/no
+                -force 若目标主机包含文件,单内容不同,若设置为yes,则墙纸覆盖,若设置为no,则只有当目标主机目标位置不存在该文件才会复制,默认为yes
+                -复制文件
+                    ansible all -m copy -a 'src=my.cnf dest=/etc/my.cnf'
+
+                -复制目录
+                    nsible all -m copy -a 'src=/etc/yum.repos.d/ dest=/etc/yum.repos.d/'
 
 
 
+            lineinfile 模块
+                -一个类似与sed的一种行编辑替换模块
+                -path  目标文件
+                -regexp 正则表达式,要修改的行
+                -line 最终的修改结果
+                -例如修改my.cnf,中 bin-log
+                ansible db -m lineinfile -a 'path="/etc/my.cnf" regexp="^binlog-format" line="binlog-format = row"'
+
+            replace 模块
+                -一个类似与sed的一种行编辑替换模块
+                -path  目标文件
+                -regexp 正则表达式,要修改的行
+                -replace 最终的修改结果
+                -例如替换指定字符 row-->mixed
+                ansible db -m replace -a 'path="/etc/my.cnf" regexp="row" replace="mixed"'
 
 
+            setup 模块
+                -主要用来获取主机信息,playbooks里经常会用的另一个参数gather_facts与该模块相关,
+                setup模块下经常用的是filter参数
+                -filter 过滤所需的信息
+
+                ansible cache -m setup -a 'filter=ansible_distribution'
 
