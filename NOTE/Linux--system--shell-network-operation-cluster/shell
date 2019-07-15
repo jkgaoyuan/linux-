@@ -780,6 +780,7 @@ shell
                     #!/bin/bash
                     echo -ne "系统负载:\t"
                     uptime | awk '{print $(NF-2)}'|  sed 's/,//'
+                    uptime | awk '{printf "%.2F",$(NF-2)}'
                                  echo -ne "网卡流量\t"
                     ifconfig eth0 | awk '/RX p/{print $5/1024^2"Mib"}'
                                  echo -ne " 内存剩余容量\t"
@@ -814,6 +815,7 @@ shell
                             echo -en "\033[${i}G${astr}"
                             sleep 0.2
                     done
+
 
 
 

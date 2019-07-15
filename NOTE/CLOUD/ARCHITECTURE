@@ -331,3 +331,522 @@ DevOps
 
                 ansible cache -m setup -a 'filter=ansible_distribution'
 
+
+DAY02
+    PLAYBOOK
+    一.playbook 基础
+        1.1ansible 七中武器
+            第一种  (必须掌握)
+                ansible 命令,用于执行零时性工作
+            第二种  (必须掌握)
+                ansible-doc 是ansible模块的文档说明,类似于man命令
+            第三种 (必须掌握)
+                ansible-console是ansible为用户提供的交互的工具
+                用户可以使用ansible-console虚拟出来的终端上想使用shell一样使用ansible内置命令
+            第四种
+                ansible-galaxy从github上下载管理Roles的一款工具与python的pip一样
+            第五种 (必须掌握)
+                ansible-playbook 是日常使用中频率最高的命令,工作机制:通过读取先编写好的PLAYBOOK文件实现批量管理,可以理解为按照一定的条件组成的ansible任务集
+            第六种
+                ansible-vault主要用户配置文件加密,如编写的PLAYBOOK文件中包含敏感信息,用他可以加密/解密文件
+            第七种
+                ansible-pull
+                ansible 有两种工作模式 pull/push 默认pull.pull和push的工作机制刚好相反
+                适用场景: 有大量机器需要配置,即便适用高并发线程也需要花费很多时间
+                通常配置大批量机器先适用,灵活性稍有欠缺,但效率几乎可以无限提升.
+
+        1.2json简介
+        json是什么
+                json是JavaScript对象表示法,一种基于文本独立于语言的轻量级数据交换格式
+                分隔符限于   ' ()  [] {} : , 这几种
+                独立于语言,与使用什么编程语言无关
+                eg:
+                [1,2,3,4]
+                {key:value}
+        json特性
+            json是纯文本
+            json具有人类可读性
+            json具有层级别结构 --可以互相嵌套
+            json可通过Javascript进行解析
+        json语法
+            -数据在名称/值对中
+            -数据由"," 分隔
+            -{} 保存对象
+            -[] 保存数组
+        json 数组的书写格式  名称/值对
+            名称/值对 包含字段名称(在""中),后面写一个:,然后是值
+            "key":"value"
+        json语法规则-数组
+           { "key":["k1":"v1",["1","2","3","4"],"k2":["k3":"v3"]]
+            }
+            犇哥: 牛犇
+            讲师:[牛犇,王凯,丁丁,静静,xx]
+            讲师:[
+                {姓名:牛犇,爱好:大锤},
+                {姓名:王凯,爱好:吃香蕉},
+                {姓名:丁丁,爱好:写书},
+                {姓名:静静,爱好:养猫},
+                {姓名:xx,爱好:开车}
+            ]
+
+        1.3jinja2介绍
+            jinja2 是什么
+                jinja2
+
+            jinja2 模板基本语法
+                -模板的表达式都是包含在分隔符"{{ }}"内的
+                -控制语句都是包含在分隔符"{% %}" 内的
+                -模板支持注释,都是包含在分隔符"{# #}" 内,支持块注释
+                -调用变量
+                    {{username}}
+                -计算
+                    {{2+3}}
+                -判断
+                     {{1 in [1,2,3]}}
+            jinja2控制语句
+
+                if 判断
+                    {% if name == '诗仙' %}
+                        dc
+                    {% elif name == '诗圣' %}
+                        ch
+                    {% elif name == '诗魔' %}
+                          bj
+                    {% else %}
+                        lh
+                    {% endif %}
+
+                    if
+                    elif
+                    else
+                    endif
+
+                for 循环
+                    {% if name == .... %}
+                        ... ...
+                    {% elif name == '于谦' %}
+                       {% for method in [抽烟,喝酒,烫头] %}
+                        {{do method}}
+                       {% endfor %}
+                       ... ...
+
+                    {% endif %}
+
+                    for i in xx
+                    do i
+                    endfor
+
+
+        1.4YAML简介
+            YAML是什么
+                高可读,用来表达数据数列的格式
+                YAML已有多种编程语言的支持
+            YAML基础语法
+                YAML的结构通过空格来展示
+                数组使用 - 来表示
+                键值对使用 : 来表示
+                YAML使用一个固定的缩进风格表示数据层级结构关系
+                一般每个缩进级别由两个以上空格组成(千万不能使用table,用来就语法错误)
+                #表示注释
+
+                注意: 不要使用table ,缩进是初学者易出错的地方
+                      同一层级必须对齐
+            YAML的键值
+                采用: 分隔
+                :后面必须有一个空格
+                YAML键值对例子
+
+                key: value /
+                key:
+                  value
+            YAML数组表示
+                使用一个短横杠加一个空格
+                json
+                    讲师:[牛犇,王凯,丁丁,静静,xx]
+                YAML
+                   讲师:
+                     - 牛犇
+                     - 王凯
+                     - 丁丁
+                     - 静静
+                     - xx
+                json
+                    讲师:[
+                        {姓名:牛犇,爱好:大锤},
+                        {姓名:王凯,爱好:吃香蕉},
+                        {姓名:丁丁,爱好:写书},
+                        {姓名:静静,爱好:养猫},
+                        {姓名:xx,爱好:开车}
+                    ]
+
+                YAML
+
+                    讲师:
+                      -
+                        姓名: 牛犇    ## 每层级 俩个空格分隔,"key:"与"value"间是有一个空格
+                        爱好: 大锤
+                      -
+                        姓名: 王凯
+                        爱好: 吃香蕉
+                      -
+                        姓名: 丁丁
+                        爱好: 写书
+                      -
+                        姓名: 静静
+                        爱好: 养猫
+                      -
+                        姓名: xx
+                        爱好: 开车
+
+    二.PLAYBOOK
+        什么是PLAYBOOK
+            ansible用于配置,部署和管理托管主机剧本,通过PLAYBOOK的详细描述,执行一系列的tasks
+
+        为什么要使用PLAYBOOK
+            执行简单的任务,使用ad-hoc
+
+        PLAYBOOK语法基础
+            PLAYBOOK语法
+                PLAYBOOK由YAML编写,
+                #表示注释
+                同一列表元素保持缩进
+                PLAYBOOK由一个/多个play组成
+                play中hosts,variables,roles,tasks等对象表示方法都是键值以':' 分隔
+                YAML开始 为---
+            playbook构成
+                hosts: 定义要执行PLAYBOOK的远程主机组
+                vars: 定义PLAYBOOK运行时需要使用的变量
+                tasks: 定义将要在远程主机上执行的任务列表
+                handlers: 定义tasks执行完成后需要调用的任务
+            PLAYBOOK执行结果
+                绿色 成功
+                红色 失败
+                黄色 系统状态改变
+
+
+            eg1:
+                ---
+                - hosts: all
+                  remote_user: root
+                  tasks:
+                    - ping:
+        变量
+            eg2:
+                ---
+                - hosts: web
+                  remote_user: root
+                  vars:
+                    username: l4
+                  tasks:
+                    - name: "create user "
+                      user:
+                        name: "{{username}}"
+                        group: users
+                    - name: "change_passwd"
+                      shell: echo 123 |passwd --stdin "{{username}}"
+
+            eg3:  变量过滤器
+                ---
+                - hosts: web
+                  remote_user: root
+                  vars:
+                    username: w5
+                  tasks:
+                    - name: "create user "
+                      user:
+                        name: "{{username}}"
+                        group: users
+                        password: "{{'123'|password_hash('sha512')}}"
+
+
+            eg4:参数传递
+                ansible-playbook user.01.yml -e "{username:  ll}"
+                ---
+                - hosts: web
+                  remote_user: root
+                  tasks:
+                    - name: "create user "
+                      user:
+                        name: "{{username}}"
+                        group: users
+                        password: "{{'123'|password_hash('sha512')}}"
+
+            eg5: 参数传递
+                ansible-playbook user.01.yml -e @username.yml
+
+                vim username.yml
+                ---
+                username:
+                  nb
+                vim  user.01.yml
+                ---
+                - hosts: web
+                  remote_user: root
+                  tasks:
+                    - name: "create user "
+                      user:
+                        name: "{{username}}"
+                        group: users
+                        password: "{{'123'|password_hash('sha512')}}"
+            eg6: 安装httpd
+
+                ---
+                - hosts: web
+                  remote_user: root
+                  tasks:
+                    - yum:
+                        name: httpd
+                        state: latest
+                    - lineinfile:
+                        path: /etc/httpd/conf/httpd.conf
+                        regexp: '^Listen 80'
+                        insertafter: '^#Listen '
+                        line: 'Listen 8080'
+                    - copy:
+                        src: /root/index.html
+                        dest: /var/www/html/index.html
+                        owner: apache
+                        group: apache
+                        mode: 0644
+                    - service:
+                        name: httpd
+                        state: started
+                        enabled: yes
+
+                vim index.html
+                    html1
+        erro模块
+            忽略错误继续执行,
+            ignore_errors: True
+                True  忽略错误继续执行
+                False 默认 遇到错误停止
+
+                eg: 在web 上的创建 /tmp/cache 并 修改配置文件重新加载配置文件
+                    ---
+                    - hosts: web
+                      remote_user: root
+                      tasks:
+                        - shell: mkdir /tmp/cache
+                          ignore_errors: True
+                        - copy:
+                            src: /root/httpd.conf
+                            dest: /etc/httpd/conf/httpd.conf
+                            owner: apache
+                            group: apache
+                            mode: 0644
+                        - service:
+                            name: httpd
+                            state: restarted
+                            enabled: yes
+
+        tag 标识
+            调用 : ansible-playbook apacher_tags.yml -t syncconf
+                ---
+                - hosts: web
+                  remote_user: root
+                  tasks:
+                #    - shell: mkdir /tmp/cache
+                #      ignore_errors: True
+                    - copy:
+                        src: /root/httpd.conf
+                        dest: /etc/httpd/conf/httpd.conf
+                        owner: apache
+                        group: apache
+                        mode: 0644
+                      tags: syncconf  ##与copy同级
+                    - name: restart apache
+                      service:
+                        name: httpd
+                        state: restarted
+                        enabled: yes
+        when 条件触发
+            需要满足特定条件后出发某一项操作,或在特定条件下执行某个行为
+
+            tasks:
+              - name: somecommand
+                  command: somecommand
+                  when: expr
+            eg:
+                ---
+                - name: Install vim
+                  hosts: all
+                  tasks:
+                    - name: Install vim yum
+                      yum: name=vim-enhanced state=installed
+                      when: ansible_os_family == "RedHat"
+                    - name: Install vim apt
+                      apt: name=vim state=installed
+                      when: ansible_os_family == "Debian"
+        with_itmes  playbooks 标准循环
+
+            通过{{item}} 获取每次迭代的值
+            创建多个用户
+            ---
+            - hosts: web
+              remote_user: root
+              tasks:
+                - name: add users
+                  user: group=wheel |password="{{'123456'|password_hash('sha512')}} name={{item}}"
+                  with_items:["nd","dd","plj","lx"]
+
+            with_items 进阶
+
+                为不同用户定义不同组
+                ---
+                - hosts: db
+                  remote_user: root
+                  tasks:
+                    - name: adduser "{{item.name}}"
+                      user:
+                        name: "{{item.name}}"
+                        group: "{{item.group}}"
+                        password: "{{item.pwd|password_hash('sha512')}}"
+                      with_items:
+                        -
+                          name: nb
+                          group: nobody
+                          pwd: "123456"
+                        -
+                          name: wk
+                          group: users
+                          pwd: "654321"
+                        -
+                          name: dd
+                          group: adm
+                          pwd: nginx
+                        -
+                          name: jj
+                          group: mysql
+                          pwd: 123qqq...A
+                        -
+                          name: xx
+                          group: root
+                          pwd: a
+
+
+
+
+        register  保存前一个命令的结果
+            有时候我们需要前面一个命令的执行结果来判断是否要执行后面的操作,
+            我们需要register模块来保存前一个命令的返回状态,在后面调用
+            - command: test command
+              register: result
+            - command: run command
+              when: result
+            变量注册进阶
+                -针对运行命令结果返回值做判定
+                -当系统负载超过一定值做特殊处理
+
+                vim dubug.yml
+                ---
+                - hosts: web
+                  remote_user: root
+                  tasks:
+                    - shell: uptime | awk '{printf("%.2f",$(NF-2))}'
+                      register: result      ####显示详细的错误信息
+                    - service:
+                        name: httpd
+                        state: stopped
+                      when: result.stdout|float > 0.7   #####result.stdout|float将输出字符转化为数值, 经过测试不转化为float也可以执行成功
+
+
+
+
+
+
+
+
+
+        handlers 触发器
+            ansible-playbook apacher_change.yml
+                ---
+                - hosts: web
+                  remote_user: root
+                  tasks:
+                #    - shell: mkdir /tmp/cache
+                #      ignore_errors: True
+                    - copy:
+                        src: /root/httpd.conf
+                        dest: /etc/httpd/conf/httpd.conf
+                        owner: apache
+                        group: apache
+                        mode: 0644
+                #      tags: syncconf
+                      notify:
+                        - restart apache
+                  handlers:  ###与tasks 同级 ,执行玩tasks后 才会执行 handler
+                    - name: restart apache
+                      service:
+                        name: httpd
+                        state: restarted
+                        enabled: yes
+
+
+
+
+
+
+
+        include and roles 调用PLAYBOOK文件
+            include
+                由于PLAYBOOK文件会随着项目越来越大,PLAYBOOK也会越来越复杂,我们可以把
+                play tasks handler 分别写入不同文件 通过include指令包含进来
+
+                tasks:
+                  -include: tasks/setup.yml
+                  -include: tasks/user.yml user=plj  ##user.yml 中可以通过{{user}} 来使用变量
+
+                handler:
+                  -include: handler/handlers.yml
+            roles
+                roles 像是一个加强版的include,他可以引入一个项目的文件和目录
+                一般所需的目录层级有
+                 -vars: 变量
+                 -tasks: 任务层
+                 -handler:出发层
+                 -file: 文件
+                 -template: 模板
+                 -default: 默认,优先级最低
+
+                 eg: 加入有一个play包含一个叫x的role则
+                    ---
+                    -hosts: host_group
+                    roles:
+                      -x
+                 -x/tasks/main.yml
+                 -x/vars/main.yml
+                 -x/handler/main.yml
+                 -x/.../main.yml
+                 这些都会添加到这和play
+
+
+
+
+
+
+
+        debug 模块
+            检测语法 ansible-playbook --syntax-check test.yml
+
+            运行测试 ansible-playbook -C test.yml
+                由于测试和检测语法的问题可能 会检测失败,但是写的PLAYBOOK 并没有问题
+            调用:ansible-playbook dubug.yml
+            当一分钟之内的cpu使用率达到70%后就停止httpd服务,在报错时显示详细信息
+            vim dubug.yml
+            ---
+            - hosts: web
+              remote_user: root
+              tasks:
+                - shell: uptime | awk '{printf("%.2f",$(NF-2))}'
+                  register: result      ####显示详细的错误信息
+                - service:
+                    name: httpd
+                    state: stopped
+                  when: result.stdout|float > 0.7   #####result.stdout|float将输出字符转化为数值, 经过测试不转化为float也可以执行成功
+                - name: show debug info
+                  debug: var=result
+
+
+
+
+

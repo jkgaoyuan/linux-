@@ -824,7 +824,8 @@ WEB服务器软件  (重要啊 面试比问)
 eg :请大家用Apache 搭一个web环境
 
 默认设置
--listen :监听地址:端口(80)
+-listen :监听地
+址:端口(80)
 -ServerName: 本站点注册的DNS名称(空缺)
 
 	DNS服务器:本次实验由classroom提供(之后自己搭建)
