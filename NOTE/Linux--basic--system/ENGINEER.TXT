@@ -1249,7 +1249,7 @@ CustomLog log/access_log combined
     "Mozilla/4.08 [en] (Win98; I ;Nav)" (\"%{User-agent}i\")
     "User-Agent"请求头。此项是客户端提供的浏览器识别信息。
 
-##########################
+##############################3
 邮件服务器
  DNS 服务器 : classroom # 由于目前没有学校DNS服务的搭建
 
