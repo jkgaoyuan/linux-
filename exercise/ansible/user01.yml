@@ -1,0 +1,30 @@
+---
+- hosts: db
+  remote_user: root
+  tasks:
+    - name: adduser "{{item.name}}"
+      user:
+        name: "{{item.name}}"
+        group: "{{item.group}}"
+        password: "{{item.pwd|password_hash('sha512')}}"
+      with_items:
+        - 
+          name: nb
+          group: nobody
+          pwd: "123456"
+        - 
+          name: wk
+          group: users
+          pwd: "654321"
+        - 
+          name: dd
+          group: adm
+          pwd: nginx
+        - 
+          name: jj
+          group: mysql
+          pwd: 123qqq...A
+        - 
+          name: xx
+          group: root
+          pwd: a

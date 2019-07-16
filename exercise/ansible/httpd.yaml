@@ -1,0 +1,23 @@
+---
+- hosts: web
+  remote_user: root
+  tasks:
+    - name: install the latest version of Apache
+      yum:
+        name: httpd
+        state: latest
+    - lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^Listen '
+        insertafter: '^#Listen '
+        line: 'Listen 8080'
+    - copy:
+        src: index.html
+        dest: /var/www/html/index.html
+        owner: apache
+        group: apache
+        mode: 0644
+    - service:
+        name: httpd
+        state: started
+        enabled: yes
