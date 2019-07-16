@@ -694,7 +694,8 @@ DAY02
                 为不同用户定义不同组
                 ---
                 - hosts: db
-                  remote_user: root
+
+
                   tasks:
                     - name: adduser "{{item.name}}"
                       user:
@@ -846,7 +847,221 @@ DAY02
                 - name: show debug info
                   debug: var=result
 
+DAY03
+    一.elk
+        1.1 elk是什么
+            elk 是一套日志监控解决方案 ,三个软件产品字母缩写,均为开源软件
+            elasticsearch  日志检测和存储   (数据库)
+            logstash       日志的收集和分析处理  (Java程序,处理log可视化-类似于php)
+            kibana         负责日志的可视化  (web软件--类似nginx)
+
+            虽然elk可zabbix都是监控软件但是,这是两个不同的监控方向,zabbix 监控服务,机器状态,elk监控日志
 
 
+        1.2 elk能做什么
+            -分布式日柱数据集中式查询和管理
+            -系统监控,包含系统硬件和应用的各个组件的监控
+            -故障排查
+            -安全信息的事件管理
+            --报表功能
+        1.3 elasticsearch 特点
+            非关系型数据库
+            实时性
+            分布式实时文档存储
+            所有对象全是文档
+            高可用 易于扩展 支持集群 分片和复制
+            接口友好 支持json
+
+            es 没有什么
+            典型意义的事物
+            面向文档的数据库
+            没有授权和认证
+        1.4 elasticsearch 相关概念
+
+            node 装有es服务器节点
+            cluster 有多个node组成集群
+            document 一个可被搜索的基础信息单元     row       行
+            index 拥有相似特征的文档集合           database
+            type 一个索引中可定义一种/多种类型      table     表
+            filed es最小单位 相当于数据的某一列     column    列
+            shards 索引的分片,每一个分片就是shard
+            replicas 索引的拷贝
+            关系行
+            DB--->database-->table-->rows-->columns
+
+                                      行        列
+            ES-->index-->types--> documents-->fields
+                 索引     类型      文档          预
+
+
+        1.5 安装
+
+            准备 7台虚拟机
+            配置 elk的 yum源
+             createrepo .
+
+            单台
+            yum -y install  java-1.8.0-openjdk
+            yum -y install elasticsearch
+            vim +54 /etc/elasticsearch/elasticsearch.yml
+            network.host: 0.0.0.0  //修改如下
+            systemctl restart elasticsearch.service
+            ss -antulp |grep 9200
+            ss -antulp |grep 9300
+            systemctl enable elasticsearch.service
+            集群
+            安装软件相同 只是修改的配置文件 有所不同
+            vim /etc/hosts  //每台机器都要做
+            192.168.1.51 es1
+            192.168.1.52 es2
+            192.168.1.53 es3
+            192.168.1.54 es4
+            192.168.1.55 es5
+            vim /etc/elasticsearch/elasticsearch.yml
+            17 cluster.name: myelk        //配置集群名字
+            23 node.name: es1        //当前主机名称,集群中node.name必须不同,与主机名一致,之前修改了hosts
+            54 network.host: 0.0.0.0     // 0.0.0.0（监听所有地址）
+            68 discovery.zen.ping.unicast.hosts: ["es1", "es2", "es3"]
+            //声明集群里的主机成员有谁，不需要全部写进去,但是在启动其他机器的服务时这三台机器的服务必须先启动.
+            集群中的其他机器在启动后会寻址这三台机器来确认集群
+            systemctl restart elasticsearch.service
+            启动没有 报错信息 若检查9300/9200 无端口 请检查 systemctl status elasticsearch.service 和  vim /var/log/messages 拍错
+            访问测试 查看node 数量
+            firefox http://192.168.1.51:9200/_cluster/health?pretty
+                "number_of_nodes" : 5,
+
+        安装插件
+               27  cd /usr/share/elasticsearch/bin/
+               28  ./plugin install ftp://192.168.1.254/elk/bigdesk-master.zip
+               31  ./plugin install ftp://192.168.1.254/elk/elasticsearch-head-master.zip
+               32  ./plugin list
+               33  ./plugin install ftp://192.168.1.254/elk/elasticsearch-kopf-master.zip
+               34  ./plugin list
+
+        访问测试
+
+            http://192.168.1.51:9200/_plugin/bigdesk/#nodes
+            http://192.168.1.51:9200/_plugin/kopf/#!/cluster
+            http://192.168.1.51:9200/_plugin/head/
+                索引名称     nsd
+                分片数        5    将数据分成5份存在服务器
+                副本数量       2   每台服务器报错一份源数据两份备份
+
+                最多坏两台服务器
+
+
+
+        补充知识
+            http协议
+
+                GET POST HEAD
+
+                OPTIONS PUT DELETE TRACE和CONNECT
+            ES 常用
+                PUT         增
+                DELETE      删
+                POST        改
+                GET         查
+
+            命令 curl
+                   -A 修改请求 agent -A
+                   -X 设置请求方法
+                   -i 显示返回头信息
+
+                   curl -A Safari/537.36 -Li http://www.jkgaoyuan.ml |head -10
+
+                      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                                     Dload  Upload   Total   Spent    Left  Speed
+                    100  1104    0  1104    0     0   1319      0 --:--:-- --:--:-- --:--:--  1318HTTP/1.1 200 OK
+                    Server: nginx/1.16.0
+                    Date: Tue, 16 Jul 2019 06:45:32 GMT
+                    Content-Type: text/html; charset=UTF-8
+                    Transfer-Encoding: chunked
+                    Connection: keep-alive
+                    X-Powered-By: PHP/5.6.40
+
+                   curl -A Safari/537.36 -Li -X PUT http://118.144.89.240/info.php
+
+                    HTTP/1.1 200 OK
+                    Server: nginx
+                    Date: Tue, 16 Jul 2019 06:48:24 GMT
+                    Content-Type: text/html; charset=UTF-8
+                    Transfer-Encoding: chunked
+                    Connection: keep-alive
+                    Set-Cookie: PHPSESSID=f13e90b9a3b7fcc167e5e69c88445099; path=/
+                    Expires: Thu, 19 Nov 1981 08:52:00 GMT
+                    Cache-Control: no-store, no-cache, must-revalidate
+                    Pragma: no-cache
+
+                    <pre>
+                    [ REQUEST_METHOD] ==> PUT
+                    [    REMOTE_ADDR] ==> 223.255.15.21
+                    [HTTP_USER_AGENT] ==> Safari/537.36
+                    [   HTTP_REFERER] ==>
+
+
+
+            RESTful API 调用
+                显示 所有cat目录
+                curl  http://192.168.1.51:9200/_cat/
+                curl  http://192.168.1.51:9200/_cat/recovery
+                显示 详细的 health信息 ?v 表示显示详细信息
+                curl  http://192.168.1.51:9200/_cat/health?v
+
+                通过命令行创建索引
+                [root@es1 ~]# curl -XPUT http://192.168.1.51:9200/tedu -d '{
+                >   "settings":{
+                >     "index" :{
+                >       number_of_shards: 5,
+                >       number_of_replicas: 1
+                >               }
+                >               }
+                > }'
+                这里的ip地址填写从服务器/主服务器都可以
+                插入数据
+                                                    索引   类型   域
+                curl -XPUT http://192.168.1.51:9200/tedu/teacher/3 -d '{
+                "name": "ff",
+                "age": "35",
+                "gender": "man",
+                "like": "chaoyan"
+                }'
+
+                修改数据
+                    -XPOST  _update  {"doc": {}} 为固定格式
+                curl -XPOST http://192.168.1.51:9200/tedu/teacher/4/_update -d '{"doc": {"gender":"wmen"}}'
+
+                查询
+                curl -XGET http://192.168.1.51:9200/tedu/teacher/6?putty
+                删除
+                    就是不能删除类型
+                删除字段
+                curl -XDELETE http://192.168.1.51:9200/tedu/teacher/5?putty
+                删除索引
+                curl -XDELETE http://192.168.1.51:9200/tedu/
+                删库
+                curl -XDELETE http://192.168.1.51:9200/*
+
+                批量导入数据
+
+                lftp 192.168.1.254
+                cd elk/
+                get logs.jsonl.gz
+                logs.jsonl.gz
+                shakespeare.json.gz
+
+                gzip -d *.gz
+
+                curl -XPOST 'http://192.168.1.51:9200/_bulk' --data-binary @logs.jsonl
+                curl -XPOST 'http://192.168.1.51:9200/_bulk' --data-binary @shakespeare.json
+                curl -XPOST 'http://192.168.1.51:9200/x/xx/_bulk/' --data-binary @accounts.json
+
+                accounts.json
+                {"index":{"_id":"1"}}^M
+                shakespeare.json
+                {"index":{"_index":"shakespeare","_type":"act","_id":0}}
+
+                这是表中必须包含的,但是account.json 缺少了 索引和 类型,我们应在导入数据时补上索引和类型
+                索引 类型 字段
 
 

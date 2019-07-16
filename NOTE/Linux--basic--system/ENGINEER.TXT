@@ -961,13 +961,31 @@ web访问限制控制
 		<Directory "/var/www">
 		    AllowOverride None
 		    # Allow open access:
-		    Require all granted
+		    Require all granted  ###　允许所有来源访问
 		</Directory>
+
+
+###url重写(伪静态技术)需要读取,有时候，我们需要修改apache默认配置，但是，
+#####我们却不想对apache的http.conf进行太多的修改，所以我们使用.htaccess(分布式配置文件)来达到我们的目的。
+####.htaccess提供了针对每个目录改变配置的方法，即在一个特定的目录中放置一个包含指令的文件，
+####其中的指令作用于此目录及其所有子目录。不过，我们需要让apache来读取它，这里就需要修改apache下的http.conf了。
+
+我们的apache都有自己项目的默认根目录，在DocumentRoot "D:/www"下面(这里以我的路径为例子) ,有一个叫<Directory>的东西，
+它里面有这样一段代码：AllowOverride None，如果我们把None改成All，那么我们的www目录下所有项目都能读取到.htaccess了。
+
+一个单词就解决了我们的问题，固然方便，但是它的弊端也很多。例如每次访问项目时，apache都会对每一个.htaccess文件进行读取，
+处理速度大幅度降低；每一个项目都能进行apache的配置修改，安全性大大降低等。　所以默认设置为none
+
+
+
 
 
 使用: <Directory></Directory>
 对于目录设置的 权限子目录默认继承,
 除非对于子目录有明确规定
+
+
+
 
 
 eg:
@@ -1007,7 +1025,7 @@ Require ip 172.0.0.1::1 172.25.0.11 #允许部分用户访问
 		Require ip 172.25.0.11
 		</Directory>
 		<Directory /webroot>
-		 Require all granted
+		 Require all granted   ###允许所有访问
 		</Directory>
 	vim /etc/httpd/conf.d/html.conf #调用配置文件--虚拟主机设置
 		<virtualhost *:80>

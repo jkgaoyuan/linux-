@@ -7,4 +7,3 @@ read -p 'ipaddress  ' ip
                             xfs_growfs /dev/vda1"
         done
 
-
