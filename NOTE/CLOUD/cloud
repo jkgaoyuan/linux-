@@ -578,6 +578,13 @@ DAY02 OPENSTACK
 
     DAY04
         一.docker
+            docker 是使用go语言编写
+            Go 编译生成的是一个静态可执行文件,除了 glibc 外没有其他外部依赖,这让部署变得异常方便.
+            参考:
+            https://www.cnblogs.com/bethal/p/5942369.html
+            镜像在没有运行起来之前只是镜像,运行起来后就可以称为 容器.
+            要点：容器 = 镜像 + 可读层。并且容器的定义并没有提及是否要运行容器。
+            docker 是 一个容器管理工具
             1.1什么是容器
 
                 容器技术已经成为应用分装和交付的核心技术
@@ -828,6 +835,6 @@ DAY02 OPENSTACK
 
                     eg:
                         docker run -v/webroot:/var/www/html -itd -p 80:80 192.168.1.31:5000/apache:httpd
-                          -v 数据传递
+                          -v 挂载磁盘,数据持久化
 
 

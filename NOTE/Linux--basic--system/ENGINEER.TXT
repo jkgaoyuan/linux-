@@ -1,4 +1,4 @@
-
+推荐博客: http://www.jinbuguo.com/
 ######################################################
 SHELL SCRIPT  SHELL 脚本(目前不做要求,之后会专门讲)
 脚本:一个可以执行的文件,运行可以实现某种功能(类似于某种程序)
@@ -1194,7 +1194,7 @@ systemctl restart httpd
 Firefox firefox https://webapp0.example.com
 
 ##########################
-Apache  httpd 服务的日志
+Apache  httpd   服务的日志
 
 通用日志格式(Common Log Format)
 这是一个典型的记录格式：

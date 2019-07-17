@@ -917,6 +917,9 @@ DAY03
             192.168.1.53 es3
             192.168.1.54 es4
             192.168.1.55 es5
+            192.168.1.56 kibana
+            192.168.1.57 logstash
+            192.168.1.58 Apache
             vim /etc/elasticsearch/elasticsearch.yml
             17 cluster.name: myelk        //配置集群名字
             23 node.name: es1        //当前主机名称,集群中node.name必须不同,与主机名一致,之前修改了hosts
@@ -1066,6 +1069,115 @@ DAY03
 
 
 
-                http://www.jinbuguo.com/
+        1.6kibana
+            安装 配置yum,使用 es1 使用的 yum源
+
+                yum -y install kibana
+            修改配置文件
+                 vim /opt/kibana/config/kibana.yml
+
+
+                  2 server.port: 5601
+
+                  5 server.host: "0.0.0.0"
+
+                  15 elasticsearch.url: "http://es1:9200"
+
+
+                  23 kibana.index: ".kibana"
+
+                  26 kibana.defaultAppId: "discover"
+
+                  53   elasticsearch.pingTimeout: 1500
+                  57   elasticsearch.requestTimeout: 30000
+                  64   elasticsearch.startupTimeout: 5000
+
+
+
+                  systemctl restart kibana.service
+                  http://192.168.1.56:5601/status
+
+                  状态为green则为正常
+
+                  http://192.168.1.56:5601/
+
+                    discover
+
+                    kibana选择日志
+
+                      支持通配符
+                      选择logstash-*
+                      time-field  选择 @timestramp
+                      create
+
+                      选择时间范围  右上角
+                      15.5.17  51.5.21
+                      框选
+
+
+                    visualiz
+
+                    pie chart
+
+
+        1.7 logstash
+
+            安装
+                 yum -y install java-1.8.0-openjdk
+                 yum -y install logstash
+
+                 安装位置
+                    /opt/logstash/
+
+                    默认没有 配置文件
+
+                 编写配置文件
+                    默认包含三部分
+                        input{}  输入
+                        filter{} 处理
+                        output{} 输出
+                    vim /opt/logstash/logstash.conf
+
+                    input{
+                            stdin{}
+                    }
+                    filter{ }
+                    output{
+                            stdout{}
+                    }
+
+                 启动
+                    -f 指定配置文件位置
+                    /opt/logstash/bin/logstash -f logstash.conf
+
+                 查看logstash 已经安装的插件
+                    /opt/logstash/bin/logstash-plugin list
+
+                 由于logstash的插件众多,可以访问下面两个 网站寻找帮助
+                    https://github.com/logstash-plugins
+                    https://www.elastic.co/guide/en/logstash/current/index.html   // INPUT filter OUTPUT 这三项
+
+
+                 配置file插件
+                    vim /opt/logstash/logstash.conf
+
+
+                    input{
+                            file{
+                            start_position => "beginning"    // 开始读取log文件的位置,这个参数受到下面文件的影响,并且优先级高于 position
+                            sincedb_path => "/var/lib/logstash/sinedb-access"    // 将指针文件定向到 /var/lib/logstash/sinedb-access, 该文件决定了服务启动后,读取log文件位置,该文件默认在 /root .sincedb_xxx
+                            path => ["/tmp/a.log","/var/tmp/b.log"]
+                            type => "a.log"                  //标记
+
+                            }
+                    }
+
+                    filter{ }
+                    output{
+                            stdout{ codec => "rubydebug"}
+                    }
+
+
+
 
 
