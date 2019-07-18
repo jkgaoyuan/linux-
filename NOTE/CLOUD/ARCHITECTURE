@@ -1178,6 +1178,338 @@ DAY03
                     }
 
 
+DAY04
+    大型架构的配置及其技术
+
+    一.大数据
+        定义:无法再一定时间范围内用常规软件工具进行捕捉管理和处理的数据集合
+
+            从海量数据中快速获取有价值的信息.
+
+            大规模并行处理数据库,数据挖掘,分布式文件系统,/数据库,云计算和可扩展的存储系统
+
+        特点: 数量(vloume)  速度(velocity) 种类(variety) 价值(value) 真实性(veracity)
+
+    二.Hadoop
+        定义: 分析和处理海量数据的软件平台
+              开源 Java分支
+              分布式基础架构
+
+              高可靠 高扩展 高效性 高容错 低成本
+        最先有Google 发布的三篇论文  产生 GFS MapReduce BigTable 组成
+        之后有Yahoo 依照论文用Java 进行实现
+            GFS------> HDFS
+            MapReduce------>  MapReduce
+            BigTable------> Hbase
+
+
+        1.1Hadoop 常用组件
+
+            HDFS      hadoop分布式文件系统  核心
+            mapreduce 分布式计算框架        核心
+            Yarn      集群资源管理系统      核心
+            Zookeeper 分布式协作服务
+            Hbase     分布式列存数据库
+            Hive      基于hadoop的数据仓库
+            Sqoop     数据同步工具
+
+        1.2 hdfs 角色及概念
+            1.2.1 hdfs结构
+                client
+                    切分文件
+                    访问hdfs
+                    与namenode交互,获取文件位置信息
+                    与datanode交互,读取和写入数据
+                datanode
+                    数据存储节点,存储实际数据
+                    汇报存储信息给namenode
+                namenode
+                    master节点,管理hdfs的名称空间和数据块映射信息(该文件名fsimage什么数据存储位置),
+                    配置副本策略(数据存储几份),处理所有客户请求,(管理数据具体存储位置)
+
+                secondary namenode
+                    定期合并fsimage 和fsedits(数据变更日志,记录数据何处变化), 推送给namenode
+                    紧急情况下,辅助恢复namenode
+                    但是secondary namenode 非namenode 热备份
+                block
+                    每块128m大小
+                    每块多副本
+
+            1.2.2 mapreduce
+
+                    由Java实现的分布式计算框架
+                    jobtracker  分解任务
+                        master节点
+                        管理所有的作业/任务监控/错误处理
+                        将任务分解,分配给tasktracker
+                    tasktracker 执行任务
+
+                    map task
+                        分析记录每条数据记录,传递给用户编写的map()并执行,将输出结果写入本地磁盘
+                        -若map-only 作业,直接写入 hdfs
+                    reducer task
+                        从map task的执行结果中,远程读取输入数据,对数据进行排序,将数据安装分组,传递给用户编写的reduce函数执行
+
+
+            1.2.3 yarn
+                    核心: 将jobtracker 和task tracker 分离,由下面几大组件构成
+                         -resourcemanager 一个全局的资源管理节点
+                         -nodemanager   每个节点(RM)代理
+                         -applicationmaster 表示每个应用
+                         -每一个applicationmaster有多个container在nodemanager上运行
+
+
+                    resourcemanager
+                       处理客户端请求
+                       启动/监控applicationmaster
+                       监控nodemanager
+                       资源分配与调度
+
+                    nodemanager
+
+                        单个节点的资源管理
+                        处理来自resourcemanager
+                        处理来自applicationmaster
+                    container
+
+                        对任务运行环境的抽象,封装了cpu 内存
+                        对维度资源及环境变量,启动命令的任务运行相关的信息
+                    applicationmaster
+
+                        数据切分
+                        为应用申请资源,并分配内部任务
+                        任务监控与容错
+                    client
+                        用户与yarn的交互客户端
+                        提交应用程序,监控 应用程序状态,杀死应用
+
+        1.3 hadoop
+                模式
+
+                    单机
+                    伪分布式  测试开发
+                    完全分布式  生产
+
+
+                单机install Hadoop
+
+                    安装Java环境
+                    yum -y install java-1.8.0-openjdk-devel
+
+
+                    tar -xf hadoop-2.7.7.tar.gz  -C
+
+                    cp -r hadoop-2.7.7/ /usr/local/hadoop/
+
+                    配置Java的运行环境
+                    vim /usr/local/hadoop/etc/hadoop/hadoop-env.sh
+
+                    指定 Java安装路径
+                    rpm -ql java-1.8.0-openjdk
+                    export JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.161-2.b14.el7.x86_64/jre"
+                    指定hadoop的配置文件 位置
+                    export HADOOP_CONF_DIR="/usr/local/hadoop/etc/hadoop"
+
+                    cd /usr/local/hadoop
+                    mkdir testinput
+
+                    cp LICENSE.txt  NOTICE.txt README.txt testinput/
+                    bin/hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.7.jar wordcount testinput/ testoutput
+
+                    wordcount 是内置的命令
+                    wordcount 输入目录  输出目录(会自己创建)  我们只需要准备好输入目录中的内容就好
+
+                    查看结果
+                    cat testoutput/part-r-00000
+
+
+                伪分布式
+
+                    伪分布式的安装和完全分布式类似,区别在与所有的角色安装在一台机器上面,使用本地磁盘,一般生产环境都会使用完全分布式,伪分布式用来学习和测试
+
+                    伪分布式配置和完全分布式配置类似
+
+                hadoop配置文件及格式
+
+                    xml文件配置格式
+                    <property>
+                        <name>关键词</name>
+                        <value>变量</value>
+                        <description>描述</description>
+                    </property>
+
+
+                搭建完全分布式
+
+                    准备三台机器(两台node 一台namenode,算上上午的node1 一共四台) 配置/etc/hosts
+                      ping通namenode
+                      192.168.1.60 node1
+                      192.168.1.61 node2
+                      192.168.1.62 node3
+                      192.168.1.63 namenode
+
+                      java -version 验证java
+                      jps 验证角色
+
+                    确保 namenode 能面秘钥远程 node1-3 包括本机
+
+                        vim /etc/ssh/ssh_config
+                        Host *
+                        GSSAPIAuthentication yes
+                        StrictHostKeyChecking no
+                                     加密长度 算法  不需要密码  文件名称
+                        ssh-keygen -b 2048 -t rsa -N '' -f .ssh/id_rsa
+
+                        ssh-copy-id root@node1
+                        ssh-copy-id root@node2
+                        ssh-copy-id root@node3
+                        ssh-copy-id root@namenode
+
+
+                    修改hdfsde配置文件
+
+                        下面配置文件的参数可以在下面网站的左下角找到
+                        http://hadoop.apache.org/docs/stable/
+
+                        ##################
+                        core-site.xml
+                        #################
+                        vim /usr/local/hadoop/etc/hadoop/core-site.xml
+
+                                hadoop.tmp.dir  数据的根目录, 类似mysql /usr/lib/mysql
+                            将<configuration>中添加如下
+
+                            <configuration>
+
+                                <property>
+                                    <name>fs.defaultFS</name>
+                                    <value>hdfs://namenode:9000</value>
+                                </property>
+                                <property>
+                                    <name>hadoop.tmp.dir</name>
+                                    <value>/var/hadoop</value>
+                                </property>
+
+                            </configuration>
+
+                            ##############
+                            hdfs-site.xml
+                            #############
+
+                            vim /usr/local/hadoop/etc/hadoop/core-site.xml
+                                哪里启动 namenode
+                                哪里启动 secondary namenode
+
+                            <configuration>
+                                <property>
+                                    <name>dfs.namenode.http-address</name>
+                                    <value>namenode:50070</value>
+                                </property>
+                                <property>
+                                    <name>dfs.namenode.secondary.http-address</name>
+                                    <value>namenode:50090</value>
+                                </property>
+                                <property>
+                                    <name>dfs.replication</name>
+                                    <value>3</value>
+                                </property>
+                            </configuration>
+
+                            ###########
+                            slaves
+                            ###########
+                                声明谁是datanode
+                            vim /usr/local/hadoop/etc/hadoop/slaves
+
+                            node1
+                            node2
+                            node3
+
+                        同步配置
+
+                          scp -r /usr/local/hadoop/ root@node2:/usr/local/hadoop/
+                          scp -r /usr/local/hadoop/ root@node3:/usr/local/hadoop/
+                          scp -r /usr/local/hadoop/ root@namenode3:/usr/local/hadoop/
+
+                        在namenode上初始化并启动服务,检查集群状态
+
+                            cd /usr/local/hadoop
+                            ./bin/hdfs namenode -format    //初始化
+                            ./sbin/start-dfs.sh            //启动服务
+                            ./bin/hdfs dfsadmin -report    // 检查集群状态
+
+                            ./sbin/stop-dfs.sh              //停止服务
+                            ./sbin/stop-all.sh              //停止所有服务
+
+                            jps 验证
+
+                                23985 Jps
+                                23747 SecondaryNameNode
+                                23564 NameNode
+
+                        日志位置
+                            每台机器都有
+                            /usr/local/hadoop/logs/
+
+                        rsync -avXSH
 
 
 
+                    修改 mapreduce 和 Yarn 的配置文件
+
+                        ssh root@namenode
+                        cd /usr/local/hadoop/etc/hadoop/
+                        mv mapred-site.xml.template mapred-site.xml
+
+                        vim mapred-site.xml
+
+                        <configuration>
+                        <property>
+                            <name>mapreduce.framework.name</name>
+                            <value>yarn</value>
+                        </property>
+
+                        </configuration>
+
+
+                         vim yarn-site.xml
+
+                        <configuration>
+
+                        <!-- Site specific YARN configuration properties -->
+
+                        <property>
+                                <name>yarn.resourcemanager.hostname</name>
+                                <value>namenode</value>
+                        </property>
+                        <property>
+                                <name>yarn.nodemanager.aux-services</name>
+                                <value>mapreduce_shuffle</value>
+                        </property>
+                        </configuration>
+
+                    同步配置文件
+
+                        for i in node{1..3};do rsync -avXSH /usr/local/hadoop/etc ${i}:/usr/local/hadoop/; done
+
+                    启动
+                        因为上面已经启动了dfs ,这里只需要启动yarn
+                        /usr/local/hadoop/sbin/start-yarn.sh
+
+
+                    检查
+                        namenode
+                        jps
+
+                            23747 SecondaryNameNode
+                            24248 ResourceManager
+                            24507 Jps
+                            23564 NameNode
+
+                            namenode 主机
+                            注意这里ip需要与你设定的ip一致
+                        http://192.168.1.63:50070/        //--namenode web页面
+                        http://192.168.1.63:50090/        //--secondory namenode web页面
+                        http://192.168.1.60:50075/        //--datanode web页面（node1,node2,node3）
+                        http://192.168.1.63:8088/        //--resourcemanager web页面
+                        http://192.168.1.60:8042/        //--nodemanager web页面（node1,node2,node3）
