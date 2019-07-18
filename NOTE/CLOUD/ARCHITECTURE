@@ -138,6 +138,8 @@ DevOps
             ansible web,db --list-hosts
             批量检测主机
             ansible web -m ping -k
+            列出所有的可执行主机
+            ansible all  --list-hosts
 
             部署免密码登录
 
@@ -145,6 +147,7 @@ DevOps
             for i in 41 42 43 44 45
             > do ssh-copy-id -i key.pub root@192.168.1.$i
             > done
+            -i 指定 公钥文件
             再次检测
             ansible web -m ping
 
@@ -303,7 +306,7 @@ DevOps
                     ansible all -m copy -a 'src=my.cnf dest=/etc/my.cnf'
 
                 -复制目录
-                    nsible all -m copy -a 'src=/etc/yum.repos.d/ dest=/etc/yum.repos.d/'
+                    ansible all -m copy -a 'src=/etc/yum.repos.d/ dest=/etc/yum.repos.d/'
 
 
 

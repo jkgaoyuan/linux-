@@ -727,7 +727,7 @@ scp ‘/root/桌面/dachui.txt/’root@172.168.5.45:/root/桌面
 
 rsync 文件 root@对方ip ：存放位置    -pgo 保持文件权限，保持用户主，保持用户组 不变
 rsync /etc/yum.repos.d/local.repo root@$i:/etc/yum.repos.d/local.repo
-
+        -avSXH
 -v, --verbose 详细模式输出
 -q, --quiet 精简输出模式
 -c, --checksum 打开校验开关，强制对文件传输进行校验
@@ -807,6 +807,10 @@ AB两个机器的免密码登录
 将B机器的公钥发送到A机器,A机器ssh登录B机器的时候就不需要 输入密码
 https://blog.csdn.net/u013948858/article/details/78252409
 ssh-copy-id IP (传输公钥到制定的 ip)
+-i 指定公钥文件
+若命令执行失败,提示被拒绝去请检查权限
+.ssh目录，以及/home/ 当前用户 需要700权限
+.ssh目录下的authorized_keys文件需要600或644权限
 ###############################################################
 ssh-keygen 产生 公钥和私钥
 
