@@ -108,6 +108,8 @@ shell
                 10089
                 [root@server0 opt]# exit
                 [root@server0 opt]#
+
+                a+=b -----> a=a+b
         shell 中的 数学运算
             方法一 expr 值1 运算符 值2
                 [root@svr5 ~]# X=1234                              //定义变量X
@@ -707,6 +709,7 @@ shell
                   sed  -rn "s/$var:([^:]+1).*/\1/p" /etc/shadow
                   done
         awk基本用法(非常重要;;;字符串的处理)
+            按行读,按列取
             格式:
                 1) 前置命令|awk [选项] '[条件][指令]'
                 2) awk[选项] '[条件][指令]' 文件
@@ -819,6 +822,17 @@ shell
 
 
 
+            用awk写一个 wc 功能
+                awk按行读,按列取
+                #!/bin/bash
+                #自定义变量 chars 变量存储字符个数,自定义变量 words 变量存储单词个数
+                #awk 内置变量 NR 存储行数
+                #length()为 awk 内置函数,用来统计每行的字符数量,因为每行都会有一个隐藏的$,所以每次统计后都+1
+                #wc 程序会把文件结尾符$也统计在内,可以使用 cat -A 文件名,查看该隐藏字符
+                # $0  当前读入的整行文本内容
+                awk '{chars+=length($0)+1;words+=NF} END{print NR,words,chars}' $1
 
+                chars=chars+length($0)+1
+                words=words+NF   //awk按列
 
 

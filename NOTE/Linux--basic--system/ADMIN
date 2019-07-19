@@ -281,6 +281,10 @@ cp 复制
            2. 拷贝文件夹需要加参数  -a
            3. 与mv的区别是一个源文件还在，一个不在。
 
+
+   选项     -r 递归复制  递归地复制目录
+            -p  保持原始文件的所有者，组，许可，和时间表属性。
+            -a 复制时,尽可能保持文件的结构和属性.(但不保持目录结构)
 练习：
       1.在自己家里创建一个a文件夹，在里面创建1.txt 2.txt 3.txt
             
@@ -724,7 +728,7 @@ eg:
 远程传输文件  
 scp 文件 root@对方ip ：存放位置
 scp ‘/root/桌面/dachui.txt/’root@172.168.5.45:/root/桌面
-
+推荐使用rsync
 rsync 文件 root@对方ip ：存放位置    -pgo 保持文件权限，保持用户主，保持用户组 不变
 rsync /etc/yum.repos.d/local.repo root@$i:/etc/yum.repos.d/local.repo
         -avSXH
@@ -1302,7 +1306,8 @@ root 不受权限管理
 		q退出不保存
 格式化: 赋予空间文件系统
 	文件系统:数据在空间的存储规则
-	Linux文件系统 RHEL6 ext4 小文件优秀
+	Linux文件系统
+	        RHEL6 ext4 小文件优秀
 			RHEL7 xfs  大文件优秀
 
 	mkfs.ext4 分区设备路径

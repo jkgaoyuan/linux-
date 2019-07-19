@@ -1262,7 +1262,7 @@ DAY04
                          -每一个applicationmaster有多个container在nodemanager上运行
 
 
-                    resourcemanager
+                    resource manager
                        处理客户端请求
                        启动/监控applicationmaster
                        监控nodemanager
@@ -1287,6 +1287,7 @@ DAY04
                         提交应用程序,监控 应用程序状态,杀死应用
 
         1.3 hadoop
+                 注意:所有的hadoop的文件必须一致
                 模式
 
                     单机
@@ -1317,7 +1318,7 @@ DAY04
                     mkdir testinput
 
                     cp LICENSE.txt  NOTICE.txt README.txt testinput/
-                    bin/hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.7.jar wordcount testinput/ testoutput
+                    ./bin/hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.7.jar wordcount testinput/ testoutput
 
                     wordcount 是内置的命令
                     wordcount 输入目录  输出目录(会自己创建)  我们只需要准备好输入目录中的内容就好
@@ -1430,6 +1431,8 @@ DAY04
 
                         同步配置
 
+                          注意:所有的hadoop的文件必须一致
+
                           scp -r /usr/local/hadoop/ root@node2:/usr/local/hadoop/
                           scp -r /usr/local/hadoop/ root@node3:/usr/local/hadoop/
                           scp -r /usr/local/hadoop/ root@namenode3:/usr/local/hadoop/
@@ -1460,9 +1463,16 @@ DAY04
 
                     修改 mapreduce 和 Yarn 的配置文件
 
+                        官方手册
+
+                        下面配置文件的参数可以在下面网站的左下角找到
+                        http://hadoop.apache.org/docs/stable/
+
                         ssh root@namenode
                         cd /usr/local/hadoop/etc/hadoop/
                         mv mapred-site.xml.template mapred-site.xml
+
+                        mapreduce
 
                         vim mapred-site.xml
 
@@ -1474,8 +1484,9 @@ DAY04
 
                         </configuration>
 
+                        Yarn
 
-                         vim yarn-site.xml
+                        vim yarn-site.xml
 
                         <configuration>
 
@@ -1486,8 +1497,8 @@ DAY04
                                 <value>namenode</value>
                         </property>
                         <property>
-                                <name>yarn.nodemanager.aux-services</name>
-                                <value>mapreduce_shuffle</value>
+                                <name>yarn.nodemanager.aux-services</name>  //计算框架
+                                <value>mapreduce_shuffle</value>            //由开发决定
                         </property>
                         </configuration>
 
@@ -1502,7 +1513,7 @@ DAY04
 
                     检查
                         namenode
-                        jps
+                        jps     // java ps
 
                             23747 SecondaryNameNode
                             24248 ResourceManager
@@ -1516,3 +1527,268 @@ DAY04
                         http://192.168.1.60:50075/        //--datanode web页面（node1,node2,node3）
                         http://192.168.1.63:8088/        //--resourcemanager web页面
                         http://192.168.1.60:8042/        //--nodemanager web页面（node1,node2,node3）
+
+
+
+
+
+
+
+
+                        在namenode中创建文件夹
+
+                            /usr/local/hadoop/bin/hadoop fs -mkdir /test   // -后面写 shell命令
+                            /usr/local/hadoop/bin/hadoop fs -ls /
+                            /usr/local/hadoop/bin/hadoop fs -put id_rsa id_rsa.pub /test  //上传本地文件到 hadoop, 前面本机文件,后面hadoop文件
+                            /usr/local/hadoop/bin/hadoop fs -get /test /test1   //下载 签名写hadoop的 后面写本机,若没有目录会自己创建
+
+                            但是只支持部分命令,touch在 hadoop 中 应该写为 touchz
+                            我们将需要统计的文件上传到 hadoop文件系统中进行分析
+                            cd /usr/local/hadoop  不去 目录 会table 不出 xxx.jar                          统计方式    hadoop文件非本机文件
+                            ./bin/hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.7.jar wordcount /test/ /out
+
+                    扩展节点
+
+                        hdfs 增加节点 (修复节点操作与增加相同)
+
+                            启动新服务器,做namenode ,免密登录
+                            修改所有的/etc/hosts,增加新节点
+                            安装openjdk 和 openstack-devel
+
+                            修改namenode的 slave 文件添加node4
+                            同步/usr/local/hadoop 到node4 /usr/local下
+                            在该节点启动datanode
+                                cd /usr/local/hadoop
+                                ./sbin/hadoop-daemon.sh start datanode
+                            查看
+                             node4 jps
+                             namenode  /usr/local/hadoop/bin/hdfs dfsadmin -report
+                                4个
+
+                            同步数据
+                                    ./bin/hdfs dfsadmin --help
+                                    ./bin/hdfs dfsadmin -setBalancerBandwidth 5000000  //设置同步带宽
+                                    ./sbin/start-balancer.sh    //同步
+                                    ./bin/hdfs dfsadmin -report
+
+                        Yarn 节点
+                            列出 yarn节点
+                            ./bin/yarn node -list
+
+                             ./sbin/yarn-daemon.sh start nodemanager  //启动
+                             ./bin/yarn node -list              //查看节点
+                             ./sbin/yarn-daemon.sh stop nodemanager
+                             停止节点后 并不会立刻消失而是,等待一段时间后消失
+
+                        删除节点
+                            hdfs 节点
+
+                            配置
+                            cd /usr/local/hadoop/
+                            vim ./etc/hadoop/hdfs-site.xml
+                                在<configuration> </configuration>
+                            添加
+                                    <property>
+                                        <name>dfs.hosts.exclude</name>
+                                        <value>/usr/local/hadoop/etc/hadoop/exclude</value>
+                                    </property>
+
+
+                            vim ./etc/hadoop/exclude
+
+                                node4
+                             ./bin/hdfs dfsadmin -report   //查看node节点
+
+                            Decommission Status : Normal   //正常状体
+
+                            ./bin/hdfs dfsadmin -refreshNodes  //刷新node节点
+
+                            Decommission Status : Decommissioned   //删除成功
+
+
+
+
+
+                NFS 网关
+
+                    准备 两台 65(nfsgw) 66(client) 服务器
+                    NFS
+                        特性:
+                            HDFS 超级用户是与namenode 进行本身具有相同表示的用户,
+                            超级可以执行任何操作,因为权限检查永远不会认为超级用户失败
+                        注意事项:
+                            安全NFS  Kerberos keytab 中的用户是代理用户
+                            非安全NFS 运行网关进程的用户是代理用户
+
+                        下面用序号表示 操作的顺序 代理用户和 配置namenode 中序号相同 表示同时进行
+                    配置代理用户
+                        在nfsgw上
+                            1.添加用户 (同时在namenode上进行)
+                                groupadd -g 800 nfsuser
+                                seradd -u 800 -g 800 -r -d /var/hadoop nfsuser
+                            1.查找 rpcbin/ nfs-utlis
+                                rpm -qa |grep -i rpcbind
+                                rpm -qa |grep -i nfs-utils
+                                有了就卸载,卸载后重启
+                            3.拷贝hadoop文件到 nfsgw (在namenode上操作,请参考)
+
+                                需要等待namenode修改完core-site.xml成后 进行
+
+                                rsync -avXSH /usr/local/hadoop/ root@192.168.1.65:/usr/local/ ###这个命令会将hadoop下的所有文件 拷贝到 /usr/local/ 下
+                                rsync -avXSH /usr/local/hadoop root@192.168.1.65:/usr/local/   ###这个命令会将hadoop文件夹 拷贝到 /usr/local/ 下
+
+                            4.修改  hdfs-site
+                                    (只在nfsgw)
+                                vim ./etc/hadoop/hdfs-site.xml
+                                添加 如下
+                                <property>
+                                    <name>nfs.dump.dir</name>
+                                    <value>/var/nfstmp</value>
+                                </property>
+                                <property>
+                                    <name>nfs.exports.allowed.hosts</name>
+                                    <value>* rw</value>
+                                </property>
+
+
+                            4.创建 临时文件夹
+                               设定权限
+                                mkdir /var/nfstmp
+
+                                chown 800.800 /var/nfstmp
+
+                                setfacl -m user:nfsuser:rwx logs/
+                                getfacl logs/
+
+                            5.启动
+                                portmap
+                                    必须先启动
+                                ./sbin/hadoop-daemon.sh --script ./bin/hdfs start portmap
+
+                                nfs3
+                                    在portmap后启动
+                                [root@nfsgw hadoop]# sudo -u nfsuser \
+                                > ./sbin/hadoop-daemon.sh --script ./bin/hdfs start nfs3
+                                停止服务时相反,先停止 nfs3 , 依赖关系
+
+
+                        配置namenode
+                            1.添加用户 (同时在nfsgw上进行)
+                                groupadd -g 800 nfsuser
+                                useradd -u 800 -g 800 -r -d /var/hadoop nfsuser
+
+                            1.停止所有的hadoop服务
+                                cd  /usr/local/hadoop/
+                                ./sbin/stop-all.sh
+
+                            2.修改 core-site.xml 文件
+
+                                vim ./etc/hadoop/core-site.xml
+
+                                <property>
+                                    <name>hadoop.proxyuser.nfsuser.groups</name>
+                                    <value>*</value>
+                                 </property>
+
+                                <property>
+                                    <name>hadoop.proxyuser.nfsuser.hosts</name>
+                                    <value>*</value>
+                                 </property>
+
+                            2.删除 不必要的文件
+                                vim ./etc/hadoop/slaves
+                                    删除 node4
+                                vim ./etc/hadoop/exclude
+                                    删除内容
+                            2.同步文件
+                                同步配置文件给node节点
+                                 rsync -avXSH /usr/local/hadoop/etc/ root@node1:/usr/local/hadoop/etc/
+                                 rsync -avXSH /usr/local/hadoop/etc/ root@node2:/usr/local/hadoop/etc/
+                                 rsync -avXSH /usr/local/hadoop/etc/ root@node3:/usr/local/hadoop/etc/
+
+                            2.启动hdfs服务
+
+                                namenode
+
+                                cd  /usr/local/hadoop/
+                                 ./sbin/start-dfs.sh
+
+                            3.同步 /usr/local/hadoop 给 nfsgw
+
+                                 拷贝hadoop
+
+                                #只是测试,用下面 :rsync -avXSH /usr/local/hadoop/ root@192.168.1.65:/usr/local/  ###这个命令会将hadoop下的所有文件 拷贝到 /usr/local/ 下
+                                rsync -avXSH /usr/local/hadoop  root@192.168.1.65:/usr/local/   ###这个命令会将hadoop文件夹 拷贝到 /usr/local/ 下
+
+                            配置client
+
+                                挂载hdfs 文件系统  (需要等待,nfsgw 启动完成后才能挂载)
+                                安装
+                                    yum -y install nfs-utils
+                                挂载
+                                    mount -t nfs -o \
+                                    vers=3,proto=tcp,nolock,noatime,sync,noacl 192.168.1.64:/  /mnt/  //挂载
+
+                                由于hdfs只支持的nfs3协议,所以这里 也要使用 nfs3 协议
+                                vers=3
+                                使用tcp作为传输协议
+                                proto=tcp
+                                不支持NLM  内核?
+                                nolock
+                                禁用access time
+                                noatime
+                                禁用acl权限
+                                noacl
+
+
+
+
+
+    补充 :
+       linux 文件的三个时间信息 atime mtime ctime
+
+            stat  [选项] 文件
+                stat可以显示inode(索引节点)信息也可以查看一个文件的某些信息 部分Metadata(元数据)
+            access time  最后一次访问时间,没有改动
+            modify time   最后一次修改文件的时间
+            change time  最后一次对文件属性改变的时间,包括权限 大小 属性
+
+            inodb(index node) 索引节点
+                作用:用于储存文件和目录基本信息
+
+                block
+
+                    磁盘在格式化的时候会被分为两部分 数据区和inodb区,并且在这个时候会设定iNode区域的大小
+                    比如我们一般ntfs文件系统 每个块(block)大小为4k,由8个扇区(sector)组成block,每个sector存储512字节,一共4k,
+                    所以具有文件系统的磁盘也被叫做块设备
+                    当然block的大小的设定一般是和我们存储文件的大小有关,文件越大相应的block应该设置越大,反之,需要注意的是block越小磁盘寻道的时间就会变长,
+
+                iNode节点的大小
+
+                    每个文件必须要有一个iNode,所以可能会有iNode节点被用完但是磁盘还是有空间的情况,这是我们无法继续创建文件
+                    每个inode节点的大小，一般是128字节或256字节。
+                    查询iNode大小
+                        sudo dumpe2fs -h /dev/sda2 | grep "Inode size"   ## /dev/sda2被查询的分区
+                    查询硬盘分区iNode的总数和
+                        df -i
+                    关于如何修改iNode的大小可以参考,我先鸽了
+                        https://blog.csdn.net/lemontree1945/article/details/80744009
+
+                inodb区主要用来存放 文件的元数据
+                    元数据包含如下信息
+                       文件的字节数
+                　　    文件拥有者的User ID
+                　　    文件的Group ID
+                　　    文件的读、写、执行权限
+                　　    文件的时间戳，共有三个：ctime指inode上一次变动的时间，mtime指文件内容上一次变动的时间，atime指文件上一次打开的时间。
+                　　    链接数，即有多少文件名指向这个inode
+                　　    文件数据block的位置
+
+
+
+
+
+
+
+
+
