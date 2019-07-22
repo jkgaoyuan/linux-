@@ -101,7 +101,7 @@
 
             ###########################################
             [root@proxy nginx-1.12.2]# make upgrade                            //升级
-            ############################################333
+            ############################################
             #或者使用killall nginx杀死进程后再启动nginx。
             /usr/local/nginx/sbin/nginx -t
             nginx: the configuration file /usr/local/nginx/conf/nginx.conf syntax is ok
@@ -151,7 +151,7 @@
 
     实验目的: 给网页添加用户访问认证,输入正确的账户密码才能访问
         1)修改配置文件
-            vim /usr/local/nginx/conf/nginx.con
+            vim /usr/local/nginx/conf/nginx.conf
             server {
             listen       80;
             server_name  localhost;
@@ -162,7 +162,7 @@
             需要手动添加的配置
             ###############################################
             auth_basic "Input Password:";                 ###提示信息
-            auth_basic_user_file "/usr/local/nginx/pass";ZZtom ng ###保存用户名密码的文件
+            auth_basic_user_file "/usr/local/nginx/pass"; ZZtom ng ###保存用户名密码的文件
             ###############################################
             location / {
                 root   html;
@@ -253,7 +253,7 @@
                     listen       443 ssl;
                     server_name            www.c.com;
                     ssl_certificate      cert.pem;         #这里是证书文件
-                    ssl_certificate_key  cert.key;         #这里是私钥文件
+                    ssl_certificate_key  cert.key;         #这里是私钥文件  文件位置 可以填写绝对路径
                     ssl_session_cache    shared:SSL:1m;
                     ssl_session_timeout  5m;
                     ssl_ciphers  HIGH:!aNULL:!MD5;
@@ -2303,7 +2303,7 @@
                             [root@web1 ~]# yum install -y keepalived
                             [root@web2 ~]# yum install -y keepalived
                 3.部署Keepalived服务
-                            1.实现vrrpvip
+                            1.实现vrrp vip  (vrrp虚拟路由热备协议,vip虚拟ip,会随着主服务而迁移)
                             2.自动配置lvs,健康检查
                         1）修改web1服务器Keepalived配置文件
                             [root@web1 ~]# vim /etc/keepalived/keepalived.conf
@@ -2317,7 +2317,7 @@
                               router_id  web1                        //设置路由ID号（实验需要修改）
                             }
                             vrrp_instance VI_1 {
-                              state MASTER                         //主服务器为MASTER（备服务器需要修改为BACKUP）, state 是作为 软件开启是临时状态,最终状态会由 priority 的数值决定,当priority 也不能比较 出结果的时候,对 ip 和 mac 进行对比.
+                              state MASTER                         //主服务器为MASTER（备服务器需要修改为BACKUP）, state  (现在设定的参数) 是作为 软件开启是临时状态,最终状态会由 priority 的数值决定,当priority 也不能比较 出结果的时候,对 ip 和 mac 进行对比.
                               interface eth0                    //定义网络接口
                               virtual_router_id 51                //主备服务器VRID号必须一致
                               priority 100                     //服务器优先级,优先级高优先获取VIP（实验需要修改）,也是最终决定 主副的 方式
@@ -2386,7 +2386,7 @@
                             [root@web1 ~]# cd /etc/sysconfig/network-scripts/
                             [root@web1 ~]# cp ifcfg-lo{,:0}
                             [root@web1 ~]# vim ifcfg-lo:0
-                            DEVICE=lo:0
+                            DEVICE=lo:0                             //网卡配置文件的默认格式
                             IPADDR=192.168.4.15
                             NETMASK=255.255.255.255 //确保只有一个ip
                             NETWORK=192.168.4.15
@@ -2394,7 +2394,7 @@
                             ONBOOT=yes
                             NAME=lo:0
                             注意：这里因为web1也配置与调度器一样的VIP地址，默认肯定会出现地址冲突。
-                            写入这四行的主要目的就是访问192.168.4.15的数据包，只有调度器会响应，其他主机都不做任何响应。
+                            写入下面四行的主要目的就是访问192.168.4.15的数据包，只有调度器会响应，其他主机都不做任何响应。
                             [root@web1 ~]# vim /etc/sysctl.conf
                             #手动写入如下4行内容
                             net.ipv4.conf.all.arp_ignore = 1
@@ -2574,9 +2574,10 @@
                                 delay_before_retry 3
                                 }
                               }
+                            }
                             [root@proxy2 ~]# systemctl start keepalived
                             [root@proxy2 ~]# ipvsadm -Ln                 #查看LVS规则
-                            [root@proxy2 ~]# ip  a   s                    #查看VIP设置
+                            [root@proxy2 ~]# ip  a   s                    #查看VIP设置,可以查看ip地址
 
 
         配置HAProxy负载平衡集群
