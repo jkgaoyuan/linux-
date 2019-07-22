@@ -1611,7 +1611,7 @@ DAY04
 
                 NFS 网关
 
-                    准备 两台 65(nfsgw) 66(client) 服务器
+                    准备 两台 1.65(nfsgw) 1.66(client) 服务器
                     NFS
                         特性:
                             HDFS 超级用户是与namenode 进行本身具有相同表示的用户,
@@ -1744,6 +1744,17 @@ DAY04
 
 
 
+
+
+
+
+
+
+
+
+
+
+
     补充 :
        linux 文件的三个时间信息 atime mtime ctime
 
@@ -1783,12 +1794,268 @@ DAY04
                 　　    文件的时间戳，共有三个：ctime指inode上一次变动的时间，mtime指文件内容上一次变动的时间，atime指文件上一次打开的时间。
                 　　    链接数，即有多少文件名指向这个inode
                 　　    文件数据block的位置
+DAY05
+    一.zookeeper
+        是什么
+
+            开源的分布式应用程序协调服务
+        能干嘛
+
+            保证数据在集群之间的事物一致性
+
+        zookeeper 运用场景
+
+            集群分布式锁
+            集群统一命名服务
+            分布式协调服务
+
+        角色与特性
+
+        角色与选举
+            zookeeper角色与选举
+                -服务在启动是的时候是没有角色的(LOOKING)
+                -角色是通过选举产生的
+                -选举产生一个Leader,剩下的时Follower
+            选举leader原则
+                -集群中超过半数的机器投票选择Leader
+                -加入集群中有Nn台服务器,那么leader必须得到n/2+1 台服务器的投票
+                -Leader死亡,重新选举Leader
+                -若down机超过一般,则集群挂掉
+                -若无法得到足够的投票数量,就重新发起投票,若参与投票机器不足n/2+1
+                集群停止工作
+                -Observer不计算在投票总设备数量里面
+
+
+        安装
+            准备 host 安装java-1.8.0.openjdk
+                /etc/hosts  每台
+                192.168.1.60 node1
+                192.168.1.61 node2
+                192.168.1.62 node3
+                192.168.1.63 namenode
+
+
+                tar -xf zookeeper-3.4.13.tar.gz
+
+                mv zookeeper-3.4.13 zookeeper
+
+                mv zookeeper /usr/local/
+
+
+                修改配置文件
+
+                    cd /usr/local/zookeeper/conf/
+
+
+                    mv zoo_sample.cfg zoo.cfg
+
+
+                    chown root:root zoo.cfg
+                    vim zoo.cfg
+                    添加如下
+                    server.1=node1:2888:3888
+                    server.2=node2:2888:3888
+                    server.3=node3:2888:3888
+                    server.4=namenode:2888:3888:observer
+
+                    mkdir /tmp/zookeeper
+                    ssh node1 mkdir /tmp/zookeeper
+                    ssh node2 mkdir /tmp/zookeeper
+                    ssh node3 mkdir /tmp/zookeeper
+
+               编辑 myid 文件 与 /usr/local/zookeeper/conf/zoo.cfg 中的 service 对应
+
+                    ssh node4 'echo 4 > /tmp/zookeeper/myid'
+                    ssh node3 'echo 3 > /tmp/zookeeper/myid'
+                    ssh node2 'echo 2 > /tmp/zookeeper/myid'
+                    ssh node1 'echo 1 > /tmp/zookeeper/myid'
+                每一台服务器都要手动启动,全部启动后才能查看状态
+                /usr/local/zookeeper/bin/zkServer.sh start   //启动
+                /usr/local/zookeeper/bin/zkServer.sh status  //查看状态
+
+               老师给的 脚本  在namenode下运行, 使用zookeeper 提供的api借口查询
+                    ./zkstats node{1..3}
+
+                    #!/bin/bash
+                    function getzkstat(){
+                        exec 2>/dev/null
+                        exec 8<>/dev/tcp/$1/2181
+                        echo stat >&8
+                        Msg=$(cat <&8 |grep -P "^Mode:")
+                        echo -e "$1\t${Msg:-Mode: \x1b[31mNULL\x1b[0m}"
+                        exec 8<&-
+                    }
+
+                    if (( $# == 0 ));then
+                        echo "${0##*/} zk1 zk2 zk3 ... ..."
+                    else
+                        for i in $@;do
+                            getzkstat ${i}
+                        done
+                    fi
+
+    二.kafka
+        是什么
+
+            分布式消息系统
+            kafka是使用Scala编写
+            一种消息中间件
+        为什么使用
+
+            解耦 冗余 提高扩展性 缓冲
+            保证顺序 灵活 削峰填谷
+            异步通信
+        kafka 角色
+
+            角色/集群结构
+                producer 生产者,负责发布消息
+                consumer 消费者,负责读取处理消息
+                topic   消息的类别
+                parition 每个topic集群包含一个/多个partition
+                broker kafka集群包含一个或多个服务器
+
+            kafka 通过 zookeeper 选举Leader
+
+
+        安装
+
+            安装在node1-3上
+
+                 tar -xf kafka_2.12-2.1.0.tgz
+                 mv kafka_2.12-2.1.0 /usr/local/kafka
+                 修改配置文件 /usr/local/kafka/config/server.properties
+                     cd /usr/local/kafka/config
+                     vim server.properties
+                         broker.id=22
+                         zookeeper.connect=node1:2181,node2:2181,node3:2181
 
 
 
 
+                 拷贝 kafka 到其他主机，并修改 broker.id ,不能重复
+                   for i in 63 64; do rsync -aSH --delete /usr/local/kafka 192.168.1.$i:/usr/local/; done
 
 
 
+                    vim /usr/local/kafka/config/server.properties
+                        broker.id=23
+
+                    vim /usr/local/kafka/config/server.properties
+                        broker.id=24
+        启动
+
+            启动 kafka 集群（node1，node2，node3启动）
+               /usr/local/kafka/bin/kafka-server-start.sh -daemon /usr/local/kafka/config/server.properties
+               jps查看
+
+            验证配置，创建一个 topic
+                /usr/local/kafka/bin/kafka-topics.sh --create --partitions 1 --replication-factor 1 --zookeeper localhost:2181 --topic aa
+
+            模拟生产者，发布消息
+                /usr/local/kafka/bin/kafka-console-producer.sh \
+                --broker-list localhost:9092 --topic aa
+                123
+            模拟消费者，接收消息
+                /usr/local/kafka/bin/kafka-console-consumer.sh \
+                --bootstrap-server node1:9092 --topic aa
+                123
 
 
+    三.hadoop 高可用
+
+        原因
+
+        -由于namenode是hdfs的核心配置,而]HDFS又是hadoop核心组件,namenode在hadoop集群中至关重要
+        -namenode宕机,将导致集群不可用,若namenode数据丢失将导致整个集群的数据丢失,
+            而namenode的数据更新有比较频繁,实现namenode的高可用是必须的
+
+        解决方案
+                HDFS with nfs
+                HDFS with qjm
+
+            方案对比
+                HA方案对比
+                    -都可以实现热备份
+                    -都是一个active nn 和一个 standby nn
+                    -都是用zookeeper和ZKFC来实现自动失效恢复
+                    -失效切换都是用Fencin配置的方法来active nn
+                    -nfs 数据共享变更方案把数据存储在共享存储里,我们还需要考虑nfs的高可用
+                    -qjm 不需要共享存储,但是需要让每一个dn都知道两个nn的位置,
+                     并把块信息和心跳包发送个active 和standby两个nn
+
+                使用原因 (qjm)
+                    -解决了namenode 单点故障
+                    -hadoop 给出了HDFS的高可用ha方案:HDFS通常由两个namenode组成,
+                     一个active nn 和一个 standby nn. active namenode对外提供服务,
+                     比如处理来自客户端的RPC请求,而standby nn 则不能对外提供服务,仅仅同步active nn的状态,
+                     以便在它失败时进行切换
+
+                nn 高可用架构
+                    -为了让standby node 和active node 同步,这两个node 都与一组jns的互相独立的进程保持通信(journal nodes)
+                     当active node更新namespace,它将记录修改日志发送给jns的多数排.standby node将会从 jns 中读取edits
+                     ,并持续关注它们对于日志的变更
+                    -standby node 将日志变更应用在自己的namespace中,当failover[故障切换] 发生standby将会在提升自己为active之前,
+                     确保能够从jns中读取所有的edits,即在 failover 故障切换 发生前standby持有 namespace与active保持完全同步
+                    -由于namenode更新频繁,为了确保主备数据一致性,为了支持快速 failover ,standby node 持有集群中blocks的最新位置是
+                     非常必要的. 为了这一目的datanode需要同时配置两个namenode地址,同时和它建立心跳链接,并把blocks位置发送给nn
+
+                    -需要注意的是任何时刻只能有一个active namenode,负责会导致集群状态混乱,两个nn将会有两种不同的数据状态,将导致数据丢失或者状态异常,这种情况称为
+                     split-brain (脑列,三节点通信阻塞,集群中不同的datanode,看到不同的 active name node)
+                    -对于jns来说 任何时候只能有一个nn 作为writer ; 在fillover 故障切换期间,原来的standby node 将会接管active的所有职能,并负责向jns写入日志记录,
+                     这种机制阻止了其他的namenode处于active状态的问题
+
+
+        配置
+
+            主要修改
+                  如下文件并将修改好的文件传递给node1-3 nn和 nnbackup
+                  vim core-site.xml
+                  vim hdfs-site.xml
+                  vim yarn-site.xml
+
+            同步配置文件
+                for i in {node1,node2,node3,nn,nnbackup}; do  rsync -avXSH /usr/local/hadoop/etc/ root@192.168.1.$i:/usr/local/hadoop/etc/; done
+            初始化集群
+                删除 使用过的存储初始化目录
+                    rm -rf /var/hadoop/*
+                    ssh node1 rm -rf /var/hadoop/*
+                    ssh node2 rm -rf /var/hadoop/*
+                    ssh node3 rm -rf /var/hadoop/*
+
+                初始化 nn1 zk集群
+                    /usr/local/hadoop/bin/hdfs zkfc -formatZK
+                node 1-3 启动journalnode服务
+                    /usr/local/hadoop/sbin/hadoop-daemon.sh start journalnodejps
+                格式化 nn1
+
+                    /usr/local/hadoop//bin/hdfs namenode -format
+                nn2 数据同步到本地 /var/hadoop/dfs
+                    rsync -aSH namenode:/var/hadoop/dfs/ /var/hadoop/
+
+                初始化 nn1 jns
+                    /usr/local/hadoop/bin/hdfs namenode -initalizeSharedEdits
+
+                node 1-3 停止journalnode 服务
+                    /usr/local/hadoop//sbin/hadoop-daemon.sh stop journalnode
+            启动集群
+                nn1
+                    /usr/local/hadoop/sbin/start-dfs.sh
+                    /usr/local/hadoop/sbin/start-yarn.sh
+                nnbackup  启动热备
+                     /usr/local/hadoop/sbin/yarn-daemon.sh start resourcemanager
+            检查集群状态
+                resource manager 状态
+                /usr/local/hadoop/bin/yarn rmadmin -getServiceState rm2
+                nn状态
+                /usr/local/hadoop/bin/hdfs haadmin -getServiceState nn1
+
+            查看节点
+                /usr/local/hadoop/bin/hdfs dfsadmin -report
+                /usr/local/hadoop/bin/yarn node -list
+            访问集群文件
+                 /usr/local/hadoop/bin/hadoop fs -mkdir /input/
+                 /usr/local/hadoop/bin/hadoop fs -ls hdfs://nsd1903/
+                 ### 集群中定义的 /usr/local/hadoop/etc/hadoop/core-site.xml
+
+            主从切换
+                /usr/local/hadoop/sbin/hadoop-daemon.sh stop namenode
