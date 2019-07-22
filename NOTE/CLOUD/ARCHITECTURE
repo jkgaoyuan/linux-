@@ -2059,3 +2059,6 @@ DAY05
 
             主从切换
                 /usr/local/hadoop/sbin/hadoop-daemon.sh stop namenode
+
+
+               test
