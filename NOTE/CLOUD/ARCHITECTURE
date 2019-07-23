@@ -82,7 +82,7 @@ DevOps
                 ansible 默认通过ssh协议管理
                 被管理机器要开启ssh服务,允许ansible主机登录
                 管理节点需要python2.5以上
-                被管理节点开启selinux,需要安装 libselinux-python
+                若被管理节点开启selinux,需要安装 libselinux-python,所以尽量关闭selinux
 
 
         准备 6 台机器 1.40-1.45

@@ -1667,38 +1667,44 @@
                     错误：stat /root/zone.spec 失败：没有那个文件或目录
                   ls rpmbuild/
                     BUILD  BUILDROOT  RPMS  SOURCES  SPECS  SRPMS
-                想要谁的 rpm包就将 谁的源码放到/rpmbuild/source 目录下,修改配置文件(重要) 确认将谁 做成rpm包
+                想要谁的 rpm包就将 谁的源码tar放到/rpmbuild/source 目录下,修改配置文件(重要) 确认将谁 做成rpm包
                     cp /nginx-1.12.2.tar.gz .
                 3)修改配置文件
+                    该文件不存在但是当你敲完这个命令的时候将会出现文件的模板
                     vim /root/rpmbuild/SPECS/nginx.spec
                         Name:nginx                                        #源码包软件名称
                         Version:1.12.2                                    #源码包软件的版本号
-                        Release:    10                                        #制作的RPM包版本号
+                        Release:    10                                        #制作的RPM包版本号 默认为 1%{?dist}         #释出号，也就是第几次制作rpm
                         Summary: Nginx is a web server software.            #RPM软件的概述
                         License:GPL                                        #软件的协议
                         URL:    www.test.com                                    #网址
                         Source0:nginx-1.12.2.tar.gz                        #源码包文件的全称
                         #BuildRequires:                                    #制作RPM时的依赖关系,并不能解决依赖只能提示
+                        #eg:#BuildRequires:   gcc,make
                         #Requires:                                        #安装RPM时的依赖关系
                         %description
                         nginx [engine x] is an HTTP and reverse proxy server.    #软件的详细描述
-                        %post
+                        #下面的几步pre、post、preun、postun 没必要可以不写
+                        %pre                                        #rpm安装前制行的脚本
+                        %post                                       #安装后执行的脚本
                         useradd nginx                               #非必需操作：安装后脚本(创建账户,删根等危险操作 也可以执行,exe 同要的道理)
-                        %prep
-                        %setup -q                                #自动解压源码包，并cd进入目录
+                        %preun                                      #卸载前执行的脚本
+                        %postun                                     #卸载后执行的脚本
+                        %prep                                       # 打包开始
+                        %setup -q                                 #自动解压源码包，并cd进入目录
                         %build
                         ./configure
-                        make %{?_smp_mflags}
+                        make %{?_smp_mflags}                        ###%{?_smp_mflags} 表示,若是多处理器就并行编译
                         %install
                         make install DESTDIR=%{buildroot}
                         %files
                         %doc
-                        /usr/local/nginx/*                    #对哪些文件与目录打包
+                        /usr/local/nginx/*                       #对哪些文件与目录打包
                         %changelog
                  打包 安装
                 4)rpmbuild -ba /root/rpmbuild/SPECS/nginx.spec
 
-                  yum -y install  gcc  pcre-devel openssl-devel
+                  yum -y install  gcc  pcre-devel openssl-devel zlib zlib-devel  automake autoconf  (编译的时候用到了pcre库)
                 5) 安装
                   rpm -ivh RPMS/x86_64/nginx-1.12.2-10.x86_64.rpm
     VPN服务器

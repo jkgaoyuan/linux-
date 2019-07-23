@@ -1505,9 +1505,9 @@ panglj@tedu.cn
                                 vim /etc/my.cnf
                                     添加如下
                                     log-bin=db51 //启动binlog
-                                    server_id=51 //指定server id
+                                    server_id=51 //指定server id  //该id唯一
                             授权用户
-                                不需要给予全部权限 只需要给予 replication slave 就好
+                                不需要给予全部权限 只需要给予 replication和slave 就好
                                 mysql> grant replication slave on *.* to repluser@'%' identified by "123qqq...A";
 
                         确保与主服数据库一致
