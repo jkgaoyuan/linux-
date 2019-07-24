@@ -30,3 +30,32 @@ DAY01
       我们在云主机上创建的 xxx.pem文件 实际上是 id_rsa 私钥文件 设置文件为属性 400,.ssh/文件夹的属性 700,
       而使用ansible 有需要 免密登录,在创建主机的时候 选择该秘钥,就可以通过jump跳板服务器来远程管理内网服务器.
 
+
+            ifconfig [interface] IP/mask
+            ifconfig eth0:1 192.168.1.100/24
+
+                    立即生效,重启失效
+
+            负载均衡
+
+            nginx     cache,web
+             lvs       4 层         问题: 超不过200台,不能跨vlan   直到lvs的 full-net出现,解决了不能跨vlan,需要修改内核.
+            haproxy    4/7层
+
+            这个架构的高扩展我们直接创建新的  集群和 nginx 在接入 lvs 即可
+                            lvs         4层
+
+                       nginx    nginx    7层
+
+                     web集群1   web 集群2
+
+                                            超大型网络架构  lvs-full-net+DPDK = DPVS
+                                                OSPF
+
+                            lvs                 lvs               lvs
+
+                       nginx    nginx        nginx    nginx    nginx    nginx
+
+                     web集群1   web 集群2   web集群1   web 集群2  web集群1   web 集群2
+
+

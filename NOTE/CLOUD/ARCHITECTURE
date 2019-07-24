@@ -98,7 +98,7 @@ DevOps
                 vim /etc/ansible/ansible.cfg
                     行取消注释
                     14 inventory      = /etc/ansible/hosts //主机集合
-                    61 host_key_checking = False //不检查配置文件
+                    71 host_key_checking = False //不检查配置文件
     1.6主机定义与分组
         安装ansible后
             ########################### 记住啊######################

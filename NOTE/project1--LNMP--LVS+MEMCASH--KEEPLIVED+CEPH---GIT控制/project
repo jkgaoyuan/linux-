@@ -300,6 +300,11 @@ LNMP
                             [root@web3 nginx-1.12.2]# make && make instal
                             [root@web3 ~]# yum -y install php php-fpm php-mysql mariadb-devel
                         2）修改nginx配置实现动静分离（web2和web3操作）
+                            方法1:
+                                web1 将动态页面请求转发给 web2/web3的调度服务器的9000端口再由调度器转发给动态web集群9000
+                            方法2:
+                                从web1 的nginx.conf 配置文件 直接指定 接受服务器和端口
+                            这里我们使用方法2
                             web2修改默认首页index.php，配置两个location实现动静分离。
                             [root@web2 ~]# vim /usr/local/nginx/conf/nginx.conf
                             location / {
