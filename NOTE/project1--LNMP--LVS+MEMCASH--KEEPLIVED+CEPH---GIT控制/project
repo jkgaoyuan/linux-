@@ -359,7 +359,7 @@ LNMP
                             ###############给数据库快照,通过快照进行恢复,将剩余的部分同步过来###################
                             ####将web1（192.168.2.11）上的wordpress代码拷贝到NFS共享。########################
                             [root@web1 ~]# cd /usr/local/nginx/
-                            [root@web1 nginx]# tar -czpf html.tar.gz html/
+                            [root@web1 nginx]# tar -czpf html.tar.gz html/     -p保留权限
                             [root@web1 nginx]# scp html.tar.gz 192.168.2.31:/web_share/
                             登陆nfs服务器，将压缩包解压
                             [root@nfs ~]# cd /web_share/
@@ -622,7 +622,7 @@ LNMP
                     2）给所有ceph节点安装ceph相关软件包
                         [root@node1 ceph-cluster]# for i in node1 node2 node3
                         do
-                             ssh $i "yum -y install ceph-mon ceph-osd ceph-mds"
+                                 ssh $i "yum -y install ceph-mon ceph-osd ceph-mds"
                         done
                         [root@node1 ceph-cluster]# ceph -s                    #查看结果
                             cluster 9f3e04b8-7dbb-43da-abe6-b9e3f5e46d2e

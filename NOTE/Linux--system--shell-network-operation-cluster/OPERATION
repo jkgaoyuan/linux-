@@ -17,6 +17,10 @@
     TOMCATE+JAVA
 
 
+参考 https://www.cnblogs.com/wcwnina/p/8728430.html
+    https://www.cnblogs.com/zyxnhr/p/10707932.html#_label0_0
+
+
     Nginx 介绍
         轻量级的http服务器
         高性能http和反向代理服务器同时 也是 imap /pops smtp 代理服务器

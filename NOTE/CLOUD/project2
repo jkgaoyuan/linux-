@@ -59,3 +59,21 @@ DAY01
                      web集群1   web 集群2   web集群1   web 集群2  web集群1   web 集群2
 
 
+
+
+            已经做成 基于路径的 动静分离
+
+            将外网ip绑定在 192.168.1.99 提供了动静分离 上
+
+            访问 image下文件是静态 页面
+                http://139.9.94.171/image/test.html
+                显示web4/web5
+            访问 /下文件是动态 页面  Tomcat 提供服务
+                http://139.9.94.171/test.jsp
+                显示 时间和 web1/2/3
+            但是还没有做ceph 做完ceph后将文件转移到 ceph中来做 网站根目录
+
+
+            tomcat 启动  /usr/local/tomcat/bin/startup.sh  检查 8080端口
+
+            nginx 启动  /usr/local/nginx/sbin/nginx
