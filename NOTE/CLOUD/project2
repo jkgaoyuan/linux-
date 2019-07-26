@@ -66,10 +66,10 @@ DAY01
             将外网ip绑定在 192.168.1.99 提供了动静分离 上
 
             访问 image下文件是静态 页面
-                http://139.9.94.171/image/test.html
-                显示web4/web5
+                http://139.9.94.171/image/test.html   显示 hostname      gif /jpg
+                    显示web4/web5
             访问 /下文件是动态 页面  Tomcat 提供服务
-                http://139.9.94.171/test.jsp
+                http://139.9.94.171/test.jsp    显示hostname和ip
                 显示 时间和 web1/2/3
             但是还没有做ceph 做完ceph后将文件转移到 ceph中来做 网站根目录
 
@@ -77,3 +77,26 @@ DAY01
             tomcat 启动  /usr/local/tomcat/bin/startup.sh  检查 8080端口
 
             nginx 启动  /usr/local/nginx/sbin/nginx
+
+            记得启动 1.99 的nginx调度
+
+
+            重启集群后 记得 挂载ceph
+
+                 tomcat
+                 rbd map vm1-image
+                 mount /dev/rbd0 /usr/local/tomcat/webapps/ROOT/
+
+                 nginx
+                 rbd map vm1-image
+                 mount /dev/rbd0 nginx/usr/local/nginx/sbin/nginx
+
+
+
+             数据库使用mariadb  root密码为 a  mysql -uroot -pa
+                主从 同步 repluser 密码为 a
+
+                设置 mha vip 1.110
+                http://tts.tmooc.cn/ttsPage/LINUX/NSDTN201904/RDBMS2/DAY04/CASE/01/index.html#case1
+                到这里这里了
+                4）在当前主服务器部署vip地址

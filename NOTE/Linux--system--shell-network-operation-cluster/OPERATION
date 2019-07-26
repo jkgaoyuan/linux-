@@ -3040,7 +3040,7 @@
                     块共享只要用户有权限就可以挂载,可以同时读,但是不可以同时写入.
                     文件系统 共享 就可以同时读写.
                     #######################################################
-                    [root@client ~]# rbd map image
+                    [root@client ~]# rbd map imagename //写创建镜像的名字
                     ###########将块设备连接到本机###########
                     [root@client ~]#  lsblk
                     [root@client ~]# rbd showmapped

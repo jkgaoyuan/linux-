@@ -2220,7 +2220,7 @@ panglj@tedu.cn
                         当master节点故障,manager自动将拥有最新数据的slave提升为新的master.
                         50 客户端
                         51 主    当前主库
-                        52 从    备用主库
+                        52 从    备用主库   一主多存
                         53 从    备用主库
                         57       管理主机
                         100      VIP地址(虚拟ip)  浮动ip
