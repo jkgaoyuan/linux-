@@ -1241,7 +1241,7 @@ panglj@tedu.cn
                                     数据库名 表名                             //单张表, 注意这里没有 .  只是空格
                                     -B 数据库1 数据库2                        //多个库
                                  scp 给其他服务器
-                            恢复命令
+                            恢复数据命令
                                 完全恢复
                                 ]# mysql -uroot -p 密码 [库名] < 目录/xxx.sql
 
@@ -1803,7 +1803,7 @@ panglj@tedu.cn
 
                     1.6.3 配置数据库服务器
                         创建监控用户
-                        mysql>grant replication slave, replication client on *.* to maxscalemon@"%" identified by "123qqq...A";
+                            mysql>grant replication slave, replication client on *.* to maxscalemon@"%" identified by "123qqq...A";
                         创建路由用户
                         mysql> grant select on mysql.* to maxscalerouter@"%" identified by "123qqq...A";
                         这两步可以只在主库上做 因为主从同步 这个操作会在从库上同步完成

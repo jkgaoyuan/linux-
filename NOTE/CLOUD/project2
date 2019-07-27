@@ -95,8 +95,30 @@ DAY01
 
              数据库使用mariadb  root密码为 a  mysql -uroot -pa
                 主从 同步 repluser 密码为 a
+                    slave 1 slave2 repluser  a
 
                 设置 mha vip 1.110
                 http://tts.tmooc.cn/ttsPage/LINUX/NSDTN201904/RDBMS2/DAY04/CASE/01/index.html#case1
                 到这里这里了
                 4）在当前主服务器部署vip地址
+
+                mha启动 命令
+                masterha_manager --conf=/etc/mha/app1.cnf  --remove_dead_master_conf --ignore_last_failover
+
+               ##############################
+                manager_workdir=/var/log/masterha/app1
+                manager_log=/var/log/masterha/app1/manager.log
+                master_ip_failover_script=/etc/mha/master_ip_failover
+
+                1.40:
+                    检查 ssh   masterha_check_ssh --conf=/etc/mha/app1.cnf
+                    检查 主从   masterha_check_repl --conf=/etc/mha/app1.cnf
+                    启动 mha集群masterha_manager --conf=/etc/mha/app1.cnf  --remove_dead_master_conf --ignore_last_failover
+
+
+                1.50/1.51 读写分离
+                    启动
+                     maxscale -f /etc/maxscale.cnf
+                     管理
+                     maxadmin  -uadmin -pmariadb -P4016
+

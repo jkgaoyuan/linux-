@@ -3253,7 +3253,7 @@
                 检查
                 [root@node3 ~]# ceph fs ls
                 name: myfs1, metadata pool: cephfs_metadata, data pools: [cephfs_data ]
-                [root@node4 ~]# ceph mds stat
+                [root@node3 ~]# ceph mds stat
                 e4: 1/1/1 up {0=node3=up:creating}
             6）客户端挂载
                 [root@client ~]# mount -t ceph 192.168.4.13:/  /mnt/cephfs/ \
