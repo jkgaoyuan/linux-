@@ -1804,8 +1804,14 @@ panglj@tedu.cn
                     1.6.3 配置数据库服务器
                         创建监控用户
                             mysql>grant replication slave, replication client on *.* to maxscalemon@"%" identified by "123qqq...A";
+
+                            REPLICATION SLAVE 常用于建立复制时所需要用到的用户权限(非复制必须权限,单独的设置 slave和 client 都是可以复制的  待验证)，也就是slave server必须被master server授权具有该权限的用户，才能通过该用户复制。
+                            REPLICATION CLIENT 不可用于建立复制,但是可以检测权限,用来检测和管理复制账户所需的权限
+                            并且这两个功能（复制需要的权限，监视和管理复制账号权限）通常会授权给一个用户
+
                         创建路由用户
-                        mysql> grant select on mysql.* to maxscalerouter@"%" identified by "123qqq...A";
+                            mysql> grant select on mysql.* to maxscalerouter@"%" identified by "123qqq...A";
+
                         这两步可以只在主库上做 因为主从同步 这个操作会在从库上同步完成
                     1.6.4 启动代理服务器
                         maxscale -f 配置文件位置
@@ -2824,7 +2830,8 @@ panglj@tedu.cn
                       344  make && make install
 
                 初始化
-                    ./utils/insert_server.sh
+
+                    redis-4.0.8/utils/insert_server.sh
                                        一路回车使用默认,若要修改则可以输入
                                        安装完成后需要修改的话,修改主配置文件
                       redis默认端口端口6379
@@ -3374,7 +3381,7 @@ panglj@tedu.cn
                                     master_host:192.168.4.53
 
 
-                哨兵服务
+                redis哨兵服务
 
                     在不开启redis集群时,使得redis具有高可用.
                     即当主51 down 哨兵在其从库52 53 中选择新的主

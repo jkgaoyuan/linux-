@@ -2590,7 +2590,9 @@
                             [root@proxy2 ~]# ip  a   s                    #查看VIP设置,可以查看ip地址
 
 
-        配置HAProxy负载平衡集群
+        配置HAProxy负载平衡集群  haproxy
+
+                    haproxy通过 监听本机的任意端口(自定义),将监听的数据转发到目标ip:端口
                     优点: 支持 session cookie
                           可以通过 url 进行健康检查
                           效率 负载均衡速度 高于 nginx 低于 lvs
@@ -2626,6 +2628,7 @@
                     ipv4.addresses 192.168.2.5/24 connection.autoconnect yes
                     [root@proxy ~]# nmcli connection up eth1
 
+                    yum -y install haproxy
 
 
                     配置文件  vim/etc/haproxy/haproxy.cfg

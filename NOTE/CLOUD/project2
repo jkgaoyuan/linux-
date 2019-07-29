@@ -122,3 +122,27 @@ DAY01
                      管理
                      maxadmin  -uadmin -pmariadb -P4016
 
+
+                    使用user test  pass a 链接1.50 的 4006
+
+                     mysql -h192.168.1.50 -P4006 -utest -pa
+
+                     进行 读写 操作 ,写只向主库写, 读 可以向从库和主库读
+
+
+                1.52  1.53 作为 haproxy+keeplive 为 maxscale提供高可用和负载均衡
+
+                         haproxy 中定义的 端口 4015 作为本机监听端口,将本机端口的访问数据转发给 maxscale读写分离集群
+
+                            访问 mysql -h192.168.1.52/53 -P4015 -utest -pa  // 测试 haproxy
+                                    数据操作
+                            访问 mysql -h192.168.1.111 -P4015 -utest -pa   //测试 keeplive + haproxy
+
+                                停止 keeplive 检查 vip是否会 转移到另外一台的 keeplive+haproxy上
+                                    数据操作
+
+                54 55 redis 主从 哨兵模式
+
+                    /etc/init.d/redis_6354  stop start  启动停止命令
+
+                    55 启动哨兵模式   redis-sentinel /etc/sentinel.conf
