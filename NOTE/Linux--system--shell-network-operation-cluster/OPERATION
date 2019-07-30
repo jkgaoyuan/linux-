@@ -1334,7 +1334,7 @@
                         [root@proxy ~]# yum -y install pcre-devel            //安装软件依赖包
                         [root@proxy ~]# yum -y install python-docutils         //安装软件依赖包
                          [root@proxy ~]# useradd -s /sbin/nologin varnish                //创建账户
-                        [root@proxy ~]# tar -xf varnish-5.2.1.tar.gz
+                        [root@proxy ~]# tar -xf varnish-5.2.1.tar.gz      /linux-soft/02/lnmp_soft.tar.gz
                         [root@proxy ~]# cd varnish-5.2.1
                         [root@proxy varnish-5.2.1]# ./configure
                         [root@proxy varnish-5.2.1]# make && make install
@@ -2721,7 +2721,7 @@
                           #stats hide-version   #隐藏统计页面上HAProxy的版本信息
                         listen  websrv-rewrite 0.0.0.0:80
                            balance roundrobin
-                           server  web1 192.168.2.100:80 check inter 2000 rise 2 fall 5
+                           server  web1 192.168.2.100:80 check inter 2000 rise 2 fall 5   //2000 表示单次检测时间间隔 ms
                            server  web2 192.168.2.200:80 check inter 2000 rise 2 fall 5
                     3）启动服务器并设置开机启动
                         [root@haproxy ~]# systemctl start haproxy
