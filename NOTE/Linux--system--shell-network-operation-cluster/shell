@@ -422,6 +422,12 @@ shell
             若起始位置为第一个字符 则 起始位可以省略
                 ${x::5}
 
+            这个和python中列表的字符切割是不同的
+
+            >>> py_str = 'python'
+            >>> py_str[2:4]    #包含起始下标的字符,不包含结束下标的字符
+             'th'
+
             子串替换的两种用法：
             只替换第一个匹配结果：
             ${变量名/old/new}
@@ -432,6 +438,10 @@ shell
             从左向右，最长匹配删除：${变量名##*关键词}
             从右向左，最短匹配删除：${变量名%关键词*}
             从右向左，最长匹配删除：${变量名%%关键词*}
+
+            最长匹配表示需要删除到该行 不包含  关键词即可
+            最端匹配表示删除遇到的第一个 关键词
+
         eg:
                 [root@server0 ~]# a=123asdfasdf
                 [root@server0 ~]# echo ${a//asd/123}
@@ -439,11 +449,11 @@ shell
 
                 [root@server0 ~]# echo $a
                 root:x:0:0:root:/root:/bin/bash
-                [root@server0 ~]# echo ${a%root*}
+                [root@server0 ~]# echo ${a%root*}       #从右往左 删除
                 root:x:0:0:root:/
                 [root@server0 ~]# echo ${a%%root*}
 
-                [root@server0 ~]# echo ${a#*root}
+                [root@server0 ~]# echo ${a#*root}     #从左往右 删除
                 :x:0:0:root:/root:/bin/bash
                 [root@server0 ~]# echo ${a##*root}
                 :/bin/bash

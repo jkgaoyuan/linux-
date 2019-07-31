@@ -445,11 +445,21 @@ echo  复读机 只会显示 echo后面输入的字符
 
 	[root@jkgao gaoyuan]# echo lolo
 	lolo
-    [student@room9pc01 linux-]$ echo -e "123\n321" #换行输出
+    [student@room9pc01 linux-]$ echo -e "123\n321" #换行输出   -e 允许对下面列出的加反斜线转义的字符进行解释
 	123
     321
     [student@room9pc01 linux-]$ echo -e "123\t321" #加入tab
     123     321
+
+    字符串切割
+    需要注意的是这里与python中的列表的字符串切割是不同的,py_str[2:4] ###包含起始下标的字符,不包含结束下标的字符
+    而shell是需要
+    [student@room9pc01 HTML---temporal]$ pwd
+    /home/student/HTML---temporal
+                                                   开头 结束
+    [student@room9pc01 HTML---temporal]$ echo ${PWD:(-6):6} //-6 表示从倒数第六个字符开始,6 表示开始后有几个字符
+    mporal
+
 #####################
 vim编辑器
 
