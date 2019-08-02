@@ -1614,7 +1614,7 @@ panglj@tedu.cn
                         [mysqld]
                         server_id=54
                         log-bin=db54
-                        log_slave_updates
+                        log_slave_updates  # 允许级联复制
                     :wq
                     ]# systemctl  restart mysqld
 
@@ -2158,7 +2158,7 @@ panglj@tedu.cn
                             </schema>
 
 
-                        [root@db56 conf]# /usr/local/mycat/bin/mycat stop
+                        [root@db56 conf]# /usr/local/mycat/bin/mycat stop #mycat启动
                         [root@db56 conf]# /usr/local/mycat/bin/mycat start
 
                         创建表
