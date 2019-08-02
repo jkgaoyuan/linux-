@@ -1928,6 +1928,21 @@ panglj@tedu.cn
                         /usr/local/mysql/bin/mysql -uroot -p123456 -S /dir1/mysqld1.socket
                         没有设置开机自启
 
+            关于mycat读写分离 请查看 https://www.cnblogs.com/kevingrace/p/9365840.html
+                部署:
+                    mycat jave-1.8.0-openjdk-devel (会附带安装openjdk)
+
+                    mysql-node1 部署主从复制
+                    mysql-node2
+
+
+                    配置 mycat 节点
+
+
+                实验还没有做完
+
+
+
        DAY03
             一.数据分片
                 分片介绍
