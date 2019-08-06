@@ -103,7 +103,7 @@ date查看/调整系统 时间  #####常常充当变量用
         ln -s /路径/软文件  /路径/快捷方式 (青色)
                   当你不起名字时候默认和源文件名相同
                   原始文件被干掉后软链接不可用
-                  可以夸分区
+                  可以跨分区
         [root@svr7 ~]# mkdir /public/
         [root@svr7 ~]# ln -s /public/ /root/zz
         [root@svr7 ~]# ls
