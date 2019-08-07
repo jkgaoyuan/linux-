@@ -662,7 +662,7 @@ usermod
 -d 修改家目录
 -s 修改解释器		
 [root@jkgao gaoyuan]# usermod -u 1700 -G tarena -s /sbin/nologin nsd11
- 
+                              -u 指定uid  -G 指定附属组  -s 指定家目录  nsd11 为目标用户
 ###########################
 命令别名 （临时别名）
 alias
