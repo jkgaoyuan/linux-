@@ -146,3 +146,7 @@ DAY01
                     /etc/init.d/redis_6354  stop start  启动停止命令
 
                     55 启动哨兵模式   redis-sentinel /etc/sentinel.conf
+
+
+
+
