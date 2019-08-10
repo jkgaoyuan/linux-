@@ -201,7 +201,7 @@ panglj@tedu.cn
                                姓名 char(10),
                                家庭地址 char(20)
                                ) DEFAULT CHARSET=utf8; ####添加参数支持中文,似乎只能在创建表的时候添加,待测试
-
+                               mysql> create database wordpress character set utf8mb4; 创建一个支持 中文的库
                                 mysql> insert into db1.学生表 values("张三丰","武当山");
                                 mysql> insert into db1.学生表 values("张四丰","武台山");
                                 mysql> select  * from  db1.学生表;

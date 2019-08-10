@@ -129,6 +129,7 @@ LNMP
                         3）配置数据库账户与权限
                             为网站提前创建一个数据库、添加账户并设置该账户有数据库访问权限。
                             [root@centos7 ~]# mysql
+                            MariaDB [(none)]>mysql
                             MariaDB [(none)]> create database wordpress character set utf8mb4;
                             MariaDB [(none)]> grant all on wordpress.* to wordpress@'%' identified by 'wordpress';
                             MariaDB [(none)]> grant all on wordpress.* to wordpress@'localhost' identified by 'wordpress';
