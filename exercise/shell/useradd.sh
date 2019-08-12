@@ -3,7 +3,7 @@
 #示必须输入账户名并退出脚本;如果用户不输入密码,则统一使用默认的 123456 作为默认密码
 read -p "输入需要添加的用户" username
 
-if [ -z $username  ]; then
+if [ -z $username  ]; then          -z 判断 参数是否为空
     echo "你必须输入用户"
     exit 2
 else

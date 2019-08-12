@@ -15153,7 +15153,7 @@ DNS 解析的作用  端口 53
         主机头部,正确申请的域名结尾
         CNNIC--中国互联网信息中心  墙 ?
 #######################################
-    虚拟机A构建基本DNS服务
+    虚拟机A构建基本DNS\dns服务
         1.安装 bind  bind-chroot
             伯克利发明
             bind.x86_64 32:9.9.4-61.el7 // 域名服务包
@@ -15164,7 +15164,7 @@ DNS 解析的作用  端口 53
             SVR7
                vim /var/named.conf
                options {
-                    listen-on port 53 { any; }; 或者删除这一行就意味着 为任何人服务
+                    listen-on port 53 { any; }; 或者删除这一行就意味着 为任何人服务// 这里的127 需要修改为any
                   directory       "/var/named";
                        };
                zone "tedu.cn" IN {
@@ -15177,7 +15177,7 @@ DNS 解析的作用  端口 53
             /var/named
             [root@svr7 var]# vim /var/named/tedu.cn.zone
 
-
+                                                       ###注意这个点
                     tedu.cn. NS     svr7               ##申明负责解析tedu.cn域名为svr7 主机
                     svr7     A      192.168.4.7        ###申明svr7 主机的ip地址为  192.168.4.7
                     www      A      192.168.4.2        ###正常解析纪录
@@ -15212,7 +15212,7 @@ DNS 解析的作用  端口 53
                             };
         2.修改地址库文件
             [root@svr7 named]# vim /var/named/qq.com.zone
-            qq.com  NS  svr7
+            qq.com.  NS  svr7
             svr7    A   192.168.4.7
             www     A    1.1.1.1
             ftp     A    2.2.2.2
