@@ -99,7 +99,8 @@ y
 y
 y
 EOF
-echo "数据库已经初始化,root密码:bvy8Tabp3Wzc7Ejg"			
+echo "数据库已经初始化,root密码:bvy8Tabp3Wzc7Ejg"
+echo "数据库zabbix用户为zabbix密码为zabbix,需要请自行修改	"
 	}
 ################开启zabbix服务
 zabbix_serves(){
@@ -115,7 +116,7 @@ cat << EOF
 1 输入nginx源码包的绝对路径,不用解压
 2 输入zabbix源码包的绝对路径,不用解压
 3 输入zabbix_server,启动zabbix服务端进程
-4 不要有骚操作,本脚本很脆弱,经办不起折腾
+4 不要有骚操作,本脚本很脆弱,经办不起折腾,请将将脚本文件和源码包放在一个文件夹下面,再输入源码报的名字就可以安装了
 EOF
 read -p "请您输入:" n
 soft=${n%%-*} ##%表示从右往左删删除第一个以及后面一个

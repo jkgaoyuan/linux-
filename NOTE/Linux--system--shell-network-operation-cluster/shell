@@ -488,8 +488,8 @@ shell
                     基本表
 
             正则符号                描述
-               ^                 匹配行首
-               $                 匹配行尾
+               ^                 匹配行首           ^匹配内容
+               $                 匹配行尾           匹配内容$
                []                集合,匹配集合中的任意单个字符  // 或   ###[a-Z] 匹配任意字符大小写,- 表示范围
                [^]               对集合取反                  // 或    ###^[^a-z] 匹配不一小写字母开头的行
                .                 匹配任意单个字符
@@ -759,6 +759,9 @@ shell
                     结束END{}
                         处理完最后一行文本后执行
                         一般用来输出结果
+
+                格式:    awk 'BEGIN{} {} END{}'   参数
+
                 eg:
                      输出行列
                     awk -F: '{print NR,NF}' /etc/passwd
@@ -780,13 +783,15 @@ shell
                     ### 显示 系统中内存占用最大的部分
                     ps -eo %mem,%cpu,ucmd | awk '{A[$3]+=$1}END{for (i in A)print A[i],i}' | sort -n
 
+                                NR 行  NF 列
+                                $NR 表示最后一行  $ NF 表示最后一列
 
                 eg: 编写脚本 要求如下
                     检测cpu 负载              uptime    uptime | awk '{print $(NF-2)}'|  sed 's/,//'
                     网卡流量                  ifconfig   ifconfig eth0 | awk '/RX p/{print $5/1024^2"Mib"}'
-                    内存剩余容量               free       free -m | awk '/Mem/{print $4"MIB"}'
-                    计算机账户数量             df          df -h | awk '/\/$/{print $(NF-2)}'
-                    当前登录计算机账户数量      /etc/passwd /  who  awk 'END{print NR}' /etc/passwd
+                    内存剩余容量               free       free -m | awk '/Mem/{print $4"MIB"}'   ### free -mh |awk '/M/{print $NF}'
+                    硬盘存储                    df          df -h | awk '/\/$/{print $(NF-2)}'   //// 匹配内容$匹配结尾  ////df -h |awk '/^\/dev/{print $(NF-3)}'
+                    当前登录计算机账户数量      /etc/passwd /  who | awk 'END{print NR}' /etc/passwd
                     计算机当前开启进程数量      ps aux          ps aux | awk 'END{print NR}'
                     本机安装软件包数量         rpm -qa         rpm -qa | awk 'END{print NR}'
                 脚本如下:
@@ -796,16 +801,24 @@ shell
                     uptime | awk '{printf "%.2F",$(NF-2)}'
                                  echo -ne "网卡流量\t"
                     ifconfig eth0 | awk '/RX p/{print $5/1024^2"Mib"}'
+
+                    ###ifconfig eth0 |awk '/RX pack/ {printf "%.2F""MB""\n",$(NF-2)/1024^2}'
+
                                  echo -ne " 内存剩余容量\t"
                     free -m | awk '/Mem/{print $4"MIB"}'
                                        echo -ne "计算机账户数量\t"
                     df -h | awk '/\/$/{print $(NF-2)}'
-                                     echo -ne  " 当前登录计算机账户数量\t"
+                                     echo -ne  " 当前计算机账户数量\t"
                     awk 'END{print NR}' /etc/passwd
                                      echo -ne  "计算机当前开启进程数量\t"
                     ps aux | awk 'END{print NR}'
                            echo -ne " 本机安装软件包数量\t"
                     rpm -qa | awk 'END{print NR}'
+
+                    筛选文件中特定字符出现的个数
+                    awk '/筛选条件(正则)/{sun++ }END{print sun}' 文件
+
+
             补充:
             每秒执行一次 xxx,配合其他命令使用 来持续检测 .
             watch -n 1 'ps aux'
@@ -836,13 +849,35 @@ shell
                 awk按行读,按列取
                 #!/bin/bash
                 #自定义变量 chars 变量存储字符个数,自定义变量 words 变量存储单词个数
-                #awk 内置变量 NR 存储行数
+                #awk 内置变量 NR 存储行数  NR 行 NF列   $NF 表示每行的最后一列
                 #length()为 awk 内置函数,用来统计每行的字符数量,因为每行都会有一个隐藏的$,所以每次统计后都+1
                 #wc 程序会把文件结尾符$也统计在内,可以使用 cat -A 文件名,查看该隐藏字符
                 # $0  当前读入的整行文本内容
                 awk '{chars+=length($0)+1;words+=NF} END{print NR,words,chars}' $1
 
-                chars=chars+length($0)+1
-                words=words+NF   //awk按列
+
+                chars+=length($0)+1 >>>>>>>   chars=chars+length($0)+1
+
+                words+=NF >>>>> words=words+NF   //awk按列
 
 
+
+
+            有一文件要求统计 文件中的关键词  master 和  node 出现的次数
+
+            文件内容:
+            aaaaaaaaaaaaa node aaaaaaasdf
+            aaaaaaaaaaaaa master aaaaaaasdf
+            aaaaaaaaaaaaa master aaaaaaasdf
+            aaaaaaaaaaaaa master aaaaaaasdf
+            aaaaaaaaaaaaa node aaaaaaasdf
+
+            要求显示格式如下
+
+            3   master
+            2   node
+
+
+            awk '{if($2=="master") sun1++;if($2=="node") sun2++}END{print sun1 "\t""master" "\n" sun2 "\t""noder"}' a.txt
+
+            awk '{S[$2]++}END{for (i in S)print S[i],i}' a.txt   /// 为什么 () 保留整体

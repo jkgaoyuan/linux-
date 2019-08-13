@@ -825,6 +825,7 @@ DAY02 OPENSTACK
 
 
 
+
                 客户端访问容器内资源
                     默认容器可以访问外网
                     但是外部主机不可以不可以变成对应的服务
@@ -832,9 +833,73 @@ DAY02 OPENSTACK
                         -p 将容器端口和宿主机端口绑定
 
                         -p 宿主机端口:容器端口
-
+                文件系统的挂载
                     eg:
                         docker run -v/webroot:/var/www/html -itd -p 80:80 192.168.1.31:5000/apache:httpd
                           -v 挂载磁盘,数据持久化
 
+                宿主机复制文件到docker容器(也可以将docker容器的文件复制到宿主机)
 
+                    docker cp 要拷贝的文件路径 容器名：要拷贝到容器里面对应的路径
+                    eg:
+                        docker cp /opt/test.js testtomcat：/usr/local/tomcat/webapps/test/js
+                    docker cp 容器名：要拷贝的文件在容器里面的路径       要拷贝到宿主机的相应路径
+                    eg:
+                        docker cp testtomcat：/usr/local/tomcat/webapps/test/js/test.js /opt
+
+                1.13 docker 网络模式
+                    参考: https://www.cnblogs.com/zuxing/articles/8780661.html
+                    查看docker网络
+                    docker network ls
+                    用--net选项指定容器的网络模式
+
+                        · host模式，使用--net=host指定。
+
+                        · container模式，使用--net=container:NAME_or_ID指定。
+
+                        · none模式，使用--net=none指定。
+
+                        · bridge模式，使用--net=bridge指定，默认设置
+
+
+                    host模式:
+                        Docker使用的网络实际上和宿主机一样，在容器内看到的网卡ip是宿主机上的ip
+
+                        由于docker使用了 基于内核的 name space 技术来进行资源隔离
+                        (隔离主要分为 PID Namespace隔离进程，Mount Namespace隔离文件系统，Network Namespace隔离网络),
+                        若docker 创建 容器 时使用了 -net=host 指定网络模式,则容器将不会进行网络隔离,容器不会虚拟出自己的网卡和配置自己的ip
+                        而直接使用宿主机的 ip
+
+                    container (容器) 模式:
+                        多个容器使用共同的网络看到的ip是一样的。
+
+                        该模式将指定一个已经存在的容器的 network name space 供 新创建的容器使用
+                        而不是和宿主机共享.新创建的容器不会创建自己的网卡，配置自己的IP，
+                        而是和一个指定的容器共享IP、端口范围等。同样，两个容器除了网络方面，其他的如文件系统、
+                        进程列表等还是隔离的。两个容器的进程可以通过lo网卡设备通信。
+
+
+
+                    none模式:
+                        该模式不会配置任何网络
+
+                        这个模式下docker拥有自己的network namespace ,但是不会对容器配置任何网络,需要我们根据实际情况 对容器配置网络
+
+                    bridge模式:
+
+                        bridge 模式是 docker默认的网络设置,该模式会为每一个容器分配network namespace,设置ip,
+                        并将一个主机上的docker容器链接到同一个网段之下,docker之间是可以通信的.
+
+                    eg:
+                        在宿主机上启动一个含有nginx的docker容器,监听tcp80 端口
+                        docker run --name=nginx_host --net=host -p 80:80 -d nginx
+
+                        我们可以直接使用  宿主机的80 端口进行访问,不需要使用nat转换
+
+                docker 网络配置过程:
+                        1.宿主机上创建一对虚拟网卡veth pair 设备,veth 设备必须成对出现,不然怎么通信,之间组成一个数据通道,
+                          数据从一个设备进入,从另一个设备出来, veth 设备则是用来链接这两个网络设备
+                        2.docker 将veth pair的设备的一端放在新创建的的容器中,并命名为eth0.另一端放在宿主机中vethxxx命名,
+                        并将这个网络设备加入到docker0网桥中,通过brctl show  查看
+
+                        3.从docker0子网中分配一个ip给容器使用,并将docker0的ip地址为默认网关
