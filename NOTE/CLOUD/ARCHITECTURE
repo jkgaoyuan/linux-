@@ -28,6 +28,9 @@ DevOps
          易用使用
          支持多层部署
          支持异构it环境
+         ##########################################
+         可以管理 linux window server mysql docker k8s
+         ##########################################
     1.3 为什么选择ansible
         特点:
             社区活跃度
@@ -93,7 +96,8 @@ DevOps
                 配置yum
             安装
                 ansible管理主机上
-                yum -y install ansible
+                yum -y install ansible   /// 这么 安装的是 python2版本
+                也可以使用pip 安装 python3新版本的 ansible
 
                 vim /etc/ansible/ansible.cfg
                     行取消注释
