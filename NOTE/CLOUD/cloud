@@ -632,7 +632,7 @@ DAY02 OPENSTACK
                     我们教学环境中最基础的是.node_base.qcow2
 
                     牛老师.node_tedu.qcow2 后端盘指向 base
-
+                先systemctl restart docker
                 docker容器基于镜像启动
                 镜像是启动容器的核心
                 镜像采用分层设计
@@ -655,6 +655,9 @@ DAY02 OPENSTACK
 
                 ~]# docker  load   //导入镜像
                     Usage:	docker load [OPTIONS]
+                    eg:
+                        docker load < gitlab_zh.tar
+
                 ~]# docker load  -i busybox.tar/  -i input
                 导入失败:停止docker 删除下/var/lib/docker/的所有,重启服务,重新导入
 
@@ -664,7 +667,8 @@ DAY02 OPENSTACK
 
                     /bin/bash 指需要启动的命令,不指定表示按照默认启动(只在容器中有效)
                     对于服务镜像的启动(交互),放置在前台,非交互(数据库,nginx)放置后台.
-
+                    i 交互式界面 t terminal(终端) d 后台执行   v 指定 后端磁盘
+                    p 指定端口
             1.6查看容器
 
                 ~]# docker ps -a //查看所有的容器 -a显示所有 -q只显示容器id,

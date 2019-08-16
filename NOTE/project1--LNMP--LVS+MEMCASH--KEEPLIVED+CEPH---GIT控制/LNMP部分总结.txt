@@ -1,0 +1,15 @@
+通常我们用nginx和 Tomcat来作为 后端 web服务器
+负载均衡
+    软件:
+        lvs/nginx
+
+    lvs 做4层的负载均衡/nginx可以做 7 层 动静分离, 在大型的web集群中通常,
+                用lvs来做 四层负载均衡, nginx七层 动静分离
+        按照4/7层的web架构可以快速扩建web集群
+    haproxy 也可以实现 负载均衡 常于 keeplived 连用
+    听李欣的的可在整理
+
+负载均衡的高可用
+
+        keeplived
+        lvs(负载均衡) 配合keeplived 做高可用
