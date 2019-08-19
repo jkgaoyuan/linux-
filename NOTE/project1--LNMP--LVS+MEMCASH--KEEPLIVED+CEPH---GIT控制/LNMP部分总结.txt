@@ -3,13 +3,42 @@
     软件:
         lvs/nginx
 
-    lvs 做4层的负载均衡/nginx可以做 7 层 动静分离, 在大型的web集群中通常,
+    lvs 只能支持做4层的负载均衡/nginx可以做 7 层 动静分离, 在大型的web集群中通常,
                 用lvs来做 四层负载均衡, nginx七层 动静分离
-        按照4/7层的web架构可以快速扩建web集群
-    haproxy 也可以实现 负载均衡 常于 keeplived 连用
+         按照4/7层的web架构可以快速扩建web集群
+    haproxy  4/7层 也可以实现 负载均衡 常于 keeplived 连用
     听李欣的的可在整理
 
 负载均衡的高可用
 
         keeplived
         lvs(负载均衡) 配合keeplived 做高可用
+
+
+lnmp 搭建 虽然有 一键安装脚本但是还是希望自己能够 独立安装
+
+关于升级 curl
+
+安装仓库
+rpm -Uvh  http://www.city-fan.org/ftp/contrib/yum-repo/rhel6/x86_64/city-fan.org-release-2-1.rhel6.noarch.rpm
+查看repo 包含的 curl 版本
+yum --showduplicates list curl --disablerepo="*" --enablerepo="city*"
+启用 repo
+vim /etc/yum.repos.d/city-fan.org.repo
+    enabled = 1
+更新
+    yum update curl
+如果提示缺少依赖 libnghttp2.so.14()(64bit)
+    rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/Packages/l/libnghttp2-1.6.0-1.el6.1.x86_64.rpm
+安装完成后 重复
+    yum update curl 或者直接 安装
+    curl -V 查看版本
+php 7.3 安装
+参考:
+https://segmentfault.com/a/1190000017547464?utm_source=tag-newest
+
+    1.下载源码
+    wget http://cn2.php.net/distributions/php-7.3.0.tar.gz
+    2. 创建安装目录 解压 编译
+    mkdir /usr/local/php7.3
+    tar -xf php-7.3.0.tar.gz
