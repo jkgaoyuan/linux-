@@ -2290,6 +2290,42 @@
 
 
         keeplived高可用
+
+
+                    keeplived 和 lvs 连用时 keeplive 的 配置中需要指定  virtural server 部分
+                如下
+                和 haproxy 连用 时 则不需要 virtual server部分
+
+                                #virtual_server 192.168.1.66 80 {
+                                #   delay_loop 6
+                                #   lb_algo rr
+                                #   lb_kind DR
+                                # #  persistence_timeout 50
+                                #   protocol TCP
+
+                                #   real_server 192.168.1.62 80 {
+                                #       weight 1
+                                #       TCP_CHECK {
+                                #           connect_timeout 3
+                                #           nb_get_retry 3
+                                #           delay_before_retry 3
+                                #      }
+
+                                #   }
+
+                                #  real_server 192.168.1.63 80 {
+                                #       weight 2
+                                #       TCP_CHECK {
+                                #           connect_timeout 3
+                                #           nb_get_retry 3
+                                #           delay_before_retry 3
+                                #      }
+                                #   }
+                                #}
+
+
+
+
                 1.配置网络环境（如果在前面课程已经完成该配置，可以忽略此步骤）
 
                         1）设置Web1服务器网络参数、配置Web服务

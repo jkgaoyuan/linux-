@@ -13,6 +13,50 @@
 
         keeplived
         lvs(负载均衡) 配合keeplived 做高可用
+        或者 haproxy + keeplived 也可以实现
+
+
+            需要注意的是:
+
+                keeplived 和 lvs 连用时 keeplive 的 配置中需要指定  virtural server 部分
+                如下
+                和 haproxy 连用 时 则不需要 virtual server部分
+
+                                #virtual_server 192.168.1.66 80 {
+                                #   delay_loop 6
+                                #   lb_algo rr
+                                #   lb_kind DR
+                                # #  persistence_timeout 50
+                                #   protocol TCP
+
+                                #   real_server 192.168.1.62 80 {
+                                #       weight 1
+                                #       TCP_CHECK {
+                                #           connect_timeout 3
+                                #           nb_get_retry 3
+                                #           delay_before_retry 3
+                                #      }
+
+                                #   }
+
+                                #  real_server 192.168.1.63 80 {
+                                #       weight 2
+                                #       TCP_CHECK {
+                                #           connect_timeout 3
+                                #           nb_get_retry 3
+                                #           delay_before_retry 3
+                                #      }
+                                #   }
+
+
+                                #}
+
+
+ Keepalived+LVS服务器
+
+ Keepalived为LVS调度器提供高可用功能，防止调度器单点故障，为用户提供Web服务
+
+
 
 
 lnmp 搭建 虽然有 一键安装脚本但是还是希望自己能够 独立安装
