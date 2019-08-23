@@ -1961,6 +1961,7 @@ DAY03
                 批量导入数据
 
                 lftp 192.168.1.254
+                lftp user:passwd@ip:port
                 cd elk/
                 get logs.jsonl.gz
                 logs.jsonl.gz
@@ -16182,6 +16183,7 @@ dpkg        rpm
 apt-get     yum
 ##################
 配置ubuntu的 apt-get
+
 
 /etc/apt/sources.list   //存放地址列表的配置文件
 deb [web或ftp地址] [发行版名字] [main/contrib/non-free]

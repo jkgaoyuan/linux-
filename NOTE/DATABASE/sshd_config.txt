@@ -52,6 +52,8 @@ SyslogFacility AUTHPRIV
 
 # PubkeyAuthentication yes
 # AuthorizedKeysFile      .ssh/authorized_keys
+# PermitRootLogin prohibit-password 允许ROOT用户登录但是进制root用 密码登录  ubuntu 默认不可以使用root+密码登录
+
 # 是否允许用户自行使用成对的密钥系统进行登入行为，仅针对 version 2。
 # 至于自制的公钥数据就放置于用户家目录下的 .ssh/authorized_keys 内
 
