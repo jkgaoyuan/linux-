@@ -5272,6 +5272,20 @@ logout
 		验证配置： 监控到主机100的用户数量大于28个时,zabbix@localhost邮箱是否收到邮件。
 
 
+补充:
+########################################
+zabbix监控磁盘剩余容量 (被动模式) 可以参考
+http://www.zsythink.net/archives/670
+在检测 磁盘 剩余容量的	使用的 key 值
+vfs.fs.size[/,pused]  使用 zabbix_get 测试
+           路径,free/total/pused
+           需要注意的是 free/total 返回的值是整数 返回百分比 是浮点
+           在创建监控项目的时候需要注意 信息类型
+           如果返回的是字节则是整数，如果返回的是百分比则是浮点。
+导出的 xml 文件 会在 本文件夹下 zbx_disk_io_templates.xml
+########################################
+
+
 
 二、Zabbix进阶操作
 		2.1 自动发现

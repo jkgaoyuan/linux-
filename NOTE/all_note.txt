@@ -8358,6 +8358,11 @@ IDC监控
 				]# zabbix_agentd
 
 				4 测试监控命令
+				若没有zabbix_get命令
+				去这里下载
+				http://repo.zabbix.com/zabbix/3.2/rhel/7/x86_64/
+				或者到 47.94.12.29 的ftp 下载
+
 web100 ~]# zabbix_get  -s 127.0.0.1 -p 10050  -k count.line.passwd
 
 
@@ -8370,12 +8375,25 @@ zabbix-server ~]# zabbix_get  -s 192.168.2.100 -p 10050  -k count.line.passwd
 				3 创建监控项(并关联命令)monitor_100_users
 				4 将模板关联主机（调用创建的监控模板）
 				5 查看监控数据
-
+关于创建监控项目　时填写的 key (键值)
+https://www.zabbix.com/documentation/3.0/manual/config/items/itemtypes/zabbix_agent
 课外练习：
 192.168.2.5 监控服务器，对本机器做监控，
 监控本机器nginx服务的运行状态，及系统状态、及系统总用户数量
            80                     0S
 
+
+
+########################################
+zabbix监控磁盘剩余容量 (被动模式) 可以参考
+http://www.zsythink.net/archives/670
+在检测 磁盘 剩余容量的	使用的 key 值
+vfs.fs.size[/,pused]  使用 zabbix_get 测试
+           路径,free/total/pused
+           需要注意的是 free/total 返回的值是整数 返回百分比 是浮点
+           在创建监控项目的时候需要注意 信息类型
+           如果返回的是字节则是整数，如果返回的是百分比则是浮点。
+########################################
 +++++++++监控与服务安全_day02
 监控服务器
 	设置IP地址（192.168.2.5）
@@ -12349,6 +12367,7 @@ panglj@tedu.cn
                                           ss -antulp |grep 10050
 
                 自定义监控
+
                     配置客户端
 
                         启动自定义监控
