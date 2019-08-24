@@ -22399,12 +22399,12 @@ shell
 
                 sed -n '$=' 1.txt       //统计文件行数
                 sed -n 'p' 1.txt        //看全部
-                sed -n '1p' 1.txt       //看第二行
+                sed -n '1p' 1.txt       //看第一行
                 sed -n '1,3p' 1.txt     //看前三行  ','
                 sed -n '1p;3p' 1.txt   //看前第1行和第3行  ';'
                 sed -n '2,+2p' 1.txt  //查看从第2行以及,后面两行
                 sed -n '1~2p' 1.txt  //查看从奇数行
-                sed -n '2~2p' 1.txt  //查看从偶数行
+                sed -n '2~2p' 1.txt  //查看从偶数行  从第二行开始 步长为2
                 sed -n '/^root/,/^adm/p' /etc/passwd  //匹配 以root 开头 到以adm开头 的行
 
                 sed 'p' 1.txt      //输出文件所有行,并附加默认输出
