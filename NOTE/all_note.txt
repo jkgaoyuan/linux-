@@ -284,11 +284,15 @@ DAY02 OPENSTACK
                 用于创建网络 子网 路由器 管理浮动 ip
                 可以实现虚拟交换机 虚拟路由器
                 可用于在项目中创建vpn
-
+                (虚拟扩展局域网)
                 通过(vxlan[扩展vlan]解决)
                 不同公司之间需要隔离,相同公司之间需要通信
                 所有安装 nova的机器上都要安装
-
+                    VXLAN在云数据中心之间虚拟机迁移中的应用，如某个企业在不同的数据中心有不同业务应用的虚拟机，数据中心之间虚拟机迁移是经常会遇到的，
+                    为了保证虚拟机迁移过程中业务不中断，则需要保证迁移虚拟机的IP地址、MAC地址等参数保持不变，这就要求虚拟机迁移前后属于统一个二层网络。
+                    参考
+                        https://bbs.hh010.com/thread-571168-1-1.html?_dsign=fc065a39
+                        https://www.jianshu.com/p/cccfb481d548
             Cinder
                 为虚拟机提供存储卷的服务
                 为运行的Nova中的实例提供永久的块存储
@@ -15843,6 +15847,9 @@ PXE 的安装  #####面试必考
             在{}中添加如下两行
             next-server 192.168.4.7; ###指定下一个服务地址
             filename "pxelinux.0";  ####指定引导文件名称 注意这里的双引号不能用单引号
+            单引号双引号的区别
+                单引号 屏蔽特殊含义  '$a' 就代表 字符$a
+                双引号 不屏蔽特殊含义  "$a" 则代表 变量$a
             "pxelinux.0" 网卡引导文件(安装说明书) 二进制文件
             重启服务
             systemctl restart dhcpd
@@ -22405,7 +22412,7 @@ shell
                 sed -n '2,+2p' 1.txt  //查看从第2行以及,后面两行
                 sed -n '1~2p' 1.txt  //查看从奇数行
                 sed -n '2~2p' 1.txt  //查看从偶数行  从第二行开始 步长为2
-                sed -n '/^root/,/^adm/p' /etc/passwd  //匹配 以root 开头 到以adm开头 的行
+                sed -n '/^root/,/^adm/p' /etc/passwd  //匹配 以root 开头 到以adm开头 的行  , 表示区间 ; 表示语句结束
 
                 sed 'p' 1.txt      //输出文件所有行,并附加默认输出
                 ###注意使用正则表达式的语法
@@ -22425,8 +22432,8 @@ shell
                 sed -n 's/2017/2077/' 2.txt // 将每行第一个2017 替换为2077
                 sed -n 's/2017/2077/g' 2.txt // 将每行所有2017 替换为2077
                 sed -n '2s/2017/2077/2' 2.txt // 将第二行的第二个2017 替换为2077
-                sed -n '2s/2017/2077/2 ; 2s/2017/2077/3' 2.txt // 将第二行的第二个和第二行第三个2017 替换为2077
-
+                sed -n '2s/2017/2077/2 ; 2s/2017/2077/2' 2.txt // 将第二行的第二个和第二行第三个2017 替换为2077
+                               先执行      后执行
                 sed 's!/bin/bash!/sbin/sh!' 2.txt  //将bin/bash 替换为 sbin/sh  !为分隔符号同 /
                 sed 's/.//2 ; s/.$//' 2.txt   //删除每行第2个字符和最后一个字符
 
@@ -22434,7 +22441,7 @@ shell
                 sed -r 's/(^.)(.*)(.$)/\3\2\1/' 2.txt  //使用扩展正则表达式 将文件的 头和尾互换 // ()有复制的效果
 
 
-                sed -rn '75s/(        #)(.*)(fastcgi)(.*)/\2\3.conf/p' nginx.conf   //测试  将75 行 # 取消并且将 fastcgi_params; 替换为fastcgi.conf;
+                sed -rn '75s/(        #)(.*)(fastcgi)(.*)/\2\3.conf;/p' nginx.conf   //测试  将75 行 # 取消并且将 fastcgi_params; 替换为fastcgi.conf;
                         #    include        fastcgi_params; //源
                              include        fastcgi.conf;   //修改后
 
@@ -22460,7 +22467,10 @@ shell
                 i    行前插入文本         ###2iyy 在第二行前添加文本yy; 4,7iyy 在4-7 每行前插入
                 a    行后插入文本         ###2auu 在第二行后添加文本uu ;/^xx/ayy 在以xx开头的行后添加
                 c    替换整行            ###2cyy  将第二行替换为 yy
-
+                sed -i '17a test' a.txt 这里加空格是为了 好区分
+                面试问 取出指定行的文本
+                head -10 a.txt | head -1 取出第10 行
+                sed -n '10p' a.txt
             多行文本的修改
                     sed -n '2cxx\nyy' m.txt  ####将第二行 替换为xx yyy
                     #### 在 hosts 文件末尾添加 两行

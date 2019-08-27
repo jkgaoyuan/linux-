@@ -133,7 +133,7 @@ shell   6 天
 
             总结
                 数据发送封装  接收数据解封
-                学习  广播 转发  更新
+交换机工作原理    学习  广播 转发  更新
                 广播域 : 同一网段  统一范围
                 广播域太大会造成 干扰 网络速率下降
                 交换机是组建局域网的重要设备,交换机可以根据mac地址智能的转发数据帧 ,且工作在数据链路层
@@ -292,7 +292,7 @@ shell   6 天
                 [Huawei-acl-basic-2000]rule deny source 192.168.2.1 0  #####拒绝192.168.2.1 主机
                                        rule permit source              ####允许
                 [Huawei-GigabitEthernet0/0/1]traffic-filter inbound acl 2000  ####在端口中设置acl条目,过滤流量
-
+                                                            outbound  出口网络
                 ###########################################
 
                 高级acl
@@ -318,8 +318,8 @@ shell   6 天
             缺点:延迟大
                 配置和维护复杂
             实现方式:
-                静态转换(一对一,从外网访问内网)
-                Easy IP(一对多,从内网访问外网,不能从外网访问内网)
+                静态转换(一对一,从外网访问内网) 一般是用在服务器为用户提供服务
+                Easy IP(一对多,从内网访问外网,不能从外网访问内网) 一般用于为 局域网内用户提供服务器
                 这两个方式可以同时存在,且优先选择 静态转换
 
             配置:
@@ -331,6 +331,7 @@ shell   6 天
                 ##### 配置静态 nat ;  nat static global 外网 ip  inside 内网 ip
                 [Huawei-GigabitEthernet0/0/0]nat static global 100.0.0.2 inside 192.168.2.1  一个外网 ip 只能对应一个 内网 ip
                 [Huawei-GigabitEthernet0/0/0]nat static global 100.0.0.3 inside 192.168.2.2
+                给另外一个端口配置网关 ip 2.254 /24
 
                 Easy IP
                 #### 先删除 之前配置的 静态nat
@@ -348,7 +349,7 @@ shell   6 天
             #### 查看stp 状态信息
             display stp brief
                 forwarding 转发
-                1discarding 阻塞状态(临时断开)
+                discarding 阻塞状态(临时断开)
 
     vrrp 技术
             虚拟路由热备协议
@@ -411,7 +412,7 @@ shell   6 天
                 [Huawei]interface Vlanif 1
                 ###### 配置vrrp        vrrp 编号
                 [Huawei-Vlanif1]vrrp vrid 1 virtual-ip 192.168.1.254
-
+                                vrrp vrid 1 priority 110 设置 优先级 默认优先级为 100
 
             排错:
                  1.查看 借口 IP
@@ -447,6 +448,11 @@ shell   6 天
                     3.链接pc的端口添加为vlan2
 
 
+vlan和vlanif
+    vlan   是二层
+    vlanif 是三层
+    vlanif可以配置 ip 是对应vlan的虚拟接口
+
 
   Q: 如何判断两个ip地址是同一个 ip段
   A: 网络位和广播地址是否相同 , 相同为同网段
@@ -457,3 +463,5 @@ shell   6 天
             简单网络管理协议（SNMP，Simple Network Management Protocol），由一组网络管理的标准组成，
             包含一个应用层协议（application layer protocol）、数据库模型（database schema）和一组资源对象。
             该协议能够支持网络管理系统，用以监测连接到网络上的设备是否有任何引起管理上关注的情况。
+
+            zabbix可以通过 snmp协议监控 网络设备的流量
