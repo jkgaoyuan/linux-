@@ -3,7 +3,7 @@
 host="192.168.1.23"
 mysqluser="zabbix"
 mysqlpasswd="zabbix"
-mysqladmin -h 192.168.1.23 -u '$mysqluser' -p '$mysqlpasswd' ping  & > /dev/null
+mysqladmin -h $host -u '$mysqluser' -p '$mysqlpasswd' ping  & > /dev/null
 if [ $? == 0 ]; then
     echo "mysql is UP"
 else
