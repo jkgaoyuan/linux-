@@ -646,7 +646,7 @@ DAY02 OPENSTACK
                     镜像由 name和tag确定唯一的
                 由docker 官方提供 镜像仓库
                 ~]# docker images //查看docker 镜像,管理不要手动管理,使用命令
-                ~]# docker search busybox  //查找镜像
+                ~]# docker search busybox  //查找镜像 搜索镜像
                 ~]# docker pull            //下载
                     docker pull [OPTIONS] NAME[:TAG|@DIGEST]
                     下载位置 /var/lib/docker/image/devicemapper/layerdb/sha256
@@ -654,7 +654,7 @@ DAY02 OPENSTACK
                 ~]# docker push            //上传
                     docker push [OPTIONS] NAME[:TAG]
                 ~]# docker save                          //导出镜像
-                    docker save [OPTIONS] IMAGE [IMAGE...]                         //导出镜像
+                    docker save [OPTIONS] IMAGE [IMAGE...]       //导出镜像  不是创建自定义镜像
                 ~]# docker save docker.io/busybox:latest -o busybox.tar  //:lasts 是tag,-o outpu  t
 
                 ~]# docker  load   //导入镜像
@@ -686,13 +686,14 @@ DAY02 OPENSTACK
                 docker inspect   //查看镜像底层信息,注意 PATH和cmd部分就好
                     docker inspect docker.io/nginx //查看镜像底层信息
                     docker inspect a49918ac2a02 //查看容器信息
-                    docker inspect -f "{{.NetworkSettings.IPAddress}}" a49918ac2a02(容器id) // -f  格式化输出
+                    docker inspect -f "{{.NetworkSettings.IPAddress}}" a49918ac2a02(容器id) // -f  格式化输出  查看容器 ip地址
+                    docker inspect -f '{{.NetworkSettings.MacAddress}}'
 
 
                     docker tag docker.io/nginx:latest nsd:nsd  //修改镜像的名称和tag
                 docker tag docker.io/oldname:oldtag newname:newtag
                 docker rmi 镜像名称   // 删除镜像,启动过容器的镜像不能删除
-                    docker rmi docker.io/nginx:latest
+                    docker rmi docker.io/nginx:latest     先删除容器才能,继续删除镜像
 
                 docker save 镜像名称 -o 保存文件名称  //导出镜像 (保存为tar包)
                     docker save docker.io/redis:latest -o redis.tar
@@ -711,7 +712,7 @@ DAY02 OPENSTACK
                 docker start 9752526130d0   //开启容器
                 docker restart 9752526130d0 //重启容器
                 docker inspect a49918ac2a02 //查看容器信息
-                docker rm 5613aa11e610      //删除容器
+                docker rm 5613aa11e610      //删除容器  先删除容器才能,继续删除镜像
                     docker rm -f 5876b2b46e6c   -f 强制删除真正运行的容器
                 docker top 容器ID             //查看容器进程列表
                     docker top 9752526130d0
@@ -731,13 +732,13 @@ DAY02 OPENSTACK
                             安装需要的软件
 
                         docker commit CONTAINER ID docker.io/name:tag   //导出镜像
-
+                            将基于官方镜像的自定义镜像 导出
                     自动创建
 
                         Dockerfile
 
                         FROM 基础镜像
-                        RUM  在容器中执行  //RUM是在容器bash中执行的,也就是说每个RUN的父进程是一个bash进程                        ADD  复制文件到镜像
+                        RUN  在容器中执行  //RUM是在容器bash中执行的,也就是说每个RUN的父进程是一个bash进程     ADD  复制文件到镜像
                         MAINTAINER 镜像创建者信息
                         EXPOSE 开放端口
                         ENV  设置环境变量
@@ -749,20 +750,23 @@ DAY02 OPENSTACK
 
                     eg: 配置yum源
                         [root@docker1 ~]# ls base/
-                        cp  /etc/yum.repos.d/local.repo .
+                        cp  /etc/yum.repos.d/local.repo bulid/
                         Dockerfile  local.repo  //创建文件如下
-
+                        mkdir bulid
+                        cd bulid
+                        touch Dockerfile
                         FROM docker.io/centos:latest
                         RUN rm -rf  /etc/yum.repos.d/*.repo
                         ADD local.repo  /etc/yum.repos.d/    ### 需要复制到docker的文件必须和 Dockerfile 在一个文件夹下
-                        RUN yum -y install vim net-tools iproute psmisc tree lftp rsync
+                             本地文件       容器中文件
+                        RUN yum -y install vim net-tools iproute psmisc tree lftp rsync bash-completion
 
                         [root@docker1 base]# docker build -t test:test .
 
                     eg:配置httpd服务
 
 
-                        vim Dockerfile
+                        vim DockerfileENV
 
                             FROM docker.io/myos1:latest
                             RUN yum -y install httpd
@@ -770,6 +774,12 @@ DAY02 OPENSTACK
                             EXPOSE 80
                             ENV EnvironmentFile=/etc/sysconfig/httpd
                             CMD ["/usr/sbin/httpd","-DFOREGROUND"]
+
+                            ENV 文件是通过如下找到的
+                                rpm -ql httpd |grep service
+                                vim /usr/lib/systemd/system/httpd.service
+                                 中 一行 EnvironmentFile
+                                    和   ExecStart  就是启动 命令和参数
 
                         docker build -t myapach:test .
 
@@ -782,12 +792,7 @@ DAY02 OPENSTACK
                       yum -y install docker-distribution
                       systemctl restart docker-distribution.service
                       systemctl enable docker-distribution.service
-                      vim /etc/sysconfig/docker  //修改如下
-                        13 ADD_REGISTRY='--add-registry 192.168.1.31:5000'  //docker1 定义在/etc/hosts 中也可以填 ip:port
-                                                                        但是需要注意的是  这两行要么填hosts 要么填 ip:port
-                                                                        并且之后上传/启动镜像也要使用相对应的
 
-                        24 INSECURE_REGISTRY='--insecure-registry 192.168.1.31:5000'
 
                       systemctl restart docker-distribution.service
 
@@ -796,6 +801,13 @@ DAY02 OPENSTACK
                       docker push 192.168.1.31:5000/myos:latest
 
                       1.32
+                        先停止服务 才能看到配置
+                        vim /etc/sysconfig/docker  //修改如下
+                        13 ADD_REGISTRY='--add-registry 192.168.1.31:5000'  //docker1 定义在/etc/hosts 中也可以填 ip:port
+                                                                        但是需要注意的是  这两行要么填hosts 要么填 ip:port
+                                                                        并且之后上传/启动镜像也要使用相对应的
+
+                        24 INSECURE_REGISTRY='--insecure-registry 192.168.1.31:5000'
                         vim /etc/sysconfig/docker
                             //依然是13/24 行和31 填写的相同
                         systemctl restart docker-distribution.service
@@ -13832,7 +13844,8 @@ vim 中命令模式下按 C 光标之后被删除
    2. 重启服务 
     systemctl restart vsftpd 
    3.验证 ftp 
-    [root@server0 ~]# firefox ftp://172.25.0.11 
+    [root@server0 ~]# firefox ftp://172.25.0.11
+    需要注意的是ftp文件的属相最好是 644
 #############################
 防火墙策略
    作用:隔离
@@ -14003,7 +14016,7 @@ iscsi 　网络磁盘服务(共享磁盘/分区) 类似于　ｓｈｅｌｌ　�
 		＃＃＃＃＃装包　配置　启动服务
 环境准备　
 　1.　ｆｉｒｅｗａｌｌ　设置
-	[root@server0 ~]# firewall-cmd --set-default-zone=trusted 
+	[root@server0 ~]# firewall-cmd --set-default-zone=trusted
 	success
 	＃＃＃＃ｄｅｓｋｔｏｐ也要将防火墙　设置为　允许所有
 	＃＃安装软件包
@@ -16230,6 +16243,30 @@ dpkg -l packagename = rpm -qa  //列出所有软件包
 dpkg -S packagename  = rpm -qf /usr/bin/vim//验证文件所属的软件包
 
 ##########################################
+rpm -qa 软件名 查询该软件是否已经安装
+		rpm -qf /usr/bin/mail  //查询文件所属软件 和 yum provides 作用相同
+		rpm -ivh 软件名-版本信息.rpm..   ###安装 只有在安装的时候才需要完整的路径和包名
+		rpm -e --nodeps 软件名          ###卸载软件,忽略依赖关系 也会删除配置文件
+		rpm -qc 软件名                  ###查找软件生成的配置文件位置
+		rpm -ql 软件名                  ###查看安装软件安装位置
+		yum provides /etc/hosts        ###查询某个文件所属的软件
+		rpm -qf                        ###查询/验证文件属于的软件包
+        rpm --import name              ###解决签名
+####################
+w命令查看上次服务器启动时间
+    [student@room9pc01 ~]$ w
+     18:03:20 up  9:14,  3 users,  load average: 0.56, 0.35, 0.27
+    USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+    student  :0       :0               08:49   ?xdm?   1:03m  0.32s /usr/libexec/gnome-session-binary --session gno
+    student  pts/1    :0               17:19   16.00s  0.06s  0.04s ssh root@139.9.210.20
+    student  pts/2    :0               17:21    0.00s  0.04s  0.00s w
+
+last命令 查看登录
+    student  pts/7        :0               Wed Jul 10 19:07 - 19:17  (00:10)
+    student  pts/7        :0               Wed Jul 10 17:09 - 17:09  (00:00)
+    student  pts/6        :0               Wed Jul 10 14:33 - 19:09  (04:35)
+    student  pts/3        :0               Wed Jul 10 10:18 - 19:09  (08:51)
+############################
 RHEL6/7
 
 6和7的不同:
@@ -17070,7 +17107,7 @@ TCP/IP 协议
 --包含大量的Internet应用中的表中协议
 --支持跨网络架构\和操作系统
 
-主机间通信的三要素
+主机间通信的三要素   ip mac 端口号
 -ip地址 ipaddress   :唯一表示网络中一个节点的地址(只要能连网的设备我们都可以称之为节点)
 	 地址组成(点分十进制)
 	 一共32个二进制数
@@ -17111,6 +17148,9 @@ cat /proc/meminfo 查看内存 空闲情况
 	MemTotal:       16329888 kB
 poweroff 关机
 reboot  重启
+
+top
+按数字键1 查看 cpu 逻辑核心数量
 ###########################################################
 查看主机名 hostname 
 修改主机名 hostname jkgao  (临时修改主机名 重启后 恢复)
@@ -17911,6 +17951,12 @@ shell   6 天
                     数据链路层----|      VLAN TRANK MSTP                             mac地址 ip头部 tcp头部 上层数据       数据帧
                     物理层                                                            bit                              数据流
             8比特=1字节
+
+                    TFTP Trivial File Transfer Protocol,简单文件传输协议 69
+                    SMTP 简单邮件传输协议 (Simple Mail Transfer Protocol, SMTP)  25
+                    SNMP 简单网络管理协议 是专门设计用于在 IP 网络管理网络节点（服务器、工作站、路由器、交换机及HUBS等）的一种标准协议，它是一种应用层协议。
+                    ICMP (Internet Control Message Protocol)Internet控制报文协议 ping命令
+                    IGMP (Internet Group Manage Protocol):Internet组管理协议,提供internet网际多点传送的功能,即将一个ip包拷贝给多个host
     网络层
             作用: 网络层提供点到点的链接
 
