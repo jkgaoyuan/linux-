@@ -743,7 +743,8 @@ DAY02 OPENSTACK
                         EXPOSE 开放端口
                         ENV  设置环境变量
                         WORKDIR 定义容器工作目录  //设置当前目录
-                        CMD  容器启动时执行的命令,仅只能有一条  所有参数和命令之间用','分割并用""将每一部分引起来 CMD ["/bin/ls","-a"]
+                        CMD  容器启动时执行的命令,仅只能有一条  所有参数和命令之间用','分割并用""将每一部分引起来 CMD ["/bin/ls", "-a"]
+                                                                                    中间使用 空格 将 , 分开 别忘记了
 
                         docker build  // -t  Name and optionally a tag in the 'name:tag' format (default [])
 
@@ -773,7 +774,7 @@ DAY02 OPENSTACK
                             RUN echo "hello world" > /var/www/html/index.html
                             EXPOSE 80
                             ENV EnvironmentFile=/etc/sysconfig/httpd
-                            CMD ["/usr/sbin/httpd","-DFOREGROUND"]
+                            CMD ["/usr/sbin/httpd", "-DFOREGROUND"] 注意,后的空格
 
                             ENV 文件是通过如下找到的
                                 rpm -ql httpd |grep service
@@ -919,8 +920,11 @@ DAY02 OPENSTACK
                         并将这个网络设备加入到docker0网桥中,通过brctl show  查看
 
                         3.从docker0子网中分配一个ip给容器使用,并将docker0的ip地址为默认网关
+[root@node6 ~]# docker run -d -h gitlab --name gitlab -p 443:443 -p 80:80 -p 22:22 --restart always -v /srv/gitlab/config:/etc/gitlab -v /srv/gitlab/logs:/var/log/gitlab -v /srv/gitlab/data:/var/opt/gitlab gitlab_zh:latest
 
-
+                    -v 将本地文件和docker 文件 共享
+                    --name 指定docker 容器启动后的 名字, 若没有则docker 生成一个
+                    -h 指定镜像
 大型架构及配置
 DAY01 ansible
 DevOps
@@ -13335,7 +13339,7 @@ panglj@tedu.cn
 
                                     lib]# chmod +x /etc/rc.local
                                     lib]# vim /etc/rc.local
-                                    su -c "/usr/local/tomcat/bin/startup.sh"  tomcat
+                                    su -c "/usr/local/tomcat/bin/startup.sh"  tomcat   ##指定用户启动
 
                                     测试
                                     ps aux | grep tomcat
@@ -17827,7 +17831,12 @@ find  查找 递归
                           或者用括号括住，防止它们被shell展开。命令是从起始目录执行的。
 
 
-	[root@server0 ~]# find /etc/ -name passwd* ####支持通配符
+	~]# find /etc/ -name passwd* ####支持通配符
+
+    #找出当前目录[3KB,10KB]大小的文件
+    find ./ -size +3k -a -size -10k
+    找到 tmp下大于200k的 复制到 指定目录
+    find /tmp/ -size +200k -exec cp '{}' /tmp/a \;
 
 date  #查看当前系统时间
 date -s 'year-month-day h:m:s' #注意格式 
@@ -18288,6 +18297,7 @@ shell   6 天
                 [Huawei-ospf-1]area 0
                 [Huawei-ospf-1-area-0.0.0.0]network 192.168.1.0 0.0.0.255
                 [Huawei-ospf-1-area-0.0.0.0]network 192.168.2.0 0.0.0.255
+                vrrp配置
                 ######进入vlan1
                 [Huawei]interface Vlanif 1
                 ###### 配置vrrp        vrrp 编号
