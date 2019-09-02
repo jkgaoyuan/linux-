@@ -3114,6 +3114,53 @@ DAY05
                           cluster: local
                         name: local
                     current-context: local
+                启动服务 检查 状态
+                systemctl enable docker kubelet.service kube-proxy.service
+                systemctl restart docker kubelet.service kube-proxy.service
+                systemctl status docker kubelet.service kube-proxy.service
+
+            master
+                查看集群
+                [root@ecs-5287 ~]# kubectl get node
+                NAME      STATUS    ROLES     AGE       VERSION
+                node1     Ready     <none>    9m        v1.10.3
+                node2     Ready     <none>    20s       v1.10.3
+
+
+        修改网络
+            master
+                vim /etc/etcd/etcd.conf
+
+                    8 ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"   ///// 监听所有地址
+
+                systemctl restart etcd.service  重启服务
+
+                创建子网
+                etcdctl mk /atmoic.io/network/config '{"Network": "10.254.0.0/16", "Backend": {"Type": "vxlan"}}'
+                etcdctl ls /atmoic.io/network/config
+                etcdctl get /atmoic.io/network/config  查看
+                    {"Network": "10.254.0.0/16", "Backend": {"Type": "vxlan"}}
+
+            在所有 节点上 安装 flannel
+                yum -y install flannel
+            vim /etc/sysconfig/flanneld
+
+                FLANNEL_ETCD_ENDPOINTS="http://192.168.1.242:2379"     /// master ip
+
+            systemctl restart docker flanneld
+
+                启动时 先启动 flanneld 然后是docker
+                关闭时 docker 然后 flanneld
+
+        node 节点
+        ##########我的 服务有问题  flanneld 重启失败
+        ip 不变化
+        重启成功 ip 会变成 10.254.0.0/16 网段  明天检查 视频  LINUX第四阶段-PROJECT3-Day04  早上201.6
+        同步 配置文件 重启服务
+
+        rsync -av 192.168.1.242:/etc/sysconfig/flanneld /etc/sysconfig/flanneld
+
+        systemctl restart docker flanneld
 
 
 
