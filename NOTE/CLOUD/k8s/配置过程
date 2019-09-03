@@ -9,7 +9,7 @@
         docker kubelet kube-proxy fluentd kube-dns pod
 
         pod 是 kubenetes 最基本的操作单元
-        pod 代表集群中运行的一个进程 内部封装了一个或多个紧密相关的容器
+            pod 代表集群中运行的一个进程 内部封装了一个或多个紧密相关的容器
         service 可以看做一组提供相同服务的pod对外访问接口
         docker
         kubelet 负责监控指派到他所在node上的pod, 包括创建 修改 监控 删除

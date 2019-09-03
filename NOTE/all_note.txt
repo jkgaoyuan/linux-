@@ -18165,6 +18165,19 @@ shell   6 天
                         fin---ack---fin---ack
                     udp 不可靠 无连接 效率高 用户数据包协议 缺乏可靠机制需要上层协议支持差错控制 游戏
                         TFTP NTP DNS是两个都用
+
+            tcp三次握手 :
+            https://www.cnblogs.com/zmlctt/p/3690998.html
+                Client ;  syn ----> server
+                Server: 收到后 回复  syn+ack----> client
+                Client : 收到后 回复 ack -----> server    状态进入 establish 链接建立完成
+            四次挥手:
+                Client : 发送 FIN ----->server
+                Server: 收到FIN -----> 回复ACK 给 client
+                Server : 关闭 与 client 的 链接 发送 FIN -----> client
+                Client : 收到 FIN+ack 会发 ACK ----->  server 关闭 client 和 server 的链接
+
+
     交换机命令行
 
 
@@ -21126,7 +21139,7 @@ shell   6 天
                             }
                             virtual_server 192.168.4.15 80 {           //设置ipvsadm的VIP规则（实验需要修改）
                               delay_loop 6
-                              lb_algo wrr                          //设置LVS调度算法为WRR
+                              lb_algo wrr                              //设置LVS调度算法为WRR
                               lb_kind DR                               //设置LVS的模式为DR
                               #persistence_timeout 50
                             #注意这样的作用是保持连接，开启后，客户端在一定时间内始终访问相同服务器
@@ -21348,7 +21361,7 @@ shell   6 天
 
 
 
-             keeplive (vrrp)
+             keepalived (vrrp)
                     浮动vip (高可用)
                     自动配置lvs规则 ,健康检查(tcp_check , http_get  , ssl_get)
 

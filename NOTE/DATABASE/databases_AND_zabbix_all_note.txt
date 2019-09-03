@@ -947,7 +947,10 @@ mysql> select * from db3.user limit 1;
 
 	1.6 撤销权限：删除授权用户的权限
 		1.6.1 命令：
-			mysql> revoke  权限列表  on  库名.表   from  用户名@"客户端地址";
+			mysql>  revoke  权限列表  on  库名.表   from  用户名@"客户端地址";
+
+
+
 
 		例子：
 			mysql> select host,user from mysql.user;

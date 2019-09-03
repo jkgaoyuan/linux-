@@ -4,7 +4,7 @@
 通常我们用nginx和 Tomcat来作为 后端 web服务器
 负载均衡
     软件:
-        lvs/nginx
+        lvs/nginx/haproxy
 
     lvs 只能支持做4层的负载均衡/nginx可以做 7 层 动静分离, 在大型的web集群中通常,
                 用lvs来做 四层负载均衡, nginx七层 动静分离
