@@ -19081,7 +19081,11 @@ shell   6 天
                                  |------->web1
                 clients---->proxy-
                                  |------->web2
-              IP_hash
+                常用的 轮询算法
+                WRR
+                IP_hash
+                URl_hash
+                fair        由upstream_fair模块支持
          1.部署实施后端Web服务器
              1）部署后端Web1服务器
                 [root@web1 ~]# yum  -y  install  httpd
