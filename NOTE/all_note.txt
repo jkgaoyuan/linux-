@@ -360,7 +360,7 @@ DAY02 OPENSTACK
                     server 192.168.1.254 iburst
                     systemctl restart chronyd.service
 
-                    测试 chronyc sources -v/timedatectl
+                    测试 chronyc sources -v/timedatectl   ###ntp时间同步测试
 
             检查防火墙和networkmanager 是否安装
 
@@ -6176,8 +6176,6 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 ]# rpm -qa  | grep  -i perl | wc -l
 
 
-学习组的组长通知组员准备集群环境
-		休息到 10:00
 
 
 [root@host57 mha-soft-student]# rpm -ivh  mha4mysql-node-0.56-0.el6.noarch.rpm
@@ -10900,6 +10898,8 @@ panglj@tedu.cn
                 集群:多台服务器提供相同的服务
                 集群分类 LB(负载均衡) HA(高可用) HPC(高性能计算)
                        lvs Haproxy  nginx ; keeplive
+
+                Master HA mha的全称
 
                 MHA介绍 实现mysql高可用的解决方案
                         数据库的自动切换操作在30s内完成
@@ -17070,9 +17070,11 @@ usermod
 -u 修改uid
 -G 修改附属组
 -d 修改家目录
--s 修改解释器		
+-s 修改解释器
+-g 指定用户的初始用户组, 该组必须存在
 [root@jkgao gaoyuan]# usermod -u 1700 -G tarena -s /sbin/nologin nsd11
                               -u 指定uid  -G 指定附属组  -s 指定家目录  nsd11 为目标用户
+
 ###########################
 命令别名 （临时别名）
 alias
@@ -17582,6 +17584,7 @@ root 不受权限管理
 		    setfacl [-R] -b 文档...               #删除所有ACL策略
 		    setfacl [-R]-m u:用户名   文档...      #删除单条指定ACL策略
 		删除 setfacl  -x :删除指定用户的acl
+		setfacl -m  u:lisi:r  /etc/shadow
     umask 值 决定了 用户默认创建 的文件 的 权限
     [root@server0 ~]# umask
     0022   root用户 默认
@@ -18021,6 +18024,26 @@ find  查找 递归
     找到 tmp下大于200k的 复制到 指定目录
     find /tmp/ -size +200k -exec cp '{}' /tmp/a \;
 
+locate
+
+locate命令其实是“find -name”的另一种写法，但是要比后者快得多，原因在于它不搜索具体目录，而是搜索一个数据库（/var/lib/locatedb），这个数据库中含有本地所有文件信息。Linux系统自动创建这个数据库，并且每天自动更新一次，所以使用locate命令查不到最新变动过的文件。为了避免这种情况，可以在使用locate之前，先使用updatedb命令，手动更新数据库。
+
+locate命令的使用实例：
+
+　　$ locate /etc/sh
+
+搜索etc目录下所有以sh开头的文件。
+
+　　$ locate ~/m
+
+搜索用户主目录下，所有以m开头的文件。
+
+　　$ locate -i ~/m
+
+搜索用户主目录下，所有以m开头的文件，并且忽略大小写。
+
+
+
 date  #查看当前系统时间
 date -s 'year-month-day h:m:s' #注意格式 
 自动时间同步
@@ -18036,6 +18059,8 @@ server classroom.example.com
  3.重启服务
 [root@server0 ~]# systemctl restart chronyd ####### 重启服务
 [root@server0 ~]# systemctl enable chronyd #####设置开机自启
+测试时间同步
+chronyc sources -v/timedatectl
 
 ####################################################
 集群
@@ -22096,6 +22121,17 @@ shell
             systemctl restart vsftpd
             systemctl enable vsftpd
             systemctl status vsftpd   ###检测服务是否启动
+
+    0 是一个文件描述符，表示标准输入(stdin)
+    1 是一个文件描述符，表示标准输出(stdout)
+
+    2 是一个文件描述符，表示标准错误(stderr)
+
+    1>&2 意思是把标准输出重定向到标准错误.
+
+    2>&1 意思是把标准错误输出重定向到标准输出。
+
+    &>filename 意思是把标准输出和标准错误输出都重定向到文件filename中
 
     变量
         使用固定的名称表示变化的量
