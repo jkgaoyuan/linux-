@@ -15,7 +15,11 @@
         kubelet 负责监控指派到他所在node上的pod, 包括创建 修改 监控 删除
         kube-proxy 主要为pod提供代理
         fluentd 日志收集 存储 查询
+        k8s 网络
 
+            node
+            pod
+            server
 
     k8s 安装
         配置 yum 源 为 华为云的
