@@ -4328,7 +4328,8 @@ mysql> select * from db3.user limit 1;
                            ]# systemctl  restart  mysqld
 			5、使用修改后的密码登陆
 			   ]# mysql -uroot -p123qqq...A
-
+        mysqladmin的格式  详细
+        可以参考  https://www.cnblogs.com/dadonggg/p/8625500.html
 		1.7.2  重置root密码
 			 ]# mysqladmin  -uroot -p  password "123456"
 			 Enter password:123qqq...A

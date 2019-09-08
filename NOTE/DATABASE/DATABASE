@@ -1215,6 +1215,9 @@ panglj@tedu.cn
                     重置数据库root密码
                     mysqladmin -uroot -p password "tarena" ###新密码
                     Enter password:                        ###旧密码
+
+                    mysqladmin的格式  详细
+                    可以参考  https://www.cnblogs.com/dadonggg/p/8625500.html
             备份
                 2.1数据备份方式
                     物理备份
