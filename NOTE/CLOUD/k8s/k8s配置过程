@@ -1,20 +1,48 @@
   k8s 是容器的集群管理系统,一个开源的平台,实现容器集群的自动化部署,升级,管理
+    k8s 是可以为自己提供服务
+  master-node 架构
+  为了高可用来说 需要三个master节点
+  pod
+    需要有标签
+    原子单元, 一旦我们把某一pod 调度到 某一node上,那么这个pod中的所有容器 都会在同一个node上运行.
+    k8s上的最小控制单元叫做 pod(逻辑上划分) 由多个 docker 组成, k8s 并不直接调度 容器.
+        pod 对外可以看成一个整体,而内部则是多个docker 共用 网络,存储,
+        一般来说一个pod中只有一个容器,而当容器间有非常紧密联系的东西时可以将多个 docker放在一个 pod中,
+        而pod中的docker则以一个为主,其他容器(边车)则是为了辅助主容器来完成工作 (pod 中 有 一个 nginx和logstash(只是负责日志收集), ).
+    分类:
+        自助式pod
+        控制器管理的pod replication controler
+  select
+    标签选择器, 所有资源都可以打上标签,通过
+    k8s 特点:
+
+        自动装箱(基于资源依赖,自动完成容器部署且不影响 容器可用性) 自我修复 水平扩展 服务发现和负载均衡  自动发布 自动回滚
+        秘钥和配置管理 存储编排(需要多少,创建多少) 批量处理执行
+
+    k8s的工作模式 :
+        master 接受到 请求 由scheduler(通过docker所需资源的上限和下限来确定)
+        决定 那个 node 更适合 执行docker
+
+        k8s 支持多种 控制器
 
     master 节点  (主节点)
         API-server  scheduer  controler-manager etcd
-            API-server 提供系统对外的接口, 供客户端和其他组件调用
-            scheduler 负责 对集群内部的资源进行调度
-            controller-manager 负责管理控制器
+            API-server 提供系统对外的接口, 供客户端和其他组件调用, 接受并处理请求.
+            scheduler 负责对集群内部的资源进行调度, 调度容器创建请求
+            controller-manager 负责管理控制器,监控控制器管理器是否健康, 控制器才是负责监控 容器是否处于健康状态
     node 节点
         docker kubelet kube-proxy fluentd kube-dns pod
+
 
         pod 是 kubenetes 最基本的操作单元
             pod 代表集群中运行的一个进程 内部封装了一个或多个紧密相关的容器
         service 可以看做一组提供相同服务的pod对外访问接口
         docker
-        kubelet 负责监控指派到他所在node上的pod, 包括创建 修改 监控 删除
+        kubelet (集群代理)负责监控指派到他所在node上的pod,
+                 包括创建 修改 监控 删除 对docker进行健康检查,也就说接受scheduler分发的请求,在本地控制docker启动.
         kube-proxy 主要为pod提供代理
         fluentd 日志收集 存储 查询
+
         k8s 网络
 
             node

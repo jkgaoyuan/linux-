@@ -272,7 +272,8 @@ DAY02 OPENSTACK
                 dashborad python页面的解释器
 
             Keystack
-                组件之间的认证
+                组件之
+                间的认证
                 提供了集中的目录服务
                 也支持多种身份认证模式, 如密码 令牌 aws登录
                 为用户提供其他服务提供sso认证服务
@@ -736,6 +737,7 @@ DAY02 OPENSTACK
                     自动创建
 
                         Dockerfile
+                        dockerfile
 
                         FROM 基础镜像
                         RUN  在容器中执行  //RUM是在容器bash中执行的,也就是说每个RUN的父进程是一个bash进程     ADD  复制文件到镜像
