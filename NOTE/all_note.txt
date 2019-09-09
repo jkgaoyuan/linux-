@@ -10654,6 +10654,11 @@ panglj@tedu.cn
                         支持mayql Oracle Salserver mongodb
                         支持数据读写分离
                         支持数据分片
+
+                        maxscale和mycat的区别：
+                            maxscale 只能做读写分离
+                            mycat可以读写分离和数据分片
+
                 2.分片规则
                     mycat 支持10 中分片规则
                         枚举 固定分片 约定范围 求模 日期列分 通陪取模 ascii码 编程指定 字符拆分hash 解析 一致性hash
@@ -18202,7 +18207,7 @@ shell   6 天
 
             tcp三次握手 :
             https://www.cnblogs.com/zmlctt/p/3690998.html
-                Client ;  syn ----> server
+                Client ：  syn ----> server
                 Server: 收到后 回复  syn+ack----> client
                 Client : 收到后 回复 ack -----> server    状态进入 establish 链接建立完成
             四次挥手:
@@ -18950,7 +18955,37 @@ shell   6 天
                 修改nginx.conf 动静分离
                 nginx动静分离参考:
                 https://blog.51cto.com/13480443/2105404
+                实际上 这种通过正则匹配的方法 是 通过 匹配不同的 url地址 来达到 动静分离的效果
+                在一个 server 中 写 多个 location 来实现， 也需要定义动态集群和静态集群来，来分别处理动态请求和静态请求
+                                        nginx 动静分离
+                                        eg ：
+                                            定义前端服务器集群
+                                                upstream htmlservers {
+                                                server 192.168.221.20:80;
+                                                server 192.168.221.30:80;
+                                                }
+                                            upstream phpservers {
+                                                server 192.168.221.20:80;
+                                                server 192.168.221.30:80;
+                                                }
+                                            upstream picservers {
+                                                server 192.168.221.20:80;
+                                                server 192.168.221.30:80;
+                                                }
 
+
+                                                // 在 location {...}内添加以下内容
+                                                if ($request_uri ~* \.html$){
+                                                                proxy_pass http://htmlservers;
+                                                            }
+                                                            if ($request_uri ~* \.php$){
+                                                                proxy_pass http://phpservers;
+                                                            }
+                                                            proxy_pass http://picservers;
+
+
+
+                这是单个服务器匹配动态页面，非nginx 调度服务器
                 location ~ \.php$ {
                   root           html;
                 ################# 将动态文件转发给9000 端口 交个 php-fpm 处理
