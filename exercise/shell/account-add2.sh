@@ -13,7 +13,7 @@ else
     # 使用stty  echo打开shell的回显功能
 
     stty -echo
-    read -p " pls text UserPasswd " userpasswd
+    read -p " pls text UserPasswd: " userpasswd
     stty echo
 
     if [ -z $userpasswd ]; then

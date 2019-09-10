@@ -4,7 +4,8 @@
 # 本案例中的用户名和密码需要根据实际情况修改后方可使用
 
 log_file=/var/log/mysql_count.log
-user=root passwd=123456
+user=root
+passwd=123456
 while :
 do
   sleep 2
