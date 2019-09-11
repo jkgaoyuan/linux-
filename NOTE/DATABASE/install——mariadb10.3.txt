@@ -1,0 +1,10 @@
+1.  create repo
+    [mariadb]
+    name=mariadb
+    baseurl=http://mirror.one.com/mariadb//mariadb-10.3.17/yum/centos7-amd64
+#    mariadb_officeal resource
+    gpgcheck=0
+    enabled=1
+
+2. yum install mariadb mariadb-server mariadb-devel
+
