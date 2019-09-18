@@ -1,0 +1,28 @@
+! Configuration File for keepalived
+global_defs {                                     　　　　　　　  #全局定义
+   notification_email {                      　　　　　　　　#出问题了收件人
+       acassen@firewall.loc
+       failover@firewall.loc
+       sysadmin@firewall.loc
+   }
+   notification_email_from Cassen@firewall.loc        #发件人
+   smtp_server 192.168.200.1            　　　　　　　 #发件服务器地址
+   smtp_connect_timeout 30              　　　　　　　#超时时间
+   router_id LVS_DEVEL                　　　　　　　　   #唯一标识，不同机器不能一样
+}
+
+vrrp_instance VI_1 {           　　　　　　　　　　　　#vrrp实例，名字可以自定义，与前面关键字空格隔开
+    state MASTER                            　　　　　　　　 #标识是主还是备，一定要大写
+    interface eth0                              　　　　　　　　#默认的通信的接口，当vip不指定时，默认绑定它
+    virtual_router_id 51                     　　　　　　　　#实例的ID（主备必须一样，同一文件唯一，0-255）
+    priority 100                               　　　　　　　　  #真正确定谁优先地方，数字越大，级别越高，越先获取资源，建议隔50
+    advert_int 1                                　　　　　　　　 #心跳间隔
+    authentication {                           　　　　　　　　#实例认证，主备一样
+        auth_type PASS
+        auth_pass 1111
+    }
+    virtual_ipaddress {                      #VIP地址
+        192.168.200.16
+        192.168.200.18/24 dev eth0 label eth0:1  #指定vip给 某一网卡
+    }
+}
