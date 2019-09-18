@@ -12,7 +12,7 @@ global_defs {                                     　　　　　　　  #全局
 }
 
 vrrp_instance VI_1 {           　　　　　　　　　　　　#vrrp实例，名字可以自定义，与前面关键字空格隔开
-    state MASTER                            　　　　　　　　 #标识是主还是备，一定要大写
+    state MASTER                            　　　　　　　　 #标识是主还是备，一定要大写 MASTER/BACKUP
     interface eth0                              　　　　　　　　#默认的通信的接口，当vip不指定时，默认绑定它
     virtual_router_id 51                     　　　　　　　　#实例的ID（主备必须一样，同一文件唯一，0-255）
     priority 100                               　　　　　　　　  #真正确定谁优先地方，数字越大，级别越高，越先获取资源，建议隔50
