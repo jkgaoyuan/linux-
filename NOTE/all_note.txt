@@ -2735,6 +2735,22 @@ DAY04
                 　　    文件的时间戳，共有三个：ctime指inode上一次变动的时间，mtime指文件内容上一次变动的时间，atime指文件上一次打开的时间。
                 　　    链接数，即有多少文件名指向这个inode
                 　　    文件数据block的位置
+       关于 kill
+            INT, TERM 立刻终止
+            QUIT 平滑终止
+            USR1 重新打开日志文件
+            USR2 平滑重载所有worker进程并重新载入配置和二进制模块
+            php-fpm进程停止
+            1. 查看 master 进程
+                ps aux |grep fpm
+                root     13380  0.0  0.2 151952  4940 ?        Ss   Sep18   0:01 php-fpm: master pro
+
+            2. kill -QUIT PID
+
+               kill -QUIT 13380   #结束进程
+
+            这个方法适合 不生产 php-fpm.pid 使用 需要生成 可以参考https://www.cnblogs.com/GaZeon/p/5421906.html
+
 DAY05
     一.zookeeper
         是什么
