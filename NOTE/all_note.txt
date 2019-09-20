@@ -2750,6 +2750,16 @@ DAY04
                kill -QUIT 13380   #结束进程
 
             这个方法适合 不生产 php-fpm.pid 使用 需要生成 可以参考https://www.cnblogs.com/GaZeon/p/5421906.html
+       关于 ls
+            ls -lh 可以显示文件大小
+              -rw-r--r--  1 admin admin  87K Aug 28 06:52 acinclude.m4
+              -rw-r--r--  1 admin admin 312K Aug 28 06:52 aclocal.m4
+              drwxr-xr-x  2 admin admin 4.0K Aug 28 06:52 appveyor
+
+            也可以 -l  --block-size=k/m/g
+                注意这是向上取整的
+                -rw-r--r--  1 admin admin 1G Aug 28 06:52 acinclude.m4
+                -rw-r--r--  1 admin admin 1G Aug 28 06:52 aclocal.m4
 
 DAY05
     一.zookeeper
