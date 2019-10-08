@@ -23,10 +23,45 @@ yum install -y gcc gcc-c++  make zlib zlib-devel libzip libzip-devel      pcre 
 ./configure --prefix=/usr/local/php --with-config-file-path=/usr/local/php --enable-mbstring --enable-ftp --with-gd --with-jpeg-dir=/usr --with-png-dir=/usr --with-mysql=mysqlnd --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --with-pear --enable-sockets --with-freetype-dir=/usr --with-zlib --with-libxml-dir=/usr --with-xmlrpc --enable-zip --enable-fpm --enable-xml --enable-sockets --with-gd --with-zlib --with-iconv --enable-zip --with-freetype-dir=/usr/lib/ --enable-soap --enable-pcntl --enable-cli --with-curl
 ./configure --prefix=/usr/local/php --with-config-file-scan-dir=/usr/local/php/etc/ --enable-inline-optimization --enable-opcache --enable-session --enable-fpm --with-mysql=mysqlnd --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --with-pdo-sqlite --with-sqlite3 --with-gettext --enable-mbregex --enable-mbstring --enable-xml --with-iconv --with-mcrypt --with-mhash --with-openssl --enable-bcmath --enable-soap --with-xmlrpc --with-libxml-dir --enable-pcntl --enable-shmop --enable-sysvmsg --enable-sysvsem --enable-sysvshm --enable-sockets --with-curl --with-curlwrappers --with-zlib --enable-zip --with-bz2 --with-gd --enable-gd-native-ttf --with-jpeg-dir --with-png-dir --with-freetype-dir --with-iconv-dir --with-readline --with-fpm-user=www --with-fpm-group=www
 
+make && make install
+
+运行php-fpm需要做的
+复制php.ini,php-fpm.conf,www.conf
+    cp php.ini-development /usr/local/php/lib/php.ini
+    cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/etc/php-fpm.conf
+    cp /usr/local/php/etc/php-fpm.d/www.conf.default /usr/local/php/etc/php-fpm.d/www.conf
+修改 www.conf配置文件指定用户，若在编译时指定了则不需要。 再次指定，需要手动添加www用户
+    useradd -s /sbin/nologin www
+
+    cp /usr/local/php73/etc/php-fpm.conf.default /usr/local/php73/etc/php-fpm.conf
+
+    cp /usr/local/php73/etc/php-fpm.d/www.conf.default /usr/local/php73/etc/php-fpm.d/www.conf
+
+    vim /usr/local/php73/etc/php-fpm.d/www.conf 将user和group设置成www 编译的时候指定了就不用了
+
+需要着重提醒的是，如果文件不存在，则阻止 Nginx 将请求发送到后端的 PHP-FPM 模块， 以避免遭受恶意脚本注入的攻击
+
+编辑 php.ini，文件中的配置项 cgi.fix_pathinfo 设置为 0 。
+
+[root/usr/local/src/php-7.2.9]# vim /usr/local/php7/lib/php.ini
+
+cgi.fix_pathinfo=0
+
+安装过程可以参考
+https://segmentfault.com/a/1190000016080151
 
 
 php安装常见错误
 
+zipconf.h不存在
+
+In file included from /root/download/php-7.3.0/ext/zip/php_zip.h:31:0,
+                 from /root/download/php-7.3.0/ext/zip/php_zip.c:36:
+/usr/local/include/zip.h:59:21: fatal error: zipconf.h: No such file or directory
+ #include <zipconf.h>
+
+解决
+cp /usr/local/lib/libzip/include/zipconf.h /usr/local/include/zipconf.h
 libzip 版本不够高
 libzip... configure: error: system libzip must be upgraded to version >= 0.11
 

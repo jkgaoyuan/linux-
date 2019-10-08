@@ -43,7 +43,22 @@ SyslogFacility AUTHPRIV
 # 4. 安全设定项目！极重要！
 # 4.1 登入设定部分
 # PermitRootLogin yes
-# 是否允许 root 登入！预设是允许的，但是建议设定成 no！
+# 是否允许 root 登入！预设是允许的也就说再不设置的情况（注释这一行时）下是默认允许的，但是建议设定成 no！
+关于PermitRootLogin 这个项目可以参考 https://blog.csdn.net/huigher/article/details/52972013
+
+参数类别 	    是否允许ssh登陆 	    登录方式 	交互shell
+yes 	            允许 	        没有限制 	没有限制
+without-password 	 允许 	        除密码以外 	没有限制
+forced-commands-only 允许 	        仅允许使用密钥 	仅允许已授权的命令
+no 	                不允许 	        N/A 	    N/A
+
+PermitRootLogin这个选项可以有如下写法，
+PermitRootLogin   yes  默认允许（注释是和为yes时一个意思）
+PermitRootLogin   without-password
+PermitRootLogin   forced-commands-only
+PermitRootLogin   no
+
+
 
 # StrictModes yes
 # 是否让 sshd 去检查用户家目录或相关档案的权限数据，
