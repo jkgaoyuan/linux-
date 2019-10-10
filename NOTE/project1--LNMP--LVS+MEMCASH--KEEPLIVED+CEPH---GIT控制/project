@@ -152,7 +152,7 @@ LNMP
                             密码wordpress
                             用户名wordpress
                             数据库名wordpress
-                            数据库主机192.168.2.11
+                            数据库主机192.168.2.11  关于安装word press 时，填写数据库主机IP可以尝试 云服务器的内部IP。
                             之后按照 步骤来
 
         project day02
