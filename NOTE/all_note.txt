@@ -14076,7 +14076,9 @@ vim 中命令模式下按 C 光标之后被删除
     [root@server0 ~]# firefox ftp://172.25.0.11
     需要注意的是ftp文件的属相最好是 644
 ##############################################
-ftp 通常分为
+可以替代ftp的方式 scp/rsync/sftp 问题是没有图形化界面。
+ftp服务两种模式
+         ftp主动模式和被动模式
          1）主动模式（port）
                     ftp client向ftp服务器发送请求并携带自己的监听端口；
                     服务器返回确认，并从服务器的20端口主动连接到 client的监听端口，最后客户端返回确认。 数据连接由服务器完成
@@ -14087,7 +14089,10 @@ ftp 通常分为
 FTP的传输有两种方式：ASCII传输模式和二进制数据传输模式
 ftp的相关问题可以参考
 https://www.jianshu.com/p/f1788f596a57
-
+原理
+https://www.cnblogs.com/lnlvinso/p/8947369.html
+配置 过程 匿名登陆 本地用户登陆 虚拟用户登陆 非常实用 必看
+https://www.jianshu.com/p/f1788f596a57
 ############################################
 #############################
 防火墙策略
@@ -21094,7 +21099,9 @@ shell   6 天
                             net.ipv4.conf.all.arp_announce = 2
                             #当有arp广播问谁是192.168.4.15时，本机忽略该ARP广播，不做任何回应
                             #本机不要向外宣告自己的lo回环地址是192.168.4.15
-                            [root@web2 ~]# sysctl -p
+                            [root@web2 ~]# sysctl -p   这个命令是刷新内核参数
+                             -p   从指定的文件加载系统参数，如不指定即从/etc/sysctl.conf中加载
+                             -a   显示所有的系统参数
                             重启网络服务，设置防火墙与SELinux
                             [root@web2 ~]# systemctl restart network
                             [root@web2 ~]# ifconfig
