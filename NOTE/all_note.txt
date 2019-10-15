@@ -3339,7 +3339,7 @@ DAY01
 
 
                          haproxy(负载均衡) 中定义的 端口 4015 作为本机监听端口,将本机端口的访问数据转发给 maxscale读写分离集群
-                            keeplived和haproxy配合使用 在 haproxy的 listen 中指定 监听的 端口  keeplived 则保证 vip 就好
+                            keepalived和haproxy配合使用 在 haproxy的 listen 中指定 监听的 端口  keepalived 则保证 vip 就好
                             eg  : haproxy 监听 80 端口
 
                            listen  websrv-rewrite 0.0.0.0:80
@@ -13794,6 +13794,7 @@ panglj@tedu.cn
                                 动态网络地址转换
 
                                     iptables -t nat -A POSTROUTING -s 192.168.4.0/24 -o eth1 j MASQUERADE
+                                    iptables -t nat -A POSTROUTING  -j MASQUERADE
 
 
 
@@ -15941,6 +15942,18 @@ other IP访问------------>tedu.com-----------> 解析地址Address: 10.20.30.40
                  选项:
                  aux  列出正在运行的所有进程
                  -elf  ppid 父进程id  列出正在运行的所有进程
+            D 不可中断的深度睡眠状态
+            R 正在运行或者正在队列中的进程。
+            S 处于休眠状态
+            T 暂停或被追踪
+            Z 退出状态 僵尸进程
+            X 退出状态 进程即将被销毁
+            < 高优先级
+            N 低优先级
+            L 有些页被锁进 内存
+            s 包含子进程
+            + 位于后台的进程组
+            I 多线程
 
    统计命令
             wc
@@ -21011,7 +21024,7 @@ shell   6 天
                     clients -------->lvs1 lvs2
                                        |     web1 eth0 4.200
                                        |_____lo:0 4.15/32(添加一个虚拟ip,也叫主机网络只有一个主机位,且只响应物理网卡ip)
-                        keeplived (VRRP协议:虚拟路由热备协议) 提高可靠性
+                        keepalived (VRRP协议:虚拟路由热备协议) 提高可靠性
 
                     (1)配置实验网络环境
 
@@ -21140,9 +21153,20 @@ shell   6 天
                                 <h1>I AM WEB2
 
 
-        keeplived高可用
+        keepalived高可用
 
-                keeplived 和 lvs 连用时 keeplive 的 配置中需要指定  virtural server 部分
+                    双主模式  两个服务器都互为主备，并且同时工作，需要两个VIP，其中一台down机后，两台服务器的请求会转移到一台机器负担。
+                            双主模式的配置可以参考 https://blog.csdn.net/huaidan1469/article/details/79652409
+                    主备模式  一个作为主工作一个作为备份，主down机时vrrp飘到备份服务器上，业务由备份服务器执行。 只有一个vip。
+                    keepalived的组播模式
+                          通常有两种模式：
+                            组播模式  通常在这个模式下所有的信息都会向224.0.018（保留地址）的组播地址发送，产生许多无用信息，并且会产生干扰。这样我们可以避免局域网由keepalived造成的虚拟路由id冲突。（待考证）
+                               我们学习的时候配置的应该都是组播模式
+                            单播模式  单薄模式需要关闭vrrp_strict，严格遵守vrrp协议这个选项 ，单薄需要在VIP实例配置段加入单播的源地址和目标地址
+                               配置可以参考这个 https://blog.51cto.com/11886307/2406618
+
+
+                keepalived 和 lvs 连用时 keepalived 的 配置中需要指定  virtural server 部分
                 如下
                 和 haproxy 连用 时 则不需要 virtual server部分
 
@@ -23606,9 +23630,9 @@ LNMP
 
 
         project day03
-            1.keeplived高可用
+            1.keepalived高可用
                 要求:
-                    部署两台代理服务器,实现 利用keeplived的高可用
+                    部署两台代理服务器,实现 利用keepalived的高可用
                     配置VIP为192.168.4.80
                     修改对应的域名解析服务
 
@@ -23620,7 +23644,7 @@ LNMP
                                 |    |            |-------------数据库 服务器
                                DNS  proxy2        web2,web3
 
-                要求: 部署量两台代理服务器 通过keeplived 实现高可用
+                要求: 部署量两台代理服务器 通过keepalived 实现高可用
                       配置vip 为192.168.4.80
                       修改对应的域名解析服务
 
