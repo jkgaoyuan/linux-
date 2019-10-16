@@ -13792,7 +13792,7 @@ panglj@tedu.cn
 
 
                                 动态网络地址转换
-
+                                    masquerade IP地址伪装 也就是按照源地址进行nat转发
                                     iptables -t nat -A POSTROUTING -s 192.168.4.0/24 -o eth1 j MASQUERADE
                                     iptables -t nat -A POSTROUTING  -j MASQUERADE
 
@@ -15933,7 +15933,31 @@ other IP访问------------>tedu.com-----------> 解析地址Address: 10.20.30.40
            唯一编号 PID
            当父进程kill之后,其子进程也会被kill
            systemd:所有进程的父进程,也负责管理孤儿进程,
+           systemctl list-unit-files 列出所有服务 包括没有启动的  disable 表示开机不启动 enable 表示开机启动  inactive 服务关闭 static服务开机启动不可管理 failed 系统配置错误
            ps -axjf  显示进程树  ppid父进程号   Z 状态表示僵尸进程 D 表示 不可中断的睡眠状态，该进程无法被杀死，也无法自行退出， 若出现较多的D状态进程我们可以回复该进程依赖的资源或者重启解决。
+       eg:
+            [root@VM_10_4_centos ~]# systemctl list-unit-files
+            UNIT FILE                                     STATE
+            proc-sys-fs-binfmt_misc.automount             static
+            dev-hugepages.mount                           static
+            dev-mqueue.mount                              static
+            proc-sys-fs-binfmt_misc.mount                 static
+            sys-fs-fuse-connections.mount                 static
+            sys-kernel-config.mount                       static
+            sys-kernel-debug.mount                        static
+            tmp.mount                                     disabled
+            brandbot.path                                 disabled
+            blk-availability.service                      disabled
+            brandbot.service                              static
+            chrony-dnssrv@.service                        static
+            chrony-wait.service                           disabled
+            chronyd.service                               disabled
+            cloud-config.service                          enabled
+            cloud-final.service                           enabled
+            cloud-init-local.service                      enabled
+            cloud-init.service                            enabled
+
+
    查看进程树
             pstree
             pstree lisi 显示某用户开启的进程
@@ -20864,7 +20888,7 @@ shell   6 天
             NAT 模式 调度和真实服务器都在 局域网中,之间直接链接
                 和nginx的调度服务器相同(瓶颈也是调度服务器,尤其是数据回传给用户的) 用户与调度服务器链接,由调度服务器 回传数据
             DR 模式 调度和真实服务器都在 局域网中,之间使用交换机链接服务器,用户直接与路由器 链接,访问时访问 lvs 的 vip ,
-                lvs回传数据直接由 互联网 传递数据,不通过调度服务器.  需要注意mac地址广播的控制 arp (后端服务器调整内核参数实现)
+                lvs回传数据直接由 互联网 传递数据,不通过调度服务器.  需要注意mac地址广播的控制 arp (后端服务器调整内核参数实现)  主要用于： 如少出多的情况 比如 视频 下载 图片
             TUN 模式 (用的少) 所有的服务器都在互联网 中 调度服务器与真实服务器间 用 vpn 链接 ,数据回传有互联网 传输
 
             关于lvs-DR工作模式的补充:
