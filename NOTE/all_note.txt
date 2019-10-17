@@ -1911,7 +1911,7 @@ DAY03
             命令 curl
                    -A 修改请求 agent -A
                    -X 设置请求方法
-                   -i 显示返回头信息
+                   -i 显示返回头信息  直接使用-I参数可以显示返回的http状态信息
 
                    curl -A Safari/537.36 -Li http://www.jkgaoyuan.ml |head -10
 
@@ -1944,6 +1944,25 @@ DAY03
                     [HTTP_USER_AGENT] ==> Safari/537.36
                     [   HTTP_REFERER] ==>
 
+            netstat -pant 显示建立连接的源地址和目标地址的状态和使用协议 ， 包括PID
+                [root@ecs-s2-large-2-linux-20190818024026 ~]# netstat -pant
+                Active Internet connections (servers and established)
+                Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+                tcp        0      0 127.0.0.1:25            0.0.0.0:*               LISTEN      4350/master
+                tcp        0      0 0.0.0.0:27076           0.0.0.0:*               LISTEN      4704/sshd
+                tcp        0     36 192.168.1.228:27076     123.139.156.118:57027   ESTABLISHED 24781/sshd: root@pt
+                tcp6       0      0 ::1:25                  :::*                    LISTEN      4350/master
+                tcp6       0      0 :::27076                :::*                    LISTEN      4704/sshd
+            ss -pantu 可以替代这个
+                [root@ecs-s2-large-2-linux-20190818024026 ~]# ss -pantu
+                Netid  State      Recv-Q Send-Q                 Local Address:Port                                Peer Address:Port
+                udp    UNCONN     0      0      fe80::f816:3eff:fe4b:f132%eth0:123                                           :::*                   users:(("ntpd",pid=3716,fd=22))
+                udp    UNCONN     0      0                                ::1:123                                           :::*                   users:(("ntpd",pid=3716,fd=19))
+                udp    UNCONN     0      0                                 :::123                                           :::*                   users:(("ntpd",pid=3716,fd=17))
+                tcp    LISTEN     0      100                        127.0.0.1:25                                             *:*                   users:(("master",pid=4350,fd=13))
+                tcp    LISTEN     0      128                                *:27076                                          *:*                   users:(("sshd",pid=4704,fd=3))
+                tcp    ESTAB      0      36                     192.168.1.228:27076                            123.139.156.118:57027               users:(("sshd",pid=24781,fd=3))
+                tcp    LISTEN     0      100                              ::1:25                                            :::*                   users:(("master",pid=4350,fd=14))
 
 
             RESTful API 调用
