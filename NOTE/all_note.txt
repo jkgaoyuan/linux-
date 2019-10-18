@@ -18415,6 +18415,7 @@ shell   6 天
                     原理https://blog.csdn.net/ptonlix/article/details/76528206
                     基本概念 https://blog.csdn.net/u013128262/article/details/78386777
                     队列满队常见影响 https://www.jianshu.com/p/ff26312e67a9
+            test
             四次挥手:
 
                             Client : 发送 FIN ----->server    Server: 收到FIN -----> 回复ACK 给 client
