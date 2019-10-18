@@ -14720,7 +14720,7 @@ eg :请大家用Apache 搭一个web环境
 
 <VirtualHost *:80>
 	ServerName  server0.examlpe.com
-	DocumentRtoot /var/www/myweb ###由于selinux会限制文件的存放位置,所以在没有修改selinux时不要吧 DocumentROOT 位置放在 其他地方
+	DocumentRoot /var/www/myweb ###由于selinux会限制文件的存放位置,所以在没有修改selinux时不要吧 DocumentROOT 位置放在 其他地方
 </VirtualHost>
 
 [root@server0 ~]# mkdir /var/www/qq
@@ -18405,9 +18405,19 @@ shell   6 天
                              增加最大半连接数
                              过滤网关防护
                              SYN cookies 技术
+            三次握手的补充：
+                半队连接（SYN队列 syns queue ）    ： 由server维护的一张连接表，主要为每个 客户端的syn包开设一个条目（server 收到 syn包时就创建request_sock 结构，并存储在半队列连接中），这张表说明servser 已经收到了 client发送的SYN包，并向client发出确认包（SYN+ACK）。这时这张表中的连接状态时SYN_RECV状态，当server 收到 客户端的确认包（ACK），就会删除表中的条目 client和server 之间的连接进入ESTABLISHED状态。
+                                    该队列为SYN 队列，长度为 max(64, /proc/sys/net/ipv4/tcp_max_syn_backlog) ，在机器的tcp_max_syn_backlog值在/proc/sys/net/ipv4/tcp_max_syn_backlog下配置。
+                全队连接（accept队列 accept queue ） ： client 和 server 建立后的连接由 这个队列管理，长度为min(backlog, somaxconn)，somaxconn的数值为128，表示最多有129的ESTAB的连接等待accept（），而backlog的值因该由 int listen (int sockfd, int backlog) 中的第二个参数制定，listen 中的backlog 是可以由我们的程序去定义的。
+
+                ddos 的syn flood 攻击攻击的就是攻击半队连接的，攻击方不停建立连接但是但是只做到接受第二步接收syn+ack，之后的数据包不再发送，导致server上的syn 队列满列，而其他的正常请求无法进入。
+            补充连接:
+                    原理https://blog.csdn.net/ptonlix/article/details/76528206
+                    基本概念 https://blog.csdn.net/u013128262/article/details/78386777
+                    队列满队常见影响 https://www.jianshu.com/p/ff26312e67a9
             四次挥手:
-                Client : 发送 FIN ----->server
-                Server: 收到FIN -----> 回复ACK 给 client
+
+                            Client : 发送 FIN ----->server    Server: 收到FIN -----> 回复ACK 给 client
                 Server : 关闭 与 client 的 链接 发送 FIN -----> client
                 Client : 收到 FIN+ack 会发 ACK ----->  server 关闭 client 和 server 的链接
 
