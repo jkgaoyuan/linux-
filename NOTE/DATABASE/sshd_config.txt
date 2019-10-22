@@ -1,3 +1,6 @@
+关于sshd命令的中文手册可以参考 金步国翻译的 http://www.jinbuguo.com/openssh/sshd.html
+配置hostdeny 防止暴力破解
+https://www.jianshu.com/p/59ffb6adc37c
 [root@www ~]# vim /etc/ssh/sshd_config
 # 1. 关于 SSH Server 的整体设定，包含使用的 port 啦，以及使用的密码演算方式
 # Port 22
@@ -136,6 +139,8 @@ UsePrivilegeSeparation yes
 # 是否权限较低的程序来提供用户操作。我们知道 sshd 启动在 port 22 ，
 # 因此启动的程序是属于 root 的身份。那么当 student 登入后，这个设定值
 # 会让 sshd 产生一个属于 sutdent 的 sshd 程序来使用，对系统较安全
+
+MaxAuthTries 3  //最多认证次数
 
 MaxStartups 10
 # 同时允许几个尚未登入的联机画面？当我们连上 SSH ，但是尚未输入密码时，

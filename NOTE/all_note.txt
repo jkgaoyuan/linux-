@@ -580,8 +580,15 @@ DAY02 OPENSTACK
                         所有计算节点安装 qemu-img-rhev,qemu-kvm-rhev
                         若位安装,在安装后需要重启libvirtd服务
 
-
+OOM 内存溢出
+内存是一种不可压缩性资源，若一个进程消耗大量内存而其他进程无法被分配到足够的资源会导致 这个进程被kill。
+并且内存不像CPU资源 没有还可以等一等。
+并且要求内核版本高于3.8
     DAY04
+        docker需要隔离 的资源 叫做 名称空间(namespaces)
+        UTS(主机名和域名) Mount(文件系统/挂载树) IPC (进程间通信)  PID (进程ID)   User，NetWork
+
+
         一.docker
             docker 是使用go语言编写
             Go 编译生成的是一个静态可执行文件,除了 glibc 外没有其他外部依赖,这让部署变得异常方便.
@@ -595,6 +602,18 @@ DAY02 OPENSTACK
                 容器技术已经成为应用分装和交付的核心技术
                 容器的核心组成需要一下三个内核技术组成
                     Cgroups (control Groups) 资源管理
+                        blkio 块设备IO
+                        cpu
+                        cpuacct cpu资源使用报告
+                        devices 设备访问
+                        freezer 挂起或恢复任务
+                        memory 内存用量以及报告
+                        perf_event  对cgroup 中的任务进行统一性测试
+                        net_cls  cgroup 中的任务创建的数据报文的类别标识符
+
+
+
+
                     NameSpace 进程隔离
                         (依靠内核的进程隔离机制,
                          主机名隔离,网络隔离,
@@ -802,6 +821,13 @@ DAY02 OPENSTACK
                       docker tag docker.io/myos1:latest 192.168.1.31:5000/myos:latest
 
                       docker push 192.168.1.31:5000/myos:latest
+
+            补充 现在可以使用  barbor 来进行docke的 私有镜像的管理
+
+                      使用 github上的  harbor的relace 来进行镜像版本的选择
+                      https://github.com/goharbor/harbor/releases
+                      可以使用在线安装或者使用完整包安装。
+                      对于server的要求 2+4G 40G硬盘  docker 17.06.0-ce+ and docker-compose 1.18.0+  最新版本的要求。
 
                       1.32
                         先停止服务 才能看到配置
@@ -12824,7 +12850,7 @@ panglj@tedu.cn
                                      提示 权限不够 请检查 /etc/passwd
                                 入职时检查  别名的设置 看看有没有坑
 
-                用户切换提权
+                用户切换sudo提权
                     切换与提权的应用场景
 
                         切换用户
@@ -12921,6 +12947,11 @@ panglj@tedu.cn
                         PasswordAuthentication yes  //密码验证  默认开启
                     启动密钥对登录
                         PubkeyAuthentication yes    //秘钥检查
+                配置denyhosts 防止暴力破解
+
+                    过程可以参考  注意 进程 名称  /usr/bin/denyhosts.py
+                    https://www.jianshu.com/p/59ffb6adc37c
+
                 部署ssh公钥
                     生成公钥
                         指定加密算法 -t rsa -t dsa
@@ -13207,6 +13238,7 @@ panglj@tedu.cn
                                 扫描
                                     nmap -sS 176.233.*  //半开扫描
                                     nmap -p 3306,80 192.168.4.55  //指定端口扫描
+                                    nmap -Pn 192.168.1.250 -p 1-65535  扫描制定端口
                         抓包工具
                                 协议分析
                                 常见的软件
@@ -13392,6 +13424,11 @@ panglj@tedu.cn
 
                         修改nginx版本信息
 
+                            在http请请求中不显示 nginx 版本，通过修改nginx.conf。
+                            在server 中添加如下：
+                                server_tokens off;
+                            重新加载配置文件
+
                             修改源码包中的版本信息 (在头部文件)
                                 http]# cd /root/nginx-1.12.2/src/http
                                 http]# vim +48 ngx_http_header_filter_module.c
@@ -13408,6 +13445,10 @@ panglj@tedu.cn
                                 make && make install
                                 /usr/local/nginx
 
+                            80转443 http转https
+                            通过地址重写，在80 的 location中添加如下:
+                                  rewrite ^(.*)$ https://$host$1 permanent;
+                                重新加载nginx
                             限制并发
 
                                 由于安装使没有取消ngx_http_limit_req_module的安装导致ddos攻击风险增加
@@ -15310,6 +15351,7 @@ date查看/调整系统 时间  #####常常充当变量用
 软硬链接  ------制作快捷方式
     1.软连接(最多)
         ln -s /路径/软文件  /路径/快捷方式 (青色)
+        创建软连接需要使用绝对路径 否则会变红并且闪烁
                   当你不起名字时候默认和源文件名相同
                   原始文件被干掉后软链接不可用
                   可以跨分区
@@ -15538,6 +15580,9 @@ DNS 解析的作用  端口 53
     DNS分为三类 :一级 DNS二级DNS  三级DNS
     通常由服务器用来解析那一类地址(一类地址,二类地址,三类地址) 用来区分 哪一级DNS
     所有的域名都要以 . 结尾 规定 ;  . 称为根域   专门维护 . 的服务器称为根域名服务器
+    通常 可以通过DNS解析来实现负载均衡， 也就是一个域名对应对台服务器。
+    实现 分线路解析可以通过 在域名添加多条记录时选择国内和国外 线路，分别设置。
+    需要注意的是 设置的国内/国外的解析若被删除且没有设置默认解析线路会造成无法访问，所以我们在配置其他解析记录时需要我们先配置默认的解析记录。
 ##########################################
         根域:
         一级域名: cn        hk  kr  jp  tw  us
@@ -17596,6 +17641,7 @@ grep 查找
 	       属性
 		 -i 忽略大小写 
 	     -v 取反查找  关键字之外的都显示
+	     -r 递归查找
 		-^word 必须以字符串word 开头
 		-word$ 必须以字符串word 结尾
 	student@gao ME]$ grep ^root /etc/passwd
@@ -17608,6 +17654,8 @@ grep 查找
 	[root@server0 ~]# grep -v ^$ /etc/chrony.conf |grep -v ^# /etc/chrony.conf | >> /opt/a.txt
 #################################################### 
 	-v 取反查找  关键字之外的都显示
+    不显示#开头的行
+	grep -v ^# /etc/ssh/sshd_config
 	[student@gao ME]$ grep -v root /etc/passwd |head -5
 	bin:x:1:1:bin:/bin:/sbin/nologin
 	daemon:x:2:2:daemon:/sbin:/sbin/nologin
@@ -22406,6 +22454,9 @@ shell
            2>   2>> 收集错误信息
            &>   &>> 收集所有信息
            < 输入重定向
+    查看历史命令 除了 可以使用 history 还可以使用 ctrl + r 来查找（交互）
+           eg:  table 直接补全 选择最近的命令。
+            (reverse-i-search)`systemctl stop': systemctl stop vsftpd.servic
 
     bash 优点
          支持 tab 快捷键  历史命令  别名  重定向  管道 等等
