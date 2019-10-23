@@ -596,7 +596,11 @@ DAY02 OPENSTACK
                          文件系统隔离,
                          用户隔离,
                          信号向量隔离(kiall)-杀进程只能杀docker里面的进程对本机无影响)
+
                     selinux 安全
+
+                    docker需要隔离 的资源 叫做 名称空间(namespaces)
+                    UTS(主机名和域名) Mount(文件系统/挂载树) IPC (进程间通信)  PID (进程ID)   User，NetWork
 
                 我们在虚拟机上查看网卡实际上查看的是真机上虚拟出来的虚拟交换机的端口,虚拟机之间通信都是通过虚拟交换机转发.
                 由于是在物理机器上实施隔离,所以启动一个容器会非常快(如同启动进程).
@@ -769,7 +773,7 @@ DAY02 OPENSTACK
 
                         docker build -t myapach:test .
 
-                        docker run -it myapach:test
+                        docker run -it myapach:test .
                         curl 172.17.0.2
                             hello world
 

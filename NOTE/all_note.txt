@@ -670,7 +670,7 @@ OOM 内存溢出
                 ~]# docker pull            //下载
                     docker pull [OPTIONS] NAME[:TAG|@DIGEST]
                     下载位置 /var/lib/docker/image/devicemapper/layerdb/sha256
-
+                    下载地址默认使用https 而非 http，在不指定端口的情况下
                 ~]# docker push            //上传
                     docker push [OPTIONS] NAME[:TAG]
                 ~]# docker save                          //导出镜像
@@ -752,6 +752,7 @@ OOM 内存溢出
                             安装需要的软件
 
                         docker commit CONTAINER ID docker.io/name:tag   //导出镜像
+
                             将基于官方镜像的自定义镜像 导出
                     自动创建
 
@@ -16663,7 +16664,7 @@ apt-get purge package  卸载软件(删除配置文件)
 ###########################################
 dpkg -i packagename  //安装
 dpkg -r packagename  //卸载
-dpkg -L packagename = rpm -ql  //列出软件包的详细详细
+dpkg -L packagename = rpm -ql  //列出软件包的详细详细 查看
 dpkg -l packagename = rpm -qa  //列出所有软件包
 dpkg -S packagename  = rpm -qf /usr/bin/vim//验证文件所属的软件包
 
