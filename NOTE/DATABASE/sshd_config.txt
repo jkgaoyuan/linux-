@@ -168,3 +168,7 @@ Subsystem       sftp    /usr/lib/ssh/sftp-server
 # UseDNS yes
 # 一般来说，为了要判断客户端来源是正常合法的，因此会使用 DNS 去反查客户端的主机名
 # 不过如果是在内网互连，这项目设定为 no 会让联机达成速度比较快。
+
+
+ ClientAliveCountMax
+ #SSH 连线闲置多长时间后自动终止连线的数值 单位 分钟

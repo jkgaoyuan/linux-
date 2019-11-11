@@ -14153,6 +14153,8 @@ ftp服务两种模式
                     命令连接和数据连接都由客户端来发起
 
                     被动模式解决了主动模式所面临的服务器到客户端的连接会被拦截阻塞的问题
+                    参考：
+                    https://andon.cloud.tencent.com/knowledgeV3/articledetail/6746
 FTP的传输有两种方式：ASCII传输模式和二进制数据传输模式
 ftp的相关问题可以参考
 https://www.jianshu.com/p/f1788f596a57
