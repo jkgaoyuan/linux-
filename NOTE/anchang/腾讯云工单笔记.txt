@@ -297,9 +297,10 @@ clb 负载均衡
 但是反过来不行
 
 windows 系统日志，开关机， 重启日志文件
+WIN+R键，打开运行，输入eventvwr，打开“事件查看器”  系统    /setup 安装 （补丁）/ 应用日志/
 详细的事件代码可以查看
-
 https://blog.csdn.net/qq_26593657/article/details/81161259
+
 
 事件ID 12  开机
 事件ID 13  关机

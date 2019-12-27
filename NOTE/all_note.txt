@@ -15423,11 +15423,18 @@ vim 编辑技巧
     GG 末尾
     gg开头
     yy复制
-    p黏贴
-    dd删除当前行
-    d$ 或者 D 从光标处删除到行尾
-    C 从光标处删除到行尾,进入插入模式
+    y^  复制当前到行头的内容；
+    y$  复制当前到行尾的内容；
+    yw  复制一个word （nyw或者ynw，复制n个word，n为数字）；
+    yG  复制至档尾（nyG或者ynG，复制到第n行，例如1yG或者y1G，复制到档尾）
+    p  黏贴
+    dd 删除当前行 (应该叫做剪切整行)
+    d$ 或者 D 从光标处删除（剪切）到行尾
+    d^ 剪切至行首
     d^ 从光标处删除到行首
+    dG 剪切至档尾
+    dw 剪切一个word
+    C 从光标处删除到行尾,进入插入模式
     u 撤销
     U 撤销当前行所有操作
     ctrl + r 取消前一次撤销操作 (反撤销)
@@ -17414,7 +17421,7 @@ eg:
 重启系统 在系统启动过程中内核选择部分 按 E  进入单用户模式
 2.
 找到Linux 16 的一行 在末端输入 rd.break console=tty00
-3. Ctrl+x 
+3. Ctrl+x e
 4.  输入
     　　　　　　重新挂载赋予读写权限　
 　　mount -o remount,rw /sysroot   （挂载sysroot 给予 、读写权限）
@@ -17423,7 +17430,19 @@ eg:
     输入新密码 （密码强度不够的话需要输入两次）
     touch /.autorelabel (跳过内核检查和ＳＥＬｉｎｕｘ相关)
     exit
-    reboot  
+    reboot
+
+ 补充：
+    参考： https://cloud.tencent.com/developer/article/1368358
+       常规方式进入单用户 使用 passwd 修改密码 报   authentication token manipulation erro
+            检查
+                     lsattr -v /etc/passwd
+                        1007528200 -------------e-- /etc/passwd  （正常）
+                     lsattr -v /etc/shadow
+                        1007528201 -------------e-- /etc/shadow    （正常）
+                     有其他特殊权限 就用下面 命令 取消
+                    # chattr -i /etc/passwd
+                   # chattr -i /etc/passwd
 #####################################################################################
 远程传输文件  
 scp 文件 root@对方ip ：存放位置
@@ -19148,7 +19167,7 @@ shell   6 天
                                               格式
             [root@proxy ~]# openssl req -new -x509 -key cert.key > cert.pem      //生成证书
 
-         2)修改配置文件
+         2)修改配置文件1
             [root@proxy ~]# vim  /usr/local/nginx/conf/nginx.conf
             … …
             server {
@@ -21644,7 +21663,7 @@ shell   6 天
                     缺点:正则弱于nginx
                         日志不如 nginx
 
-                    注意事项：
+                    注意事项：eht
                     将前面实验VIP、LVS等实验的内容清理干净！！！！！！
                     删除所有设备的VIP，清空所有LVS设置，关闭keepalived！！！
                     web1关闭多余的网卡与VIP，配置本地真实IP地址。
@@ -22297,6 +22316,48 @@ https://www.zhihu.com/question/21536660
                 删 压根就没删除
                 写 真的写上去了
                 mkfs.ext4 -i -b  /dev/vdbc
+
+            linux inode 占用100%的解决办法
+            导语
+
+            当你Linux 系统无法创建新文件时，有可能是磁盘满了，还有可能是磁盘的 inode 用光了，，只能是删除一些文件，但是一般情况下，其实是系统中的某个地方产生了大量的并不需要的文件，要做的就是找到他们并删除就可以了，
+            什么是 inode ？
+
+            文件储存在硬盘上，硬盘的最小存储单位叫做”扇区”（Sector）。每个扇区储存512字节（相当于0.5KB）。
+            操作系统读取硬盘的时候，不会一个个扇区地读取，这样效率太低，而是一次性连续读取多个扇区，即一次性读取一个”块”（block）。这种由多个扇区组成的”块”，是文件存取的最小单位。”块”的大小，最常见的是4KB，即连续八个 sector组成一个 block。
+            文件数据都储存在”块”中，那么很显然，我们还必须找到一个地方储存文件的元信息，比如文件的创建者、文件的创建日期、文件的大小等等。这种储存文件元信息的区域就叫做inode，中文译名为”索引节点”。
+            每一个文件都有对应的inode，里面包含了与该文件有关的一些信息。
+            如何查看系统的 innode 占用情况
+
+                df -ih
+
+            如何查找那个目录下文件最多
+
+            首先切到根目录 /
+
+                cd /
+
+            然后执行
+
+                for i in /*; do echo $i; find $i | wc -l; done
+
+            或者
+
+                for i in `ls -1A | grep -v "\.\./" | grep -v "\./"`; do echo "`find $i | sort -u | wc -l` $i"; done | sort -rn | head -10
+
+            这样会依次返回/目录下文件最多的目录,进入这个目录，再执行上述命令，就这样层层深入最终确定是那个目录文件最多
+            如何删除那个目录的的所有文件
+
+            一般情况下，如果这个目录下应该会有数以百万的文件，如果你直接用 rm -rf 目录名 的话效率会很低，可以用下面方法
+
+                  find 目录 -type f -name '*' -print0 | xargs -0 rm
+
+            时间可能会比较久，所以你最好开一个 screen 来处理
+            有可能是你遇到了下面的情况
+
+            /var/spool/postfix/maildrop 下面有很多文件
+            为了避免，可以执行 crontab -e
+            在最开头添加 MAILTO='"' 保存，然后 server crond restart 重启 crond
 
 
         Ceph文件系统
