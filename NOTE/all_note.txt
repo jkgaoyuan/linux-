@@ -10003,7 +10003,7 @@ panglj@tedu.cn
                             完全备份备份所有数据
                             备份命令:
                                  mysqldump //备份命令
-                                 ]# mysqldump -uroot -p密码 库名 > 目录/xxx.sql(目录自己创建)
+                                 ]# mysqldump -uroot -p密码 库名 > 目录/xxx.sql(目录自己创建)  支持mysql/mariadb
 
 
                                     备份时库名的表示方式  --all-database 或 -A //所有库
@@ -10116,6 +10116,8 @@ panglj@tedu.cn
 
    DAY05  备份
         innobackupex
+
+        mariadb10 以上版本推荐使用 mariadbbackup，因为恢复时不支持 innobackupex，当然可以使用mysqldump
 
         查看创建信息
         mysql> show create table db3.user \G; 可以查看到表引擎
@@ -10234,8 +10236,90 @@ panglj@tedu.cn
 
                 ]# mysql -uroot -ptarena
 
+            mariadbbackup
 
+                    mariabackup [--defaults-file=#] [--backup | --prepare | --copy-back | --move-back] [OPTIONS]
 
+                    --backup
+                        备份数据库。
+                        使用此命令选项，Mariabackup会对您的数据库执行备份操作。备份将写入目标目录，由- -target-dir选项设置。
+                    --copy-back
+                        将备份还原到数据目录。
+                        使用此命令，Mariabackup将备份从目标目录复制到数据目录，如- -datadir选项所定义。您必须在运行此命令之前停止MariaDB服务器。数据目录必须为空。如果要使用备份覆盖数据目录，请使用该- -force-non-empty-directories选项。
+                        请记住，在恢复备份之前，首先需要使用该- -prepare选项运行Mariabackup 。在完全备份的情况下，这使得文件的时间点保持一致。使用增量备份，这会将增量应用于基本备份。准备好备份后，您可以运行- -copy-back将其应用于MariaDB Server。
+                        运行该- -copy-back命令会将备份文件复制到数据目录。如果要保存备份以供日后使用，请使用此命令。如果您不想保存备份以供日后使用，请使用该- -move-back命令。
+                    --defaults-file
+                        定义包含默认配置的文件的路径。
+                    -H, --host
+                        定义要备份的MariaDB服务器的主机
+                    --incremental-basedir
+                        定义是否要增加备份
+                    --incremental-dir
+                        定义是否要增加准备好的备份
+                        将此选项与- -prepare命令选项一起使用会导致Mariabackup增加准备好的备份，而不是从头开始复制。增量将.delta文件和日志文件应用到目标目录中。
+                    --move-back
+                        将备份还原到数据目录。
+                        使用此命令，Mariabackup将备份从目标目录移动到数据目录，如–datadir选项所定义。您必须在运行此命令之前停止MariaDB服务器。数据目录必须为空。如果要使用备份覆盖数据目录，请使用该–force-non-empty-directories选项。
+                        请记住，在恢复备份之前，首先需要使用该–prepare选项运行Mariabackup 。在完全备份的情况下，这使得文件的时间点保持一致。使用增量备份，这会将增量应用于基本备份。准备好备份后，您可以运行–move-back将其应用于MariaDB Server。
+                    -p, --password
+                        定义用于连接MariaDB Server的密码。
+                    -P, --port
+                        定义要连接的服务器端口
+                    --prepare
+                        准备现有备份以还原到MariaDB服务器 。
+                        Mariabackup --backup在目标目录中的操作期间生成的文件尚未准备好在服务器上使用。在将数据还原到MariaDB之前，首先需要准备备份。
+                        在完全备份的情况下，文件不是时间点一致的，因为它们是在不同时间拍摄的。如果您尝试在未先准备数据的情况下还原数据库，InnoDB会将新数据拒绝为损坏。使用该–prepare命令运行Mariabackup 会使数据准备就绪，因此您可以将其还原到MariaDB Server。使用增量备份时，需要使用–prepare命令和–incremental-dir选项通过增量备份中的增量更新基本备份。
+                    -S, --socket
+                        定义用于连接本地数据库的套接字
+                    --user
+                        定义用于连接MariaDB服务器的用户名
+                    --version-check
+                        启用版本检查。
+                        使用此选项，您可以启用Mariabackup版本检查
+                    --version
+
+            全备份
+                mariabackup --backup --target-dir /backup/$(date '+%y-%m-%d')_fullbackup  --user root  --password centos
+
+                --target-dir 指定备份目录
+                             备份到目录/backup/$(date ‘+%y-%m-%d’)_fullbackup 这里的$(date ‘+%y-%m-%d’)_fullbackup目录会自动创建，而backup需要自己创建
+
+            恢复
+                和innobackupex 一样需要 两步
+
+                1. 准备恢复数据
+                    mariabackup --prepare --target-dir   --user backup_user --password backup_passwd
+                2. 恢复数据
+                    mariabackup --copy-back --target-dir /backup/18-07-30_fullbackup  --user root  --password centos
+                3. 修改数据权限
+                    别忘了
+                    因为备份的用户是root，还原过去的时候属主没有变化，所以要吧还原过去的数据的属主和属组修改一下
+                    chown -R mysql:mysql /usr/local/mariadb/data  ###指向你的数据库目录 /var/lib/mysql/
+            增量备份与还原
+                增量备份要在全备份的基础上做
+                1. 完全备份
+                    mariabackup --backup --target-dir /backup/fullbackup  --user root  --password centos
+
+                2. 增量备份
+                    mariabackup --backup --target-dir /backup/inc1   --incremental-basedir /backup/fullbackup --user root --password centos
+
+                    --incremental-basedir 指向你的全备份
+                    --target-dir  指向你的增量备份
+                增量备份恢复
+
+                1. 准备全备数据
+                    mariabackup --prepare --target-dir /backup/fullbackup/    --user root --password centos     --apply-log-only
+
+                2. 将增量备份与全备合并
+                    mariabackup --prepare --target-dir /backup/fullbackup/  \
+                       --user root --password centos  \
+                       --incremental-dir /backup/inc1   --apply-log-only
+                3. 还原(保证data目录为空)
+                    mariabackup --copy-back --target-dir /backup/fullbackup/ \
+                    --user root  --password centos
+                4. 修改属主属组
+                    别忘记了
+                   chown -R mysql:mysql /usr/local/mariadb/data  ###指向你的数据库目录 /var/lib/mysql/
    进阶
        DAY06
             max-connections MySQL服务的最大并发连接数

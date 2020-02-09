@@ -4,7 +4,7 @@
 #使用yum源CentOS7-1804.iso
 #Install LNMP architecture
 ########################检查源码包
-jiancha()   {
+ajianch()   {
 	export PWD=`pwd` 
         cd $PWD
 	bianliang=$(ls | grep $1)
