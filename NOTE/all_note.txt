@@ -732,7 +732,7 @@ OOM 内存溢出
                 docker start 9752526130d0   //开启容器
                 docker restart 9752526130d0 //重启容器
                 docker inspect a49918ac2a02 //查看容器信息
-                docker rm 5613aa11e610      //删除容器  先删除容器才能,继续删除镜像
+             docker rm 5613aa11e610      //删除容器  先删除容器才能,继续删除镜像
                     docker rm -f 5876b2b46e6c   -f 强制删除真正运行的容器
                 docker top 容器ID             //查看容器进程列表
                     docker top 9752526130d0
@@ -14406,9 +14406,35 @@ https://cloud.tencent.com/developer/article/1165387
 [root@desktop0 ~]# swapon -a 　＃＃＃自动挂载ｓｗａｐ分区
 [root@desktop0 ~]# swapon -s　＃＃＃３显示　ｓｗａｐ分区信息
 文件名				类型		大小	已用	权限
-/dev/vdb1   
+/dev/vdb1
 
+################################
+关于系统内存
+free -m 可见的是系统为用户分配全部可用的部分（total 下的值 ） ， 即除开硬件开销和内核crush （kdump ）需要收集日志所消耗的内存部分。
 
+[root@VM_0_9_centos ~]# free
+              total        used        free      shared  buff/cache   available
+Mem:        1882192      135092      755192         472      991908     1571672
+Swap:             0           0           0
+
+查询系统初始化完毕后系统为用户分配的内存，  可用/总共
+[root@VM_0_9_centos ~]# dmesg |grep available  #检查系统启动后系统为用户分配的内存
+[    0.000000] e820: [mem 0x80000000-0xfeffbfff] available for PCI devices
+[    0.000000] Memory: 1860324k/2097144k available (7764k kernel code, 392k absent, 236428k reserved, 5967k data, 1980k init)
+系统初始化完毕后并不会 持续保留这些内存 而是将其释放
+
+[root@VM_0_9_centos ~]# dmesg |grep Freeing    #检查内存初始化后释放内存
+[    0.065434] Freeing SMP alternatives: 28k freed
+[    0.518569] Freeing initrd memory: 18892k freed
+[    0.746929] Freeing unused kernel memory: 1980k freed
+[    0.751678] Freeing unused kernel memory: 416k freed
+[    0.754349] Freeing unused kernel memory: 552k freed
+
+下面单位全部为K
+用户当前可用   系统初始完毕为用户分配
+1882192   -   1860324 =‬  21,868
+
+28   +   18892   +   1980   +   416   +   552 =‬  21,868
 
 ＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃＃３３
 iscsi 　网络磁盘服务(共享磁盘/分区) 类似于　ｓｈｅｌｌ　脚本的地位　也就是说必须学好  怎么读 爱斯嘎see
@@ -17504,7 +17530,7 @@ eg:
 1.
 重启系统 在系统启动过程中内核选择部分 按 E  进入单用户模式
 2.
-找到Linux 16 的一行 在末端输入 rd.break console=tty00
+找到Linux 16 的一行 在末端输入 rd.break console=tty0
 3. Ctrl+x e
 4.  输入
     　　　　　　重新挂载赋予读写权限　
