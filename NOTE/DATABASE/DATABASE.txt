@@ -215,7 +215,7 @@ panglj@tedu.cn
                         4)delete from 库名.表名;  删除表单中的所有数据,但不删除表
                         5)create table 库名.表名;
                         7)drop table 表名； 删除表
-
+                        8）alter 修改表结构；
                         mysql服务提交方式mysql服务提交方式autocommit
 
             3.Mysql数据类型
