@@ -13887,9 +13887,9 @@ panglj@tedu.cn
                             基本的匹配条件
 
 
-
+                            保存iptables规则
                             保存  iptables-save > /etc/sysconfig/iptables
-
+                             恢复 iptables-restore < /etc/sysconfig/iptables
 
                             filter 表
 
