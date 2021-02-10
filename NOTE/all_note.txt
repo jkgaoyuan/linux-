@@ -4265,6 +4265,12 @@ mysql> select name,uid from user where id<=10 limit 1,3;
 mysql> grant   all    on     *.*     to     mydba@"%"  identified by "123qqq...A"
     -> with grant option;
 
+mysql8.0 授权用户时 需要先创建用户再授权
+
+use mysql;
+create user 'username'@'localhost' identified by 'pass123';
+grant all privileges on *.* to 'username'@'localhost' with grant option;
+
 
 mysql> grant select on  db3.user to admin@"192.168.4.%" identified by "123qqq...A";
 
@@ -20484,7 +20490,7 @@ shell   6 天
                     checkout 切换分支
                 1) clone克隆服务器仓库到本地。
                     [root@web2 ~]# yum -y install git
-                    [root@web2 ~]# git clone root@192.168.2.100 :/var/git/project
+                    [root@web2 ~]# git clone root@192.168.2.100:/var/git/project
                     [root@web2 ~]# cd project
                     [root@web2 ~]# ls
                 2) 修改git配置。
