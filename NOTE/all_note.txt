@@ -4268,7 +4268,7 @@ mysql> grant   all    on     *.*     to     mydba@"%"  identified by "123qqq...A
 mysql8.0 授权用户时 需要先创建用户再授权
 
 use mysql;
-create user 'username'@'localhost' identified by 'pass123';
+create user 'username'@'localhost' identified by 'pass123';hh
 grant all privileges on *.* to 'username'@'localhost' with grant option;
 
 
