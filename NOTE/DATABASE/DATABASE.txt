@@ -2666,6 +2666,8 @@ panglj@tedu.cn
                         Query OK, 0 rows affected (0.05 sec)
                         Records: 0  Duplicates: 0  Warnings: 0
 
+                        mysql> alter table db10.b charset=utf8mb4; //修改表的字符集
+
                         mysql> show create table db10.c\G;   //查看数据库创建信息
                         (
                           `name` char(10) DEFAULT NULL
