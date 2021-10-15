@@ -655,8 +655,7 @@ DAY02 OPENSTACK
                     docker push [OPTIONS] NAME[:TAG]
                 ~]# docker save                          //导出镜像
                     docker save [OPTIONS] IMAGE [IMAGE...]                         //导出镜像
-                ~]# docker save docker.io/busybox:latest -o busybox.tar  //:lasts 是tag,-o outpu  t
-
+                ~]# docker save docker.io/busybox:latest -o bus
                 ~]# docker  load   //导入镜像
                     Usage:	docker load [OPTIONS]
                     eg:

@@ -1105,7 +1105,7 @@ DevOps
             批量检测主机
             ansible web -m ping -k
             列出所有的可执行主机
-            ansible all  --list-hosts
+            ansible all  --list-hostsans
 
             部署免密码登录
 

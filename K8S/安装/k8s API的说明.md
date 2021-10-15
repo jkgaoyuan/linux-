@@ -1,6 +1,5 @@
 ### k8s API
 
-本章内容了解即可
 
 #### 什么是 k8s API
 
@@ -19,9 +18,7 @@ kubectl
 
 #### API 版本
 
-Alpha  
-Beta
-Stable
+Alpha  Beta  Stable
 
 
 #### api组

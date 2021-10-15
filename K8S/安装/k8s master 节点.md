@@ -1,7 +1,7 @@
 ### k8s master 节点
 
 
-master节点可以在集群中任意的机器中运行，为了简单通常只会在一台机器中运行master节点组件， ，且运行 master 组件的机器最好不要运行其他的容器化程序。 
+master节点可以在集群中任意的机器中运行，为了简单通常只会在一台机器中运行master节点组件，且运行 master 组件的机器最好不要运行其他的容器化程序。 
 
 
 #### master 组件
@@ -25,18 +25,21 @@ master节点可以在集群中任意的机器中运行，为了简单通常只�
 	
 	控制器管理器，用于检测控制器健康状态， 控制器是维护pod集群的状态， 检测pod的健康状态， 如 故障检测、自动扩展、滚动更新等操作。  
 	滚动更新： 灰度发布， 金丝雀发布
+	
 	补充： 什么是**控制器**？  
-		pod 作为k8s的最小单元， 用于管理pod的状态和行为就称为控制器。 
+	
+	pod 作为k8s的最小单元， 用于管理pod的状态和行为就称为控制器。 
+	
 	有如下5种控制器
 	
-	<font color=Red>
-	* 		**deployment**
-	* 	 	**statefullset**
-	* 	 	**daemonset**
-	* 	  	**job**
-	* 	  	**cronjob**
 
-	</font>
+	* 		deployment
+	* 	    statefullset
+	* 	 	daemonset
+	* 	  	job
+	* 	  	cronjob
+
+
 	
 4. etcd
 	
@@ -75,8 +78,7 @@ master节点可以在集群中任意的机器中运行，为了简单通常只�
     
     	 
     	 
-  	 
-<font color=green>TEST</font>  
+
 
 	
  
