@@ -1760,6 +1760,17 @@ panglj@tedu.cn
                     1.6.1 配置软件
                         yum -y install /root/maxscale-2.1.2-1.rhel.7.x86_64.rpm
                         rpm -ql maxscale //检查 生成文件位置
+
+                        或者可以直接配置repo 进行安装
+                        测试发现使用 repo 直接安装最新版本 会报依赖库 异常单确认后发现 需要的依赖已经安装了，建议还是 下载rpm 安装
+                        /etc/yum.repos.d/maxscale.repo
+                        [maxscale]
+                        name = maxscale
+                        baseurl = https://downloads.mariadb.com/MaxScale/rhel/7/x86_64/
+                        enabled = 1
+                        gpgcheck = 0
+
+
                     1.6.2 修改代理服务的主配置文件
                         cp /etc/maxscale.cnf /root/ //备份主配置文件
                         /var/log/maxscale/ log存放位置
