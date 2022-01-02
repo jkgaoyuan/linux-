@@ -18,5 +18,5 @@ spec:
       nfs:
         path: /opt/test    #nfs 定义共享的文件位置
         server: 127.0.0.1
-
+#操作前请 先部署nfs 服务， 并在  /etc/exports 指定共享的文件位置和权限
 
